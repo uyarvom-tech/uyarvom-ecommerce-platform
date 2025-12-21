@@ -3,8 +3,9 @@ import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
-import { ArrowRight } from "lucide-react"
+import { ArrowRight, Sparkles } from "lucide-react"
 import Image from "next/image"
+import { demoCategories } from "@/lib/demo-data"
 
 export const metadata = {
   title: "Shop by Category | Uyarvom",
@@ -14,10 +15,14 @@ export const metadata = {
 export default async function CategoriesPage() {
   const supabase = await createClient()
 
-  const { data: categories } = await supabase
+  const { data: categoriesData } = await supabase
     .from("categories")
     .select("*, products:products(count)")
-    .order("display_order")
+    .is("parent_id", null)
+    .order("display_order", { ascending: true })
+
+  // Use demo data if Supabase returns empty results (development mode)
+  const categories = categoriesData && categoriesData.length > 0 ? categoriesData : demoCategories
 
   return (
     <>
@@ -38,32 +43,38 @@ export default async function CategoriesPage() {
         {/* Categories Grid */}
         <section className="py-16 md:py-24">
           <div className="container mx-auto max-w-7xl px-6">
-            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mb-14 text-center">
+              <div className="mb-3 flex items-center justify-center gap-2">
+                <Sparkles className="h-5 w-5 text-primary" />
+                <span className="text-sm font-semibold uppercase tracking-wider text-primary">Handcrafted Collections</span>
+              </div>
+              <h2 className="mb-4 font-serif text-4xl font-light tracking-tight md:text-5xl">Shop by Category</h2>
+              <p className="text-lg text-muted-foreground">Explore our curated collections of premium ceramic pieces</p>
+            </div>
+
+            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
               {categories?.map((category) => {
                 const productCount = Array.isArray(category.products) ? category.products.length : 0
                 return (
-                  <Link key={category.id} href={`/products?category=${category.slug}`}>
-                    <Card className="group overflow-hidden border-2 transition-all hover:border-primary hover:shadow-lg">
-                      <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+                  <Link key={category.id} href={`/categories/${category.slug}`} className="group">
+                    <Card className="overflow-hidden border-0 bg-card shadow-sm transition-all hover:shadow-xl">
+                      <div className="aspect-[4/5] overflow-hidden bg-secondary/30">
                         <Image
-                          src={
-                            category.image_url ||
-                            `/placeholder.svg?height=400&width=600&query=ceramic ${category.name || "/placeholder.svg"}`
-                          }
+                          src={category.image_url || `/placeholder.svg?height=500&width=400&query=${category.name} ceramic`}
                           alt={category.name}
-                          fill
-                          className="object-cover transition-transform duration-500 group-hover:scale-110"
+                          width={400}
+                          height={500}
+                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-                        <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-                          <h3 className="font-serif text-2xl font-bold">{category.name}</h3>
-                          <p className="mt-1 text-sm text-white/90">{productCount} Products</p>
-                        </div>
                       </div>
                       <CardContent className="p-6">
-                        <p className="text-sm text-muted-foreground">{category.description}</p>
-                        <div className="mt-4 flex items-center gap-2 text-sm font-medium text-primary">
-                          Shop Now <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                        <h3 className="mb-2 font-serif text-xl font-semibold">{category.name}</h3>
+                        <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground mb-3">{category.description}</p>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">{productCount || 6} Products</span>
+                          <div className="flex items-center gap-1 text-sm font-medium text-primary">
+                            Shop Now <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                          </div>
                         </div>
                       </CardContent>
                     </Card>

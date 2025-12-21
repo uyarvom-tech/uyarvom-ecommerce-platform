@@ -1,30 +1,25 @@
-# Uyarvom ecommerce platform
+# Uyarvom E-commerce Platform
 
-*Automatically synced with your [v0.app](https://v0.app) deployments*
+A modern e-commerce platform built with Next.js, React, and Tailwind CSS.
 
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/hpofficial420-3045s-projects/v0-uyarvom-ecommerce-platform)
-[![Built with v0](https://img.shields.io/badge/Built%20with-v0.app-black?style=for-the-badge)](https://v0.app/chat/nevVosibHe3)
+## How to Run
 
-## Overview
+1. **Install dependencies:**
+   ```bash
+   npm install
+   ```
 
-This repository will stay in sync with your deployed chats on [v0.app](https://v0.app).
-Any changes you make to your deployed app will be automatically pushed to this repository from [v0.app](https://v0.app).
+2. **Run the development server:**
+   ```bash
+   npm run dev
+   ```
 
-## Deployment
+3. **Open your browser:**
+   Navigate to [http://localhost:3000](http://localhost:3000)
 
-Your project is live at:
+## Available Scripts
 
-**[https://vercel.com/hpofficial420-3045s-projects/v0-uyarvom-ecommerce-platform](https://vercel.com/hpofficial420-3045s-projects/v0-uyarvom-ecommerce-platform)**
-
-## Build your app
-
-Continue building your app on:
-
-**[https://v0.app/chat/nevVosibHe3](https://v0.app/chat/nevVosibHe3)**
-
-## How It Works
-
-1. Create and modify your project using [v0.app](https://v0.app)
-2. Deploy your chats from the v0 interface
-3. Changes are automatically pushed to this repository
-4. Vercel deploys the latest version from this repository
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm start` - Start production server
+- `npm run lint` - Run ESLint

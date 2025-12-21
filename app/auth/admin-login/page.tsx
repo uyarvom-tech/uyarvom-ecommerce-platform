@@ -33,17 +33,12 @@ export default function AdminLoginPage() {
       })
       if (signInError) throw signInError
 
-      // Check if user is admin/staff
-      const { data: adminData, error: adminError } = await supabase
-        .from("admin_users")
-        .select("role")
-        .eq("id", data.user.id)
-        .single()
-
-      if (adminError || !adminData) {
-        // Not an admin, sign out
+      // In demo mode, check user role from user metadata
+      const user = data.user
+      if (!user?.user_metadata?.role || (user.user_metadata.role !== 'admin' && user.user_metadata.role !== 'staff')) {
+        // Not an admin/staff, sign out
         await supabase.auth.signOut()
-        throw new Error("Access denied. This account does not have admin privileges.")
+        throw new Error("Access denied. This account does not have admin or staff privileges.")
       }
 
       // Redirect to admin dashboard
@@ -56,9 +51,14 @@ export default function AdminLoginPage() {
     }
   }
 
+  const fillDemoCredentials = (email: string, password: string) => {
+    setEmail(email)
+    setPassword(password)
+  }
+
   return (
     <div className="flex min-h-screen w-full items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-6">
-      <div className="w-full max-w-sm">
+      <div className="w-full max-w-md">
         <Card className="border-2 border-primary/20">
           <CardHeader className="text-center">
             <div className="mb-4 flex justify-center">
@@ -70,6 +70,64 @@ export default function AdminLoginPage() {
             <CardDescription>Staff & Administrator Access Only</CardDescription>
           </CardHeader>
           <CardContent>
+            {/* Demo Admin Credentials Section */}
+            <div className="mb-6 rounded-lg border bg-orange-50 p-4">
+              <h3 className="mb-3 font-semibold text-orange-900">Demo Admin Credentials</h3>
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-orange-800">Admin:</span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fillDemoCredentials('admin@uyarvom.com', 'admin123')}
+                    className="h-6 px-2 text-xs"
+                  >
+                    Use
+                  </Button>
+                </div>
+                <div className="text-xs text-orange-600">admin@uyarvom.com / admin123</div>
+                
+                <div className="flex items-center justify-between">
+                  <span className="text-orange-800">Super Admin:</span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fillDemoCredentials('superadmin@uyarvom.com', 'super123')}
+                    className="h-6 px-2 text-xs"
+                  >
+                    Use
+                  </Button>
+                </div>
+                <div className="text-xs text-orange-600">superadmin@uyarvom.com / super123</div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-orange-800">Staff:</span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fillDemoCredentials('staff@uyarvom.com', 'staff123')}
+                    className="h-6 px-2 text-xs"
+                  >
+                    Use
+                  </Button>
+                </div>
+                <div className="text-xs text-orange-600">staff@uyarvom.com / staff123</div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-orange-800">Manager:</span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fillDemoCredentials('manager@uyarvom.com', 'manager123')}
+                    className="h-6 px-2 text-xs"
+                  >
+                    Use
+                  </Button>
+                </div>
+                <div className="text-xs text-orange-600">manager@uyarvom.com / manager123</div>
+              </div>
+            </div>
+
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>

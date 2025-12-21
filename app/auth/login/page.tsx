@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useState } from "react"
@@ -41,9 +42,14 @@ export default function LoginPage() {
     }
   }
 
+  const fillDemoCredentials = (email: string, password: string) => {
+    setEmail(email)
+    setPassword(password)
+  }
+
   return (
     <div className="flex min-h-screen w-full items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-6">
-      <div className="w-full max-w-sm">
+      <div className="w-full max-w-md">
         <Card className="border-2">
           <CardHeader className="text-center">
             <div className="mb-2 text-center">
@@ -54,6 +60,38 @@ export default function LoginPage() {
             <CardDescription>Sign in to continue shopping</CardDescription>
           </CardHeader>
           <CardContent>
+            {/* Demo Credentials Section */}
+            <div className="mb-6 rounded-lg border bg-blue-50 p-4">
+              <h3 className="mb-3 font-semibold text-blue-900">Demo Login Credentials</h3>
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-blue-800">Customer:</span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fillDemoCredentials('customer@example.com', 'customer123')}
+                    className="h-6 px-2 text-xs"
+                  >
+                    Use
+                  </Button>
+                </div>
+                <div className="text-xs text-blue-600">customer@example.com / customer123</div>
+                
+                <div className="flex items-center justify-between">
+                  <span className="text-blue-800">Demo User:</span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fillDemoCredentials('demo@example.com', 'demo123')}
+                    className="h-6 px-2 text-xs"
+                  >
+                    Use
+                  </Button>
+                </div>
+                <div className="text-xs text-blue-600">demo@example.com / demo123</div>
+              </div>
+            </div>
+
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
@@ -88,7 +126,7 @@ export default function LoginPage() {
               </Link>
             </div>
             <div className="mt-4 border-t pt-4 text-center text-sm text-muted-foreground">
-              Are you staff?{" "}
+              Are you staff or admin?{" "}
               <Link href="/auth/admin-login" className="font-medium text-primary underline-offset-4 hover:underline">
                 Admin Login
               </Link>

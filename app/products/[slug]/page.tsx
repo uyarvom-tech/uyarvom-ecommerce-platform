@@ -10,12 +10,13 @@ import { notFound } from "next/navigation"
 import type { Metadata } from "next"
 import { Card, CardContent } from "@/components/ui/card"
 
-export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params
   const supabase = await createClient()
   const { data: product } = await supabase
     .from("products")
     .select("name, short_description")
-    .eq("slug", params.slug)
+    .eq("slug", slug)
     .single()
 
   if (!product) {
@@ -28,7 +29,8 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   }
 }
 
-export default async function ProductPage({ params }: { params: { slug: string } }) {
+export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
   const supabase = await createClient()
 
   const { data: product } = await supabase
@@ -40,7 +42,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
       images:product_images(image_url, alt_text, is_primary, display_order)
     `,
     )
-    .eq("slug", params.slug)
+    .eq("slug", slug)
     .eq("is_active", true)
     .single()
 

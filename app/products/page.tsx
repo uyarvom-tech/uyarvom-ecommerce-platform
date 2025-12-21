@@ -3,13 +3,15 @@ import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { ProductCard } from "@/components/product-card"
 import { ProductFilters } from "@/components/product-filters"
+import { demoProducts, demoCategories } from "@/lib/demo-data"
 
 export default async function ProductsPage({
   searchParams,
 }: {
-  searchParams: { category?: string; sort?: string; min?: string; max?: string }
+  searchParams: Promise<{ category?: string; sort?: string; min?: string; max?: string }>
 }) {
   const supabase = await createClient()
+  const params = await searchParams
 
   let query = supabase
     .from("products")
@@ -23,23 +25,23 @@ export default async function ProductsPage({
     .eq("is_active", true)
 
   // Filter by category
-  if (searchParams.category) {
-    const { data: category } = await supabase.from("categories").select("id").eq("slug", searchParams.category).single()
+  if (params.category) {
+    const { data: category } = await supabase.from("categories").select("id").eq("slug", params.category).single()
     if (category) {
       query = query.eq("category_id", category.id)
     }
   }
 
   // Filter by price range
-  if (searchParams.min) {
-    query = query.gte("price", Number.parseFloat(searchParams.min))
+  if (params.min) {
+    query = query.gte("price", Number.parseFloat(params.min))
   }
-  if (searchParams.max) {
-    query = query.lte("price", Number.parseFloat(searchParams.max))
+  if (params.max) {
+    query = query.lte("price", Number.parseFloat(params.max))
   }
 
   // Sort
-  const sortBy = searchParams.sort || "newest"
+  const sortBy = params.sort || "newest"
   switch (sortBy) {
     case "price-asc":
       query = query.order("price", { ascending: true })
@@ -54,9 +56,12 @@ export default async function ProductsPage({
       query = query.order("created_at", { ascending: false })
   }
 
-  const { data: products } = await query
+  const { data: productsData } = await query
+  const { data: categoriesData } = await supabase.from("categories").select("*").is("parent_id", null).order("name")
 
-  const { data: categories } = await supabase.from("categories").select("*").is("parent_id", null).order("name")
+  // Use demo data if Supabase returns empty results (development mode)
+  const products = productsData && productsData.length > 0 ? productsData : demoProducts
+  const categories = categoriesData && categoriesData.length > 0 ? categoriesData : demoCategories
 
   return (
     <div className="flex min-h-screen flex-col">

@@ -7,12 +7,14 @@ import Link from "next/link"
 import Image from "next/image"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
+import { DevNotice } from "@/components/dev-notice"
+import { demoProducts } from "@/lib/demo-data"
 
 export default async function HomePage() {
   const supabase = await createClient()
 
   // Fetch featured products
-  const { data: featuredProducts } = await supabase
+  const { data: featuredProductsData } = await supabase
     .from("products")
     .select(
       `
@@ -26,16 +28,16 @@ export default async function HomePage() {
     .order("created_at", { ascending: false })
     .limit(6)
 
-  // Fetch categories
-  const { data: categories } = await supabase
-    .from("categories")
-    .select("*")
-    .is("parent_id", null)
-    .order("display_order", { ascending: true })
+  // Use demo data if Supabase returns empty results (development mode)
+  const featuredProducts = featuredProductsData && featuredProductsData.length > 0 ? featuredProductsData : demoProducts
 
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
+      
+      <div className="container mx-auto max-w-7xl px-6 pt-4">
+        <DevNotice />
+      </div>
 
       <section className="relative overflow-hidden px-6 py-24 md:py-40">
         <div className="container mx-auto max-w-7xl">
@@ -121,37 +123,6 @@ export default async function HomePage() {
               Get <span className="font-bold text-primary">20% OFF</span> on your first purchase + Free Shipping |{" "}
               <span className="text-muted-foreground">Code: WELCOME20</span>
             </p>
-          </div>
-        </div>
-      </section>
-
-      <section className="px-6 py-20 md:py-28">
-        <div className="container mx-auto max-w-7xl">
-          <div className="mb-14 text-center">
-            <h2 className="mb-4 font-serif text-4xl font-light tracking-tight md:text-5xl">Shop by Category</h2>
-            <p className="text-lg text-muted-foreground">Explore our curated collections</p>
-          </div>
-
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {categories?.map((category) => (
-              <Link key={category.id} href={`/categories/${category.slug}`} className="group">
-                <Card className="overflow-hidden border-0 bg-card shadow-sm transition-all hover:shadow-xl">
-                  <div className="aspect-[4/5] overflow-hidden bg-secondary/30">
-                    <Image
-                      src={category.image_url || `/placeholder.svg?height=500&width=400&query=${category.name} ceramic`}
-                      alt={category.name}
-                      width={400}
-                      height={500}
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-                    />
-                  </div>
-                  <CardContent className="p-6">
-                    <h3 className="mb-2 font-serif text-xl font-semibold">{category.name}</h3>
-                    <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground">{category.description}</p>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
           </div>
         </div>
       </section>
