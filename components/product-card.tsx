@@ -1,6 +1,5 @@
 import Link from "next/link"
 import Image from "next/image"
-import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Star } from "lucide-react"
 
@@ -14,26 +13,32 @@ export function ProductCard({ product }: { product: any }) {
   const isNew = new Date(product.created_at) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // Last 30 days
 
   return (
-    <Link href={`/products/${product.slug}`} className="group">
-      <Card className="overflow-hidden border-0 bg-card shadow-md transition-all hover:shadow-2xl hover:-translate-y-1">
-        <div className="relative aspect-square overflow-hidden bg-secondary/30">
+    <Link href={`/products/${product.slug}`} className="group block h-full">
+      <div className="apple-card p-0 h-full apple-hover-lift flex flex-col">
+        {/* Apple-style Product Image */}
+        <div className="relative aspect-[4/3] overflow-hidden bg-secondary/20 rounded-t-[20px] flex-shrink-0">
           <Image
-            src={primaryImage?.image_url || `/placeholder.svg?height=500&width=500&query=${product.name}`}
+            src={primaryImage?.image_url || `/placeholder.svg?height=400&width=400&query=${product.name}`}
             alt={primaryImage?.alt_text || product.name}
-            width={500}
-            height={500}
-            className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+            width={400}
+            height={300}
+            className="h-full w-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
           />
 
+          {/* Apple-style Badges */}
           <div className="absolute right-3 top-3 flex flex-col gap-2">
             {hasDiscount && (
-              <Badge className="bg-destructive text-destructive-foreground border-0 px-3 py-1.5 font-bold shadow-lg">
+              <Badge className="bg-destructive text-destructive-foreground border-0 px-2 py-1 text-xs font-semibold rounded-full apple-shadow">
                 {discountPercent}% OFF
               </Badge>
             )}
-            {isNew && <Badge className="bg-blue-500 text-white border-0 px-3 py-1.5 font-bold shadow-lg">NEW</Badge>}
+            {isNew && (
+              <Badge className="bg-primary text-primary-foreground border-0 px-2 py-1 text-xs font-semibold rounded-full apple-shadow">
+                NEW
+              </Badge>
+            )}
             {product.stock_quantity <= 0 && (
-              <Badge variant="secondary" className="backdrop-blur-sm">
+              <Badge className="bg-muted text-muted-foreground border-0 px-2 py-1 text-xs font-semibold rounded-full apple-shadow">
                 Out of Stock
               </Badge>
             )}
@@ -41,33 +46,37 @@ export function ProductCard({ product }: { product: any }) {
 
           {isLowStock && (
             <div className="absolute bottom-3 left-3">
-              <Badge
-                variant="secondary"
-                className="border border-destructive/30 bg-destructive/10 text-destructive font-semibold backdrop-blur-sm"
-              >
+              <Badge className="bg-amber-500/90 text-white border-0 px-2 py-1 text-xs font-semibold rounded-full apple-shadow backdrop-blur-sm">
                 ⚡ Only {product.stock_quantity} left
               </Badge>
             </div>
           )}
 
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 transition-opacity group-hover:opacity-100 flex items-end justify-center pb-4">
-            <Badge variant="secondary" className="backdrop-blur-sm">
-              Quick View
-            </Badge>
-          </div>
+          {/* Apple-style Hover Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 transition-all duration-300 group-hover:opacity-100" />
         </div>
 
-        <CardContent className="p-5">
-          <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-primary">{product.category?.name}</p>
-          <h3 className="mb-2 font-serif text-lg font-semibold leading-tight group-hover:text-primary transition-colors">
-            {product.name}
+        {/* Apple-style Product Info */}
+        <div className="p-4 flex flex-col flex-1">
+          <p className="text-xs font-semibold uppercase tracking-wider text-primary mb-2">
+            {product.category?.name}
+          </p>
+          
+          <h3 className="text-lg font-semibold mb-2 leading-tight group-hover:text-primary transition-colors duration-300 min-h-[3.5rem] flex items-start">
+            <span className="line-clamp-2">{product.name}</span>
           </h3>
-          <p className="mb-3 line-clamp-2 text-sm leading-relaxed text-muted-foreground">{product.short_description}</p>
+          
+          <p className="apple-body text-sm mb-3 line-clamp-2 leading-relaxed flex-1 min-h-[2.5rem]">
+            {product.short_description}
+          </p>
 
-          <div className="mb-3 flex items-center justify-between">
-            <div className="flex flex-col">
+          {/* Apple-style Pricing */}
+          <div className="flex items-center justify-between mb-3 mt-auto">
+            <div>
               <div className="flex items-baseline gap-2">
-                <span className="font-serif text-xl font-bold">₹{product.price.toLocaleString("en-IN")}</span>
+                <span className="text-xl font-semibold tracking-tight">
+                  ₹{product.price.toLocaleString("en-IN")}
+                </span>
                 {hasDiscount && (
                   <span className="text-sm text-muted-foreground line-through">
                     ₹{product.compare_at_price.toLocaleString("en-IN")}
@@ -83,17 +92,17 @@ export function ProductCard({ product }: { product: any }) {
 
             <div className="flex items-center gap-1">
               <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-              <span className="font-bold text-sm">4.8</span>
-              <span className="text-xs text-muted-foreground">(128)</span>
+              <span className="font-semibold text-sm">4.8</span>
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground border-t pt-3">
+          {/* Apple-style Social Proof */}
+          <div className="flex items-center gap-2 text-xs text-muted-foreground pt-2 border-t border-border/50">
             <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
-            <span className="font-medium">43 people viewing this</span>
+            <span>43 people viewing this</span>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </Link>
   )
 }

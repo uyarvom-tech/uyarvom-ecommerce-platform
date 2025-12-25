@@ -1,9 +1,12 @@
 import { createClient } from "@/lib/supabase/server"
 import Link from "next/link"
-import { Search, Heart } from "lucide-react"
+import Image from "next/image"
+import { Search, Heart, ShoppingBag } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { AuthButton } from "@/components/auth-button"
 import { CartButton } from "@/components/cart-button"
+import { ThemeToggle } from "@/components/theme-toggle"
+import { MobileMenu } from "@/components/mobile-menu"
 
 export async function Header() {
   const supabase = await createClient()
@@ -22,40 +25,119 @@ export async function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
-        <div className="flex items-center gap-8">
-          <Link href="/" className="text-xl font-bold tracking-tight">
-            Uyarvom
-          </Link>
-          <nav className="hidden items-center gap-6 md:flex">
-            <Link href="/products" className="text-sm font-medium transition-colors hover:text-primary">
-              Products
-            </Link>
-            <Link href="/categories" className="text-sm font-medium transition-colors hover:text-primary">
-              Categories
-            </Link>
-            <Link href="/about" className="text-sm font-medium transition-colors hover:text-primary">
-              About
-            </Link>
-          </nav>
-        </div>
+    <>
+      <header className="premium-global-nav">
+        <div className="max-w-[980px] mx-auto px-6">
+          <div className="flex h-12 items-center justify-between">
+            {/* Mobile Menu Toggle - Left Side */}
+            <div className="flex md:hidden items-center">
+              <MobileMenu user={user} />
+            </div>
 
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" className="hidden md:inline-flex" asChild>
-            <Link href="/search">
-              <Search className="h-5 w-5" />
+            {/* Brand Logo - Center on Mobile, Left on Desktop */}
+            <Link href="/" className="flex items-center hover:opacity-80 transition-opacity duration-300 md:mr-auto">
+              <Image
+                src="/logos/logo.png"
+                alt="Uyarvom"
+                width={32}
+                height={32}
+                className="h-8 w-auto"
+              />
             </Link>
-          </Button>
-          <Button variant="ghost" size="icon" asChild>
-            <Link href="/wishlist">
-              <Heart className="h-5 w-5" />
-            </Link>
-          </Button>
-          <CartButton initialCount={cartCount} />
-          <AuthButton />
+            
+            {/* Desktop Navigation */}
+            <nav className="hidden items-center gap-8 md:flex">
+              <Link href="/" className="premium-nav-link">
+                Home
+              </Link>
+              <Link href="/products" className="premium-nav-link">
+                Store
+              </Link>
+              <Link href="/categories" className="premium-nav-link">
+                Categories
+              </Link>
+              <Link href="/products?tab=ai-match" className="premium-nav-link flex items-center gap-1" title="AI Kitchen Match">
+                ✨ AI Match
+              </Link>
+              <Link href="/about" className="premium-nav-link">
+                About
+              </Link>
+              <Link href="/support" className="premium-nav-link">
+                Support
+              </Link>
+            </nav>
+
+            {/* Desktop Actions */}
+            <div className="hidden md:flex items-center gap-2">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8 hover:bg-white/20 text-white/90 hover:text-white transition-all duration-300" 
+                asChild
+              >
+                <Link href="/search">
+                  <Search className="h-4 w-4" />
+                  <span className="sr-only">Search</span>
+                </Link>
+              </Button>
+              
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8 hover:bg-white/20 text-white/90 hover:text-white transition-all duration-300" 
+                asChild
+              >
+                <Link href="/wishlist">
+                  <Heart className="h-4 w-4" />
+                  <span className="sr-only">Wishlist</span>
+                </Link>
+              </Button>
+              
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8 hover:bg-white/20 text-white/90 hover:text-white transition-all duration-300" 
+                asChild
+              >
+                <Link href="/cart">
+                  <ShoppingBag className="h-4 w-4" />
+                  <span className="sr-only">Cart</span>
+                </Link>
+              </Button>
+              
+              <ThemeToggle />
+              <AuthButton />
+            </div>
+
+            {/* Mobile Actions - Right Side */}
+            <div className="flex md:hidden items-center gap-2">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8 hover:bg-white/20 text-white/90 hover:text-white transition-all duration-300" 
+                asChild
+              >
+                <Link href="/search">
+                  <Search className="h-4 w-4" />
+                  <span className="sr-only">Search</span>
+                </Link>
+              </Button>
+              
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8 hover:bg-white/20 text-white/90 hover:text-white transition-all duration-300" 
+                asChild
+              >
+                <Link href="/cart">
+                  <ShoppingBag className="h-4 w-4" />
+                  <span className="sr-only">Cart</span>
+                </Link>
+              </Button>
+            </div>
+          </div>
         </div>
-      </div>
-    </header>
+      </header>
+    </>
   )
 }

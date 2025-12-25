@@ -2,9 +2,8 @@ import { createClient } from "@/lib/supabase/server"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import Link from "next/link"
-import { Card, CardContent } from "@/components/ui/card"
-import { ArrowRight, Sparkles } from "lucide-react"
-import Image from "next/image"
+import { CategoryTiltedCard } from "@/components/category-tilted-card"
+import ScrollFloat from "@/components/ScrollFloat"
 import { demoCategories } from "@/lib/demo-data"
 
 export const metadata = {
@@ -28,59 +27,27 @@ export default async function CategoriesPage() {
     <>
       <Header />
       <main className="min-h-screen bg-gradient-to-b from-background to-primary/5">
-        {/* Hero Section */}
-        <section className="border-b bg-background">
-          <div className="container mx-auto max-w-7xl px-6 py-16 text-center md:py-24">
-            <h1 className="font-serif text-4xl font-bold tracking-tight text-balance md:text-6xl">
-              Explore Our Collections
-            </h1>
-            <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground text-pretty">
-              Discover handcrafted ceramic excellence across our carefully curated categories
-            </p>
-          </div>
-        </section>
-
         {/* Categories Grid */}
         <section className="py-16 md:py-24">
           <div className="container mx-auto max-w-7xl px-6">
             <div className="mb-14 text-center">
-              <div className="mb-3 flex items-center justify-center gap-2">
-                <Sparkles className="h-5 w-5 text-primary" />
-                <span className="text-sm font-semibold uppercase tracking-wider text-primary">Handcrafted Collections</span>
-              </div>
-              <h2 className="mb-4 font-serif text-4xl font-light tracking-tight md:text-5xl">Shop by Category</h2>
+              <ScrollFloat
+                animationDuration={1.2}
+                ease="back.inOut(2)"
+                scrollStart="center bottom+=50%"
+                scrollEnd="bottom bottom-=40%"
+                stagger={0.03}
+                className="mb-4 font-serif text-4xl font-light tracking-tight md:text-5xl"
+              >
+                Shop by Category
+              </ScrollFloat>
               <p className="text-lg text-muted-foreground">Explore our curated collections of premium ceramic pieces</p>
             </div>
 
-            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-              {categories?.map((category) => {
-                const productCount = Array.isArray(category.products) ? category.products.length : 0
-                return (
-                  <Link key={category.id} href={`/categories/${category.slug}`} className="group">
-                    <Card className="overflow-hidden border-0 bg-card shadow-sm transition-all hover:shadow-xl">
-                      <div className="aspect-[4/5] overflow-hidden bg-secondary/30">
-                        <Image
-                          src={category.image_url || `/placeholder.svg?height=500&width=400&query=${category.name} ceramic`}
-                          alt={category.name}
-                          width={400}
-                          height={500}
-                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-                        />
-                      </div>
-                      <CardContent className="p-6">
-                        <h3 className="mb-2 font-serif text-xl font-semibold">{category.name}</h3>
-                        <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground mb-3">{category.description}</p>
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-muted-foreground">{productCount || 6} Products</span>
-                          <div className="flex items-center gap-1 text-sm font-medium text-primary">
-                            Shop Now <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </Link>
-                )
-              })}
+            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4 place-items-center">
+              {categories?.map((category) => (
+                <CategoryTiltedCard key={category.id} category={category} />
+              ))}
             </div>
           </div>
         </section>
@@ -88,7 +55,16 @@ export default async function CategoriesPage() {
         {/* CTA Section */}
         <section className="border-t bg-background py-16">
           <div className="container mx-auto max-w-7xl px-6 text-center">
-            <h2 className="font-serif text-3xl font-bold tracking-tight">Can&apos;t decide?</h2>
+            <ScrollFloat
+              animationDuration={1}
+              ease="back.inOut(2)"
+              scrollStart="center bottom+=30%"
+              scrollEnd="bottom bottom-=30%"
+              stagger={0.05}
+              className="font-serif text-3xl font-bold tracking-tight"
+            >
+              Can't decide?
+            </ScrollFloat>
             <p className="mt-4 text-muted-foreground">
               Browse all products or get in touch for personalized recommendations
             </p>

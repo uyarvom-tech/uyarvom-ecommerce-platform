@@ -1,17 +1,11 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Geist, Geist_Mono, Crimson_Pro } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { Toaster } from "sonner"
+import { ThemeProvider } from "@/components/theme-provider"
+import { GlobalClickSpark } from "@/components/global-click-spark"
+import { FloatingAIButton } from "@/components/floating-ai-button"
 import "./globals.css"
-
-const _geist = Geist({ subsets: ["latin"] })
-const _geistMono = Geist_Mono({ subsets: ["latin"] })
-const _crimsonPro = Crimson_Pro({
-  subsets: ["latin"],
-  variable: "--font-serif",
-  weight: ["300", "400", "600", "700"],
-})
 
 export const metadata: Metadata = {
   title: "Uyarvom - Premium Ceramic Houseware",
@@ -42,10 +36,30 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className="scroll-smooth" suppressHydrationWarning>
       <body className="font-sans antialiased">
-        {children}
-        <Toaster position="bottom-right" />
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <GlobalClickSpark>
+            {children}
+          </GlobalClickSpark>
+          <FloatingAIButton />
+          <Toaster 
+            position="bottom-right" 
+            toastOptions={{
+              style: {
+                background: 'rgb(var(--card))',
+                color: 'rgb(var(--card-foreground))',
+                border: '1px solid rgb(var(--border))',
+                borderRadius: '16px',
+              },
+            }}
+          />
+        </ThemeProvider>
         <Analytics />
       </body>
     </html>
