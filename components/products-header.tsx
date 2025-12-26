@@ -1,11 +1,11 @@
 import { createClient } from "@/lib/supabase/server"
 import Link from "next/link"
 import Image from "next/image"
-import { Search, Heart, ShoppingBag } from "lucide-react"
+import { Heart, ShoppingBag } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { AuthButton } from "@/components/auth-button"
-import { ThemeToggle } from "@/components/theme-toggle"
 import { ProductsMobileMenu } from "@/components/products-mobile-menu"
+import { CategoriesDropdown } from "@/components/categories-dropdown"
 
 interface ProductsHeaderProps {
   categories: any[]
@@ -22,33 +22,34 @@ export async function ProductsHeader({ categories }: ProductsHeaderProps) {
     <>
       <header className="premium-global-nav">
         <div className="max-w-[980px] mx-auto px-6">
-          <div className="flex h-12 items-center justify-between">
+          <div className="flex h-12 items-center">
             {/* Mobile Menu Toggle - Left Side (with filters) */}
             <div className="flex md:hidden items-center">
-              <ProductsMobileMenu user={user} categories={categories} />
+              <ProductsMobileMenu user={user as any} categories={categories} />
             </div>
 
-            {/* Brand Logo - Center on Mobile, Left on Desktop */}
-            <Link href="/" className="flex items-center hover:opacity-80 transition-opacity duration-300 md:mr-auto">
+            {/* Brand Logo - Left */}
+            <Link href="/" className="flex items-center hover:opacity-80 transition-opacity duration-300 mr-8">
               <Image
                 src="/logos/logo.png"
                 alt="Uyarvom"
-                width={32}
-                height={32}
-                className="h-8 w-auto"
+                width={40}
+                height={40}
+                className="h-10 w-auto"
               />
             </Link>
             
-            {/* Desktop Navigation */}
-            <nav className="hidden items-center gap-8 md:flex">
+            {/* Desktop Navigation - Center */}
+            <nav className="hidden items-center gap-8 md:flex flex-1 justify-center">
               <Link href="/" className="premium-nav-link">
                 Home
               </Link>
-              <Link href="/products" className="premium-nav-link text-white font-semibold">
+              <Link href="/products" className="premium-nav-link font-semibold">
                 Store
               </Link>
-              <Link href="/categories" className="premium-nav-link">
-                Categories
+              <CategoriesDropdown categories={categories} />
+              <Link href="/products?tab=ai-match" className="premium-nav-link flex items-center gap-1" title="AI Kitchen Match">
+                ✨ AI Match
               </Link>
               <Link href="/about" className="premium-nav-link">
                 About
@@ -59,23 +60,11 @@ export async function ProductsHeader({ categories }: ProductsHeaderProps) {
             </nav>
 
             {/* Desktop Actions */}
-            <div className="hidden md:flex items-center gap-2">
+            <div className="hidden md:flex items-center gap-3">
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="h-8 w-8 hover:bg-white/20 text-white/90 hover:text-white transition-all duration-300" 
-                asChild
-              >
-                <Link href="/search">
-                  <Search className="h-4 w-4" />
-                  <span className="sr-only">Search</span>
-                </Link>
-              </Button>
-              
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-8 w-8 hover:bg-white/20 text-white/90 hover:text-white transition-all duration-300" 
+                className="h-8 w-8 hover:bg-black/10 text-amber-800 hover:text-amber-900 transition-all duration-300" 
                 asChild
               >
                 <Link href="/wishlist">
@@ -87,7 +76,7 @@ export async function ProductsHeader({ categories }: ProductsHeaderProps) {
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="h-8 w-8 hover:bg-white/20 text-white/90 hover:text-white transition-all duration-300" 
+                className="h-8 w-8 hover:bg-black/10 text-amber-800 hover:text-amber-900 transition-all duration-300" 
                 asChild
               >
                 <Link href="/cart">
@@ -96,7 +85,8 @@ export async function ProductsHeader({ categories }: ProductsHeaderProps) {
                 </Link>
               </Button>
               
-              <ThemeToggle />
+              <div className="w-px h-6 bg-amber-800/20 mx-1"></div>
+              
               <AuthButton />
             </div>
 
@@ -105,19 +95,7 @@ export async function ProductsHeader({ categories }: ProductsHeaderProps) {
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="h-8 w-8 hover:bg-white/20 text-white/90 hover:text-white transition-all duration-300" 
-                asChild
-              >
-                <Link href="/search">
-                  <Search className="h-4 w-4" />
-                  <span className="sr-only">Search</span>
-                </Link>
-              </Button>
-              
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-8 w-8 hover:bg-white/20 text-white/90 hover:text-white transition-all duration-300" 
+                className="h-8 w-8 hover:bg-black/10 text-amber-800 hover:text-amber-900 transition-all duration-300" 
                 asChild
               >
                 <Link href="/cart">

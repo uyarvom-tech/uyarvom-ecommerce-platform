@@ -6,6 +6,7 @@ import { ProductFilters } from "@/components/product-filters"
 import { AppleProductTabs, defaultProductTabs } from "@/components/apple-product-tabs"
 import { AppleReveal } from "@/components/apple-scroll-animations"
 import { AIKitchenMatch } from "@/components/ai-kitchen-match"
+import { Search } from "lucide-react"
 import { demoProducts, demoCategories } from "@/lib/demo-data"
 
 export default async function ProductsPage({
@@ -84,21 +85,34 @@ export default async function ProductsPage({
       <ProductsHeader categories={categories || []} />
       
       <main className="flex-1">
-        {/* Apple Product Tabs */}
-        <section className="py-4 border-b border-border/50">
-          <div className="max-w-[980px] mx-auto px-6">
-            <AppleReveal>
-              <div className="flex items-center justify-between mb-4">
-                <AppleProductTabs tabs={defaultProductTabs} className="justify-center" />
+        {/* Search Bar Section - Only show for regular products, not AI tab */}
+        {!isAITab && (
+          <section className="py-4 border-b border-border/50">
+            <div className="max-w-[980px] mx-auto px-6">
+              <AppleReveal>
+                {/* Search Bar */}
+                <div className="mb-6">
+                  <div className="relative max-w-md mx-auto">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <input
+                      type="text"
+                      placeholder="Search products..."
+                      className="w-full pl-10 pr-4 py-3 rounded-full border-2 border-primary/20 focus:border-primary focus:outline-none bg-background text-foreground transition-colors"
+                    />
+                  </div>
+                </div>
+                
                 {params.category && (
-                  <div className="text-sm text-muted-foreground">
-                    Showing: <span className="font-medium text-primary capitalize">{params.category}</span>
+                  <div className="text-center">
+                    <div className="text-sm text-muted-foreground">
+                      Showing: <span className="font-medium text-primary capitalize">{params.category}</span>
+                    </div>
                   </div>
                 )}
-              </div>
-            </AppleReveal>
-          </div>
-        </section>
+              </AppleReveal>
+            </div>
+          </section>
+        )}
 
         {/* Apple Product Grid */}
         <section className="py-8">

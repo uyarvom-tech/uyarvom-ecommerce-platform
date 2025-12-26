@@ -43,7 +43,18 @@ export default async function HomePage() {
           <div className="absolute inset-0 bg-gradient-to-b from-secondary/20 via-background to-background"></div>
         </AppleParallax>
         
-        <div className="max-w-[980px] mx-auto px-6 text-center">
+        {/* Background Logo */}
+        <div className="absolute inset-0 flex items-center justify-center z-0">
+          <Image
+            src="/logos/logo.png"
+            alt=""
+            width={500}
+            height={500}
+            className="w-[700px] h-[700px] opacity-15 object-contain"
+          />
+        </div>
+        
+        <div className="max-w-[980px] mx-auto px-6 text-center relative z-10">
           <AppleReveal delay={200}>
             <ScrollFloat
               animationDuration={1.2}

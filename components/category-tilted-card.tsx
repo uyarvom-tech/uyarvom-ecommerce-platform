@@ -20,7 +20,7 @@ export function CategoryTiltedCard({ category }: CategoryTiltedCardProps) {
   const productCount = Array.isArray(category.products) ? category.products.length : 0
 
   const handleClick = () => {
-    router.push(`/categories/${category.slug}`)
+    router.push(`/products?category=${category.slug}`)
   }
 
   return (

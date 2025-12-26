@@ -8,25 +8,13 @@ import { FloatingAIButton } from "@/components/floating-ai-button"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "Uyarvom - Premium Ceramic Houseware",
+  title: "Uyarvom - Homestyles",
   description: "Discover handcrafted ceramic cookware, bakeware, and dinnerware for modern kitchens",
   generator: "v0.app",
   icons: {
-    icon: [
-      {
-        url: "/icon-light-32x32.png",
-        media: "(prefers-color-scheme: light)",
-      },
-      {
-        url: "/icon-dark-32x32.png",
-        media: "(prefers-color-scheme: dark)",
-      },
-      {
-        url: "/icon.svg",
-        type: "image/svg+xml",
-      },
-    ],
-    apple: "/apple-icon.png",
+    icon: "/logos/logo.png",
+    apple: "/logos/logo.png",
+    shortcut: "/logos/logo.png",
   },
 }
 
@@ -40,8 +28,8 @@ export default function RootLayout({
       <body className="font-sans antialiased">
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
-          enableSystem
+          defaultTheme="light"
+          enableSystem={false}
           disableTransitionOnChange
         >
           <GlobalClickSpark>
