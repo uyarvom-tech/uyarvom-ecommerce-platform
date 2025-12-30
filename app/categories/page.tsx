@@ -1,10 +1,9 @@
-import { createClient } from "@/lib/supabase/server"
+import { prisma } from "@/lib/prisma"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import Link from "next/link"
 import { CategoryTiltedCard } from "@/components/category-tilted-card"
 import ScrollFloat from "@/components/ScrollFloat"
-import { demoCategories } from "@/lib/demo-data"
 
 export const metadata = {
   title: "Shop by Category | Uyarvom",
@@ -12,16 +11,30 @@ export const metadata = {
 }
 
 export default async function CategoriesPage() {
-  const supabase = await createClient()
+  // Get categories from admin-configured database
+  const categories = await prisma.category.findMany({
+    where: { 
+      isActive: true,
+      parentId: null // Only root categories
+    },
+    include: {
+      _count: {
+        select: {
+          productCategories: true
+        }
+      }
+    },
+    orderBy: [
+      { displayOrder: 'asc' },
+      { name: 'asc' }
+    ]
+  })
 
-  const { data: categoriesData } = await supabase
-    .from("categories")
-    .select("*, products:products(count)")
-    .is("parent_id", null)
-    .order("display_order", { ascending: true })
-
-  // Use demo data if Supabase returns empty results (development mode)
-  const categories = categoriesData && categoriesData.length > 0 ? categoriesData : demoCategories
+  // Transform for compatibility with CategoryTiltedCard
+  const transformedCategories = categories.map(category => ({
+    ...category,
+    products: { count: category._count.productCategories }
+  }))
 
   return (
     <>
@@ -45,7 +58,7 @@ export default async function CategoriesPage() {
             </div>
 
             <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4 place-items-center">
-              {categories?.map((category) => (
+              {transformedCategories?.map((category) => (
                 <CategoryTiltedCard key={category.id} category={category} />
               ))}
             </div>

@@ -1,22 +1,25 @@
-import { createClient } from "@/lib/supabase/server"
 import Link from "next/link"
 import Image from "next/image"
-import { Heart, ShoppingBag } from "lucide-react"
+import { Heart, ShoppingBag, Shield } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { AuthButton } from "@/components/auth-button"
 import { ProductsMobileMenu } from "@/components/products-mobile-menu"
 import { CategoriesDropdown } from "@/components/categories-dropdown"
+import { AdminCustomerToggle } from "@/components/admin-customer-toggle"
 
-interface ProductsHeaderProps {
-  categories: any[]
+interface Category {
+  id: string
+  name: string
+  slug: string
+  description?: string
+  imageUrl?: string
 }
 
-export async function ProductsHeader({ categories }: ProductsHeaderProps) {
-  const supabase = await createClient()
+interface ProductsHeaderProps {
+  categories: Category[]
+}
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+export function ProductsHeader({ categories }: ProductsHeaderProps) {
 
   return (
     <>
@@ -25,7 +28,7 @@ export async function ProductsHeader({ categories }: ProductsHeaderProps) {
           <div className="flex h-12 items-center">
             {/* Mobile Menu Toggle - Left Side (with filters) */}
             <div className="flex md:hidden items-center">
-              <ProductsMobileMenu user={user as any} categories={categories} />
+              <ProductsMobileMenu user={null} categories={categories} />
             </div>
 
             {/* Brand Logo - Left */}
@@ -49,7 +52,7 @@ export async function ProductsHeader({ categories }: ProductsHeaderProps) {
               </Link>
               <CategoriesDropdown categories={categories} />
               <Link href="/products?tab=ai-match" className="premium-nav-link flex items-center gap-1" title="AI Kitchen Match">
-                ✨ AI Match
+                <span>✨</span> AI Match
               </Link>
               <Link href="/about" className="premium-nav-link">
                 About
@@ -88,6 +91,8 @@ export async function ProductsHeader({ categories }: ProductsHeaderProps) {
               <div className="w-px h-6 bg-amber-800/20 mx-1"></div>
               
               <AuthButton />
+              
+              <AdminCustomerToggle />
             </div>
 
             {/* Mobile Actions - Right Side */}

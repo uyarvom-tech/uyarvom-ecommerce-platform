@@ -1,32 +1,25 @@
-import { createClient } from "@/lib/supabase/server"
+import { prisma } from "@/lib/prisma"
 import Link from "next/link"
 import Image from "next/image"
-import { Heart, ShoppingBag } from "lucide-react"
+import { Heart, ShoppingBag, Shield } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { AuthButton } from "@/components/auth-button"
 import { MobileMenu } from "@/components/mobile-menu"
 import { CategoriesDropdown } from "@/components/categories-dropdown"
-import { demoCategories } from "@/lib/demo-data"
+import { AdminCustomerToggle } from "@/components/admin-customer-toggle"
 
 export async function Header() {
-  const supabase = await createClient()
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  let cartCount = 0
-  if (user) {
-    const { count } = await supabase
-      .from("cart_items")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", user.id)
-    cartCount = count || 0
-  }
-
   // Get categories for dropdown
-  const { data: categoriesData } = await supabase.from("categories").select("*").is("parent_id", null).order("name")
-  const categories = categoriesData && categoriesData.length > 0 ? categoriesData : demoCategories
+  const categories = await prisma.category.findMany({
+    where: { 
+      isActive: true,
+      parentId: null 
+    },
+    orderBy: [
+      { displayOrder: 'asc' },
+      { name: 'asc' }
+    ]
+  })
 
   return (
     <>
@@ -35,7 +28,7 @@ export async function Header() {
           <div className="flex h-12 items-center">
             {/* Mobile Menu Toggle - Left Side */}
             <div className="flex md:hidden items-center">
-              <MobileMenu user={user as any} />
+              <MobileMenu user={null} />
             </div>
 
             {/* Brand Logo - Left */}
@@ -59,7 +52,7 @@ export async function Header() {
               </Link>
               <CategoriesDropdown categories={categories} />
               <Link href="/products?tab=ai-match" className="premium-nav-link flex items-center gap-1" title="AI Kitchen Match">
-                ✨ AI Match
+                <span>✨</span> AI Match
               </Link>
               <Link href="/about" className="premium-nav-link">
                 About
@@ -98,6 +91,8 @@ export async function Header() {
               <div className="w-px h-6 bg-amber-800/20 mx-2"></div>
               
               <AuthButton />
+              
+              <AdminCustomerToggle />
             </div>
 
             {/* Mobile Actions - Right Side */}

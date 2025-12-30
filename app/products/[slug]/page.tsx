@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server"
+import { prisma } from "@/lib/prisma"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { ProductGallery } from "@/components/product-gallery"
@@ -12,12 +12,11 @@ import { Card, CardContent } from "@/components/ui/card"
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params
-  const supabase = await createClient()
-  const { data: product } = await supabase
-    .from("products")
-    .select("name, short_description")
-    .eq("slug", slug)
-    .single()
+  
+  const product = await prisma.product.findUnique({
+    where: { slug },
+    select: { name: true, shortDescription: true }
+  })
 
   if (!product) {
     return { title: "Product Not Found" }
@@ -25,39 +24,44 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
   return {
     title: `${product.name} | Uyarvom`,
-    description: product.short_description,
+    description: product.shortDescription,
   }
 }
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
-  const supabase = await createClient()
 
-  const { data: product } = await supabase
-    .from("products")
-    .select(
-      `
-      *,
-      category:categories(name, slug),
-      images:product_images(image_url, alt_text, is_primary, display_order)
-    `,
-    )
-    .eq("slug", slug)
-    .eq("is_active", true)
-    .single()
+  const product = await prisma.product.findUnique({
+    where: { 
+      slug,
+      isActive: true 
+    },
+    include: {
+      productCategories: {
+        include: { category: true },
+        orderBy: { isPrimary: 'desc' }
+      },
+      images: {
+        orderBy: { sortOrder: 'asc' }
+      }
+    }
+  })
 
   if (!product) {
     notFound()
   }
 
-  const hasDiscount = product.compare_at_price && product.compare_at_price > product.price
+  // Get primary category for display
+  const primaryCategory = product.productCategories.find(pc => pc.isPrimary)?.category || product.productCategories[0]?.category
+
+  const hasDiscount = product.compareAtPrice && product.compareAtPrice > product.price
   const discountPercent = hasDiscount
-    ? Math.round(((product.compare_at_price - product.price) / product.compare_at_price) * 100)
+    ? Math.round(((product.compareAtPrice - product.price) / product.compareAtPrice) * 100)
     : 0
 
-  const sortedImages = product.images?.sort((a: any, b: any) => a.display_order - b.display_order) || []
+  const sortedImages = product.images || []
 
-  const isLowStock = product.stock_quantity <= product.low_stock_threshold && product.stock_quantity > 0
+  const isLowStock = product.stockQuantity <= product.lowStockThreshold && product.stockQuantity > 0
   const viewersCount = Math.floor(Math.random() * 50) + 20 // Mock concurrent viewers
   const recentPurchases = Math.floor(Math.random() * 30) + 10 // Mock recent purchases
 
@@ -82,15 +86,15 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             <div className="flex flex-col">
               <div className="mb-3 flex items-center gap-2">
                 <Badge variant="secondary" className="font-semibold">
-                  {product.category?.name}
+                  {primaryCategory?.name || 'Uncategorized'}
                 </Badge>
                 {isLowStock && (
                   <Badge className="bg-destructive/10 text-destructive border-destructive/30 font-semibold">
                     ⚡ Low Stock
                   </Badge>
                 )}
-                {product.stock_quantity <= 0 && <Badge variant="outline">Out of Stock</Badge>}
-                {new Date(product.created_at) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) && (
+                {product.stockQuantity <= 0 && <Badge variant="outline">Out of Stock</Badge>}
+                {new Date(product.createdAt) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) && (
                   <Badge className="bg-blue-500 text-white">NEW</Badge>
                 )}
               </div>
@@ -127,7 +131,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                   {hasDiscount && (
                     <>
                       <span className="text-xl text-muted-foreground line-through">
-                        ₹{product.compare_at_price.toLocaleString("en-IN")}
+                        ₹{product.compareAtPrice.toLocaleString("en-IN")}
                       </span>
                       <Badge className="bg-destructive text-destructive-foreground text-base px-3 py-1">
                         SAVE {discountPercent}%
@@ -137,14 +141,14 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                 </div>
                 {hasDiscount && (
                   <p className="mt-2 text-sm font-medium text-green-600">
-                    You save ₹{(product.compare_at_price - product.price).toLocaleString("en-IN")} on this purchase!
+                    You save ₹{(product.compareAtPrice - product.price).toLocaleString("en-IN")} on this purchase!
                   </p>
                 )}
                 <p className="mt-2 text-sm text-muted-foreground">Inclusive of all taxes</p>
               </div>
 
-              {product.short_description && (
-                <p className="mb-6 text-lg leading-relaxed text-muted-foreground">{product.short_description}</p>
+              {product.shortDescription && (
+                <p className="mb-6 text-lg leading-relaxed text-muted-foreground">{product.shortDescription}</p>
               )}
 
               <div className="mb-6">

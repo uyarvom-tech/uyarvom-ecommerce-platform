@@ -1,16 +1,38 @@
+'use client'
+
 import Link from "next/link"
 import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
 import { Star } from "lucide-react"
 
 export function ProductCard({ product }: { product: any }) {
-  const primaryImage = product.images?.find((img: any) => img.is_primary) || product.images?.[0]
-  const hasDiscount = product.compare_at_price && product.compare_at_price > product.price
+  const primaryImage = product.images?.find((img: any) => img.isPrimary || img.is_primary) || product.images?.[0]
+  
+  // Fix discount calculation logic
+  const comparePrice = product.compareAtPrice || product.compare_at_price
+  const currentPrice = product.price
+  
+  const hasDiscount = comparePrice && comparePrice > currentPrice
   const discountPercent = hasDiscount
-    ? Math.round(((product.compare_at_price - product.price) / product.compare_at_price) * 100)
+    ? Math.round(((comparePrice - currentPrice) / comparePrice) * 100)
     : 0
-  const isLowStock = product.stock_quantity <= product.low_stock_threshold && product.stock_quantity > 0
-  const isNew = new Date(product.created_at) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // Last 30 days
+    
+  const isLowStock = (product.stockQuantity || product.stock_quantity) <= (product.lowStockThreshold || product.low_stock_threshold || 10) && (product.stockQuantity || product.stock_quantity) > 0
+  const isNew = new Date(product.createdAt || product.created_at) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // Last 30 days
+
+  // Create a safe placeholder URL
+  const placeholderUrl = `/placeholder.svg?height=400&width=400&query=${encodeURIComponent(product.name || 'product')}`
+  
+  // Try multiple ways to get the image URL
+  let imageUrl = placeholderUrl
+  if (primaryImage?.imageUrl) {
+    imageUrl = primaryImage.imageUrl
+  } else if (primaryImage?.image_url) {
+    imageUrl = primaryImage.image_url
+  } else if (product.images && product.images.length > 0) {
+    // If no primary image, use the first available image
+    imageUrl = product.images[0].imageUrl || product.images[0].image_url || placeholderUrl
+  }
 
   return (
     <Link href={`/products/${product.slug}`} className="group block h-full">
@@ -18,8 +40,8 @@ export function ProductCard({ product }: { product: any }) {
         {/* Apple-style Product Image */}
         <div className="relative aspect-[4/3] overflow-hidden bg-secondary/20 rounded-t-[20px] flex-shrink-0">
           <Image
-            src={primaryImage?.image_url || `/placeholder.svg?height=400&width=400&query=${product.name}`}
-            alt={primaryImage?.alt_text || product.name}
+            src={imageUrl}
+            alt={primaryImage?.altText || primaryImage?.alt_text || product.name}
             width={400}
             height={300}
             className="h-full w-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
@@ -37,7 +59,7 @@ export function ProductCard({ product }: { product: any }) {
                 NEW
               </Badge>
             )}
-            {product.stock_quantity <= 0 && (
+            {(product.stockQuantity || product.stock_quantity) <= 0 && (
               <Badge className="bg-muted text-muted-foreground border-0 px-2 py-1 text-xs font-semibold rounded-full apple-shadow">
                 Out of Stock
               </Badge>
@@ -47,7 +69,7 @@ export function ProductCard({ product }: { product: any }) {
           {isLowStock && (
             <div className="absolute bottom-3 left-3">
               <Badge className="bg-amber-500/90 text-white border-0 px-2 py-1 text-xs font-semibold rounded-full apple-shadow backdrop-blur-sm">
-                ⚡ Only {product.stock_quantity} left
+                ⚡ Only {product.stockQuantity || product.stock_quantity} left
               </Badge>
             </div>
           )}
@@ -59,7 +81,7 @@ export function ProductCard({ product }: { product: any }) {
         {/* Apple-style Product Info */}
         <div className="p-4 flex flex-col flex-1">
           <p className="text-xs font-semibold uppercase tracking-wider text-primary mb-2">
-            {product.category?.name}
+            {product.primaryCategory?.name || product.categories?.[0]?.name || product.category?.name || 'Uncategorized'}
           </p>
           
           <h3 className="text-lg font-semibold mb-2 leading-tight group-hover:text-primary transition-colors duration-300 min-h-[3.5rem] flex items-start">
@@ -67,7 +89,7 @@ export function ProductCard({ product }: { product: any }) {
           </h3>
           
           <p className="apple-body text-sm mb-3 line-clamp-2 leading-relaxed flex-1 min-h-[2.5rem]">
-            {product.short_description}
+            {product.shortDescription || product.short_description}
           </p>
 
           {/* Apple-style Pricing */}
@@ -79,13 +101,13 @@ export function ProductCard({ product }: { product: any }) {
                 </span>
                 {hasDiscount && (
                   <span className="text-sm text-muted-foreground line-through">
-                    ₹{product.compare_at_price.toLocaleString("en-IN")}
+                    ₹{(product.compareAtPrice || product.compare_at_price).toLocaleString("en-IN")}
                   </span>
                 )}
               </div>
               {hasDiscount && (
                 <span className="text-xs font-medium text-green-600">
-                  Save ₹{(product.compare_at_price - product.price).toLocaleString("en-IN")}
+                  Save ₹{((product.compareAtPrice || product.compare_at_price) - product.price).toLocaleString("en-IN")}
                 </span>
               )}
             </div>

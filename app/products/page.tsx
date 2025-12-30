@@ -1,84 +1,108 @@
-import { createClient } from "@/lib/supabase/server"
+import { prisma } from "@/lib/prisma"
 import { ProductsHeader } from "@/components/products-header"
 import { Footer } from "@/components/footer"
 import { ProductCard } from "@/components/product-card"
 import { ProductFilters } from "@/components/product-filters"
-import { AppleProductTabs, defaultProductTabs } from "@/components/apple-product-tabs"
 import { AppleReveal } from "@/components/apple-scroll-animations"
 import { AIKitchenMatch } from "@/components/ai-kitchen-match"
 import { Search } from "lucide-react"
-import { demoProducts, demoCategories } from "@/lib/demo-data"
 
 export default async function ProductsPage({
   searchParams,
 }: {
   searchParams: Promise<{ category?: string; sort?: string; min?: string; max?: string; tab?: string }>
 }) {
-  const supabase = await createClient()
   const params = await searchParams
 
   // Check if we're on the AI tab
   const isAITab = params.tab === 'ai-match'
 
-  let query = supabase
-    .from("products")
-    .select(
-      `
-      *,
-      category:categories(name, slug),
-      images:product_images(image_url, alt_text, is_primary)
-    `,
-    )
-    .eq("is_active", true)
+  // Build where clause for products
+  const where: any = { isActive: true }
 
   // Filter by category (only if not on AI tab)
   if (params.category && !isAITab) {
-    const { data: category } = await supabase.from("categories").select("id").eq("slug", params.category).single()
+    const category = await prisma.category.findUnique({
+      where: { slug: params.category }
+    })
     if (category) {
-      query = query.eq("category_id", category.id)
+      where.productCategories = {
+        some: {
+          categoryId: category.id
+        }
+      }
     }
   }
 
   // Filter by price range (only if not on AI tab)
   if (params.min && !isAITab) {
-    query = query.gte("price", Number.parseFloat(params.min))
+    where.price = { ...where.price, gte: Number.parseFloat(params.min) }
   }
   if (params.max && !isAITab) {
-    query = query.lte("price", Number.parseFloat(params.max))
+    where.price = { ...where.price, lte: Number.parseFloat(params.max) }
   }
 
-  // Sort (only if not on AI tab)
+  // Build orderBy clause
+  let orderBy: any = { createdAt: 'desc' } // default
   if (!isAITab) {
     const sortBy = params.sort || "newest"
     switch (sortBy) {
       case "price-asc":
-        query = query.order("price", { ascending: true })
+        orderBy = { price: 'asc' }
         break
       case "price-desc":
-        query = query.order("price", { ascending: false })
+        orderBy = { price: 'desc' }
         break
       case "name":
-        query = query.order("name", { ascending: true })
+        orderBy = { name: 'asc' }
         break
       default:
-        query = query.order("created_at", { ascending: false })
+        orderBy = { createdAt: 'desc' }
     }
   }
 
-  const { data: productsData } = !isAITab ? await query : { data: null }
-  const { data: categoriesData } = await supabase.from("categories").select("*").is("parent_id", null).order("name")
+  // Get products and categories
+  const [products, categories] = await Promise.all([
+    !isAITab ? prisma.product.findMany({
+      where,
+      include: {
+        productCategories: {
+          include: { category: true },
+          orderBy: { isPrimary: 'desc' }
+        },
+        images: {
+          orderBy: { sortOrder: 'asc' }
+        }
+      },
+      orderBy
+    }) : [],
+    prisma.category.findMany({
+      where: { 
+        isActive: true,
+        parentId: null 
+      },
+      orderBy: [
+        { displayOrder: 'asc' },
+        { name: 'asc' }
+      ]
+    })
+  ])
 
-  // Use demo data if Supabase returns empty results (development mode)
-  const products = productsData && productsData.length > 0 ? productsData : demoProducts
-  const categories = categoriesData && categoriesData.length > 0 ? categoriesData : demoCategories
+  // For AI tab, get all products
+  const aiProducts = isAITab ? await prisma.product.findMany({
+    where: { isActive: true },
+    include: {
+      productCategories: {
+        include: { category: true },
+        orderBy: { isPrimary: 'desc' }
+      },
+      images: {
+        orderBy: { sortOrder: 'asc' }
+      }
+    }
+  }) : []
 
-  // Filter demo products by category if in demo mode and category is specified
-  const filteredProducts = products && params.category && (!productsData || productsData.length === 0) && !isAITab
-    ? products.filter((product: any) => 
-        product.category?.slug === params.category || 
-        product.category?.name.toLowerCase() === params.category?.toLowerCase()
-      )
-    : products
+  const displayProducts = isAITab ? aiProducts : products
 
   return (
     <div className="flex min-h-screen flex-col bg-background apple-scroll-snap">
@@ -120,7 +144,7 @@ export default async function ProductsPage({
             {isAITab ? (
               /* AI Kitchen Match Interface */
               <AppleReveal>
-                <AIKitchenMatch products={filteredProducts || []} />
+                <AIKitchenMatch products={displayProducts || []} />
               </AppleReveal>
             ) : (
               /* Regular Product Grid */
@@ -136,9 +160,9 @@ export default async function ProductsPage({
 
                 {/* Product Grid - Full width on mobile, 3/4 on desktop */}
                 <div className="lg:col-span-3">
-                  {filteredProducts && filteredProducts.length > 0 ? (
+                  {displayProducts && displayProducts.length > 0 ? (
                     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                      {filteredProducts.map((product: any, index: number) => (
+                      {displayProducts.map((product: any, index: number) => (
                         <AppleReveal key={product.id} delay={index * 100}>
                           <ProductCard product={product} />
                         </AppleReveal>

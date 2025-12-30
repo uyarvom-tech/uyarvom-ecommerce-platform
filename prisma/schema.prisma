@@ -1,0 +1,222 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// User Management
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  fullName  String?
+  avatarUrl String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  orders    Order[]
+  cartItems CartItem[]
+  reviews   Review[]
+  adminUser AdminUser?
+
+  @@map("users")
+}
+
+model AdminUser {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  role        String   @default("moderator") // super_admin, admin, moderator
+  permissions String   @default("[]") // JSON string of permissions array
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("admin_users")
+}
+
+// Product Management
+model Category {
+  id           String   @id @default(cuid())
+  name         String
+  slug         String   @unique
+  description  String?
+  imageUrl     String?
+  displayOrder Int      @default(0)
+  parentId     String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  productCategories ProductCategory[]
+  parent            Category?         @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children          Category[]        @relation("CategoryHierarchy")
+
+  @@map("categories")
+}
+
+model Product {
+  id                 String   @id @default(cuid())
+  name               String
+  slug               String   @unique
+  description        String?
+  shortDescription   String?
+  price              Float
+  compareAtPrice     Float?
+  stockQuantity      Int      @default(0)
+  lowStockThreshold  Int      @default(10)
+  sku                String?  @unique
+  weight             Float?
+  dimensions         String? // JSON string for width, height, depth
+  isActive           Boolean  @default(true)
+  isFeatured         Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  // Relations
+  productCategories ProductCategory[]
+  images            ProductImage[]
+  orderItems        OrderItem[]
+  cartItems         CartItem[]
+  reviews           Review[]
+
+  @@map("products")
+}
+
+model ProductImage {
+  id        String   @id @default(cuid())
+  productId String
+  imageUrl  String
+  altText   String?
+  isPrimary Boolean  @default(false)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  // Relations
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_images")
+}
+
+// Many-to-Many relationship between Products and Categories
+model ProductCategory {
+  id         String   @id @default(cuid())
+  productId  String
+  categoryId String
+  isPrimary  Boolean  @default(false) // One category can be marked as primary for display
+  createdAt  DateTime @default(now())
+
+  // Relations
+  product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, categoryId])
+  @@map("product_categories")
+}
+
+// Order Management
+model Order {
+  id           String   @id @default(cuid())
+  orderNumber  String   @unique
+  userId       String
+  status       String   @default("pending") // pending, confirmed, shipped, delivered, cancelled
+  subtotal     Float
+  tax          Float    @default(0)
+  shipping     Float    @default(0)
+  total        Float
+  currency     String   @default("INR")
+  
+  // Shipping Address
+  shippingName     String
+  shippingEmail    String
+  shippingPhone    String?
+  shippingAddress1 String
+  shippingAddress2 String?
+  shippingCity     String
+  shippingState    String
+  shippingZip      String
+  shippingCountry  String @default("India")
+  
+  // Billing Address (optional, can be same as shipping)
+  billingName     String?
+  billingEmail    String?
+  billingPhone    String?
+  billingAddress1 String?
+  billingAddress2 String?
+  billingCity     String?
+  billingState    String?
+  billingZip      String?
+  billingCountry  String?
+  
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user       User        @relation(fields: [userId], references: [id])
+  orderItems OrderItem[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String   @id @default(cuid())
+  orderId   String
+  productId String
+  quantity  Int
+  price     Float    // Price at time of order
+  total     Float    // quantity * price
+  createdAt DateTime @default(now())
+
+  // Relations
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@map("order_items")
+}
+
+// Cart Management
+model CartItem {
+  id        String   @id @default(cuid())
+  userId    String
+  productId String
+  quantity  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@map("cart_items")
+}
+
+// Review System
+model Review {
+  id        String   @id @default(cuid())
+  userId    String
+  productId String
+  rating    Int      // 1-5 stars
+  title     String?
+  comment   String?
+  isVerified Boolean @default(false) // Verified purchase
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId]) // One review per user per product
+  @@map("reviews")
+}

@@ -2,7 +2,7 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Analytics } from "@vercel/analytics/next"
 import { Toaster } from "sonner"
-import { ThemeProvider } from "@/components/theme-provider"
+import { SecretThemeProvider } from "@/components/secret-theme-provider"
 import { GlobalClickSpark } from "@/components/global-click-spark"
 import { FloatingAIButton } from "@/components/floating-ai-button"
 import "./globals.css"
@@ -26,12 +26,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="scroll-smooth" suppressHydrationWarning>
       <body className="font-sans antialiased">
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
-          enableSystem={false}
-          disableTransitionOnChange
-        >
+        <SecretThemeProvider>
           <GlobalClickSpark>
             {children}
           </GlobalClickSpark>
@@ -47,7 +42,7 @@ export default function RootLayout({
               },
             }}
           />
-        </ThemeProvider>
+        </SecretThemeProvider>
         <Analytics />
       </body>
     </html>

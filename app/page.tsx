@@ -1,6 +1,5 @@
-import { createClient } from "@/lib/supabase/server"
+import { prisma } from "@/lib/prisma"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { ArrowRight, Star, Sparkles, ChevronRight } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
@@ -10,28 +9,47 @@ import { AppleReveal, AppleParallax } from "@/components/apple-scroll-animations
 import ScrollStack, { ScrollStackItem } from "@/components/scroll-stack"
 import ScrollFloat from "@/components/ScrollFloat"
 import { CustomerReviewsLoop } from "@/components/customer-reviews-loop"
-import { demoProducts } from "@/lib/demo-data"
 
 export default async function HomePage() {
-  const supabase = await createClient()
+  // Fetch featured products from database
+  const featuredProducts = await prisma.product.findMany({
+    where: {
+      isActive: true,
+      isFeatured: true
+    },
+    include: {
+      productCategories: {
+        include: { category: true },
+        orderBy: { isPrimary: 'desc' }
+      },
+      images: {
+        orderBy: { sortOrder: 'asc' }
+      }
+    },
+    orderBy: { createdAt: 'desc' },
+    take: 6
+  })
 
-  // Fetch featured products
-  const { data: featuredProductsData } = await supabase
-    .from("products")
-    .select(
-      `
-      *,
-      category:categories(name, slug),
-      images:product_images(image_url, alt_text, is_primary)
-    `,
-    )
-    .eq("is_active", true)
-    .eq("is_featured", true)
-    .order("created_at", { ascending: false })
-    .limit(6)
+  // Fetch active categories for the showcase
+  const showcaseCategories = await prisma.category.findMany({
+    where: {
+      isActive: true,
+      parentId: null // Only root categories
+    },
+    orderBy: [
+      { displayOrder: 'asc' },
+      { name: 'asc' }
+    ],
+    take: 4 // Show top 4 categories in the scroll stack
+  })
 
-  // Use demo data if Supabase returns empty results (development mode)
-  const featuredProducts = featuredProductsData && featuredProductsData.length > 0 ? featuredProductsData : demoProducts
+  // Define colors for category showcase
+  const categoryColors = [
+    { hover: 'group-hover:text-amber-200', text: 'text-amber-200' },
+    { hover: 'group-hover:text-blue-200', text: 'text-blue-200' },
+    { hover: 'group-hover:text-green-200', text: 'text-green-200' },
+    { hover: 'group-hover:text-purple-200', text: 'text-purple-200' }
+  ]
 
   return (
     <div className="flex min-h-screen flex-col bg-background apple-scroll-snap">
@@ -131,97 +149,33 @@ export default async function HomePage() {
 
       {/* Scroll Stack Collection Showcase */}
       <ScrollStack className="">
-        <ScrollStackItem>
-          <Link href="/categories/cookware" className="block w-full h-full cursor-pointer group relative z-10">
-            <div className="text-center h-full flex flex-col justify-center transition-transform duration-300 group-hover:scale-105 relative z-10">
-              <ScrollFloat
-                animationDuration={1}
-                ease="back.inOut(2)"
-                scrollStart="center bottom+=30%"
-                scrollEnd="bottom bottom-=30%"
-                stagger={0.02}
-                className="text-4xl md:text-6xl font-bold mb-6 text-white drop-shadow-lg group-hover:text-amber-200 transition-colors"
-              >
-                Cookware Collection
-              </ScrollFloat>
-              <p className="text-xl md:text-2xl text-white/90 max-w-4xl mx-auto group-hover:text-white transition-colors drop-shadow-md leading-relaxed">
-                Professional-grade ceramic cookware designed for the modern kitchen. Heat evenly, cook perfectly, serve beautifully.
-              </p>
-              <div className="mt-8 text-lg font-semibold text-white/80 group-hover:text-amber-200 transition-colors drop-shadow-md">
-                Click to Explore →
-              </div>
-            </div>
-          </Link>
-        </ScrollStackItem>
-        
-        <ScrollStackItem>
-          <Link href="/categories/dinnerware" className="block w-full h-full cursor-pointer group relative z-10">
-            <div className="text-center h-full flex flex-col justify-center transition-transform duration-300 group-hover:scale-105 relative z-10">
-              <ScrollFloat
-                animationDuration={1}
-                ease="back.inOut(2)"
-                scrollStart="center bottom+=30%"
-                scrollEnd="bottom bottom-=30%"
-                stagger={0.02}
-                className="text-4xl md:text-6xl font-bold mb-6 text-white drop-shadow-lg group-hover:text-blue-200 transition-colors"
-              >
-                Dinnerware Sets
-              </ScrollFloat>
-              <p className="text-xl md:text-2xl text-white/90 max-w-4xl mx-auto group-hover:text-white transition-colors drop-shadow-md leading-relaxed">
-                Elegant ceramic dinnerware that transforms every meal into a special occasion. Durable, beautiful, and dishwasher safe.
-              </p>
-              <div className="mt-8 text-lg font-semibold text-white/80 group-hover:text-blue-200 transition-colors drop-shadow-md">
-                Click to Shop →
-              </div>
-            </div>
-          </Link>
-        </ScrollStackItem>
-        
-        <ScrollStackItem>
-          <Link href="/categories/bakeware" className="block w-full h-full cursor-pointer group relative z-10">
-            <div className="text-center h-full flex flex-col justify-center transition-transform duration-300 group-hover:scale-105 relative z-10">
-              <ScrollFloat
-                animationDuration={1}
-                ease="back.inOut(2)"
-                scrollStart="center bottom+=30%"
-                scrollEnd="bottom bottom-=30%"
-                stagger={0.02}
-                className="text-4xl md:text-6xl font-bold mb-6 text-white drop-shadow-lg group-hover:text-green-200 transition-colors"
-              >
-                Bakeware Essentials
-              </ScrollFloat>
-              <p className="text-xl md:text-2xl text-white/90 max-w-4xl mx-auto group-hover:text-white transition-colors drop-shadow-md leading-relaxed">
-                From artisan bread to delicate pastries, our ceramic bakeware delivers consistent results every time. Oven to table elegance.
-              </p>
-              <div className="mt-8 text-lg font-semibold text-white/80 group-hover:text-green-200 transition-colors drop-shadow-md">
-                Click to Discover →
-              </div>
-            </div>
-          </Link>
-        </ScrollStackItem>
-        
-        <ScrollStackItem>
-          <Link href="/categories/serveware" className="block w-full h-full cursor-pointer group relative z-10">
-            <div className="text-center h-full flex flex-col justify-center transition-transform duration-300 group-hover:scale-105 relative z-10">
-              <ScrollFloat
-                animationDuration={1}
-                ease="back.inOut(2)"
-                scrollStart="center bottom+=30%"
-                scrollEnd="bottom bottom-=30%"
-                stagger={0.02}
-                className="text-4xl md:text-6xl font-bold mb-6 text-white drop-shadow-lg group-hover:text-purple-200 transition-colors"
-              >
-                Serveware Collection
-              </ScrollFloat>
-              <p className="text-xl md:text-2xl text-white/90 max-w-4xl mx-auto group-hover:text-white transition-colors drop-shadow-md leading-relaxed">
-                Impress your guests with our stunning ceramic serveware. Perfect for entertaining and everyday dining alike.
-              </p>
-              <div className="mt-8 text-lg font-semibold text-white/80 group-hover:text-purple-200 transition-colors drop-shadow-md">
-                Click to View →
-              </div>
-            </div>
-          </Link>
-        </ScrollStackItem>
+        {showcaseCategories.map((category, index) => {
+          const colors = categoryColors[index] || categoryColors[0]
+          return (
+            <ScrollStackItem key={category.id}>
+              <Link href={`/products?category=${category.slug}`} className="block w-full h-full cursor-pointer group relative z-10">
+                <div className="text-center h-full flex flex-col justify-center transition-transform duration-300 group-hover:scale-105 relative z-10">
+                  <ScrollFloat
+                    animationDuration={1}
+                    ease="back.inOut(2)"
+                    scrollStart="center bottom+=30%"
+                    scrollEnd="bottom bottom-=30%"
+                    stagger={0.02}
+                    className={`text-4xl md:text-6xl font-bold mb-6 text-white drop-shadow-lg ${colors.hover} transition-colors`}
+                  >
+                    {category.name}
+                  </ScrollFloat>
+                  <p className="text-xl md:text-2xl text-white/90 max-w-4xl mx-auto group-hover:text-white transition-colors drop-shadow-md leading-relaxed">
+                    {category.description || `Discover our premium ${category.name.toLowerCase()} collection. Quality craftsmanship meets modern design.`}
+                  </p>
+                  <div className={`mt-8 text-lg font-semibold text-white/80 ${colors.hover} transition-colors drop-shadow-md`}>
+                    Click to Explore →
+                  </div>
+                </div>
+              </Link>
+            </ScrollStackItem>
+          )
+        })}
       </ScrollStack>
 
       {/* Apple-style Testimonials with Scrolling Reviews */}

@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server"
+import { prisma } from "@/lib/prisma"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { SearchResults } from "@/components/search-results"
@@ -14,36 +14,61 @@ export default async function SearchPage({
   const query = params.q || ""
   const categoryFilter = params.category
 
-  const supabase = await createClient()
-
-  let productsQuery = supabase
-    .from("products")
-    .select(
-      `
-      *,
-      category:categories(name, slug),
-      images:product_images(image_url, alt_text, is_primary)
-    `,
-    )
-    .eq("is_active", true)
+  // Build search query
+  const where: any = { isActive: true }
 
   if (query) {
-    productsQuery = productsQuery.or(
-      `name.ilike.%${query}%,description.ilike.%${query}%,short_description.ilike.%${query}%`,
-    )
+    where.OR = [
+      { name: { contains: query, mode: 'insensitive' } },
+      { description: { contains: query, mode: 'insensitive' } },
+      { shortDescription: { contains: query, mode: 'insensitive' } }
+    ]
   }
 
   if (categoryFilter) {
-    const { data: category } = await supabase.from("categories").select("id").eq("slug", categoryFilter).single()
-
+    const category = await prisma.category.findUnique({
+      where: { slug: categoryFilter }
+    })
     if (category) {
-      productsQuery = productsQuery.eq("category_id", category.id)
+      where.productCategories = {
+        some: {
+          categoryId: category.id
+        }
+      }
     }
   }
 
-  const { data: products } = await productsQuery.order("created_at", { ascending: false }).limit(50)
+  // Get products and categories
+  const [products, categories] = await Promise.all([
+    prisma.product.findMany({
+      where,
+      include: {
+        productCategories: {
+          include: { category: true },
+          orderBy: { isPrimary: 'desc' }
+        },
+        images: {
+          orderBy: { sortOrder: 'asc' }
+        }
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 50
+    }),
+    prisma.category.findMany({
+      where: { isActive: true },
+      orderBy: [
+        { displayOrder: 'asc' },
+        { name: 'asc' }
+      ]
+    })
+  ])
 
-  const { data: categories } = await supabase.from("categories").select("*").order("display_order")
+  // Transform products for compatibility
+  const transformedProducts = products.map(product => ({
+    ...product,
+    category: product.productCategories.find(pc => pc.isPrimary)?.category || product.productCategories[0]?.category,
+    categories: product.productCategories.map(pc => pc.category)
+  }))
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -64,7 +89,7 @@ export default async function SearchPage({
           </div>
 
           {/* Results */}
-          <SearchResults products={products || []} query={query} />
+          <SearchResults products={transformedProducts || []} query={query} />
         </div>
       </main>
       <Footer />

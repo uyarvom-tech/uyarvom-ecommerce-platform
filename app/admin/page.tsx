@@ -1,162 +1,190 @@
-import { createClient } from "@/lib/supabase/server"
+import { prisma } from "@/lib/prisma"
 import { AdminHeader } from "@/components/admin-header"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Package, ShoppingCart, DollarSign, TrendingUp, AlertCircle } from "lucide-react"
-import { redirect } from "next/navigation"
+import { Button } from "@/components/ui/button"
+import { 
+  Package, 
+  ShoppingCart, 
+  Users, 
+  TrendingUp, 
+  Eye,
+  Plus,
+  BarChart3,
+  Settings
+} from "lucide-react"
 import Link from "next/link"
 
-export default async function AdminDashboardPage() {
-  const supabase = await createClient()
+export default async function AdminDashboard() {
+  // Get dashboard statistics
+  const [
+    totalProducts,
+    activeProducts,
+    totalCategories,
+    lowStockProducts
+  ] = await Promise.all([
+    prisma.product.count(),
+    prisma.product.count({ where: { isActive: true } }),
+    prisma.category.count(),
+    prisma.product.count({ where: { stockQuantity: { lte: 10 } } })
+  ])
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    redirect("/auth/login?redirect=/admin")
-  }
-
-  const { data: adminUser } = await supabase.from("admin_users").select("*").eq("id", user.id).single()
-
-  if (!adminUser) {
-    redirect("/")
-  }
-
-  // Get statistics
-  const { count: totalOrders } = await supabase.from("orders").select("*", { count: "exact", head: true })
-
-  const { count: pendingOrders } = await supabase
-    .from("orders")
-    .select("*", { count: "exact", head: true })
-    .eq("status", "pending")
-
-  const { count: totalProducts } = await supabase.from("products").select("*", { count: "exact", head: true })
-
-  const { count: lowStockProducts } = await supabase
-    .from("products")
-    .select("*", { count: "exact", head: true })
-    .lte("stock_quantity", 10)
-
-  const { data: recentOrders } = await supabase
-    .from("orders")
-    .select("*, profiles(full_name, email)")
-    .order("created_at", { ascending: false })
-    .limit(5)
-
-  // Calculate total revenue
-  const { data: allOrders } = await supabase.from("orders").select("total").in("status", ["delivered", "shipped"])
-
-  const totalRevenue = allOrders?.reduce((sum, order) => sum + Number(order.total), 0) || 0
+  // Get recent products
+  const recentProducts = await prisma.product.findMany({
+    take: 5,
+    orderBy: { createdAt: 'desc' },
+    include: {
+      productCategories: {
+        include: { category: true },
+        where: { isPrimary: true },
+        take: 1
+      },
+      images: {
+        where: { isPrimary: true },
+        take: 1
+      }
+    }
+  })
 
   return (
     <div className="flex min-h-screen flex-col bg-muted/30">
       <AdminHeader />
       <main className="flex-1 px-6 py-8">
-        <div className="container mx-auto max-w-7xl">
+        <div className="container mx-auto">
+          {/* Header */}
           <div className="mb-8">
-            <h1 className="mb-2 text-3xl font-bold tracking-tight">Dashboard</h1>
-            <p className="text-muted-foreground">Welcome back, {adminUser.role}</p>
+            <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
+            <p className="text-muted-foreground">Welcome to your store management console</p>
           </div>
 
           {/* Stats Grid */}
-          <div className="mb-8 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">₹{totalRevenue.toLocaleString("en-IN")}</div>
-                <p className="text-xs text-muted-foreground">From completed orders</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
-                <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{totalOrders}</div>
-                <p className="text-xs text-muted-foreground">{pendingOrders} pending</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Products</CardTitle>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Products</CardTitle>
                 <Package className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{totalProducts}</div>
-                <p className="text-xs text-muted-foreground">{lowStockProducts} low stock</p>
+                <p className="text-xs text-muted-foreground">
+                  {activeProducts} active products
+                </p>
               </CardContent>
             </Card>
 
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Growth</CardTitle>
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Categories</CardTitle>
+                <BarChart3 className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">+12.5%</div>
-                <p className="text-xs text-muted-foreground">From last month</p>
+                <div className="text-2xl font-bold">{totalCategories}</div>
+                <p className="text-xs text-muted-foreground">
+                  Product categories
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Low Stock</CardTitle>
+                <TrendingUp className="h-4 w-4 text-orange-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-orange-600">{lowStockProducts}</div>
+                <p className="text-xs text-muted-foreground">
+                  Products need restocking
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Store Status</CardTitle>
+                <Eye className="h-4 w-4 text-green-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-green-600">Live</div>
+                <p className="text-xs text-muted-foreground">
+                  Store is operational
+                </p>
               </CardContent>
             </Card>
           </div>
 
+          {/* Quick Actions & Recent Products */}
           <div className="grid gap-6 lg:grid-cols-2">
-            {/* Recent Orders */}
+            {/* Quick Actions */}
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle>Recent Orders</CardTitle>
-                  <Link href="/admin/orders" className="text-sm text-primary hover:underline">
-                    View all
-                  </Link>
-                </div>
+                <CardTitle>Quick Actions</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {recentOrders?.map((order) => (
-                    <Link key={order.id} href={`/admin/orders/${order.id}`}>
-                      <div className="flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-muted">
-                        <div>
-                          <p className="font-medium">#{order.order_number}</p>
-                          <p className="text-sm text-muted-foreground">{order.profiles?.full_name || "Guest"}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-semibold">₹{Number(order.total).toLocaleString("en-IN")}</p>
-                          <p className="text-xs text-muted-foreground capitalize">{order.status}</p>
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
+              <CardContent className="space-y-4">
+                <Button asChild className="w-full justify-start">
+                  <Link href="/admin/products/new">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add New Product
+                  </Link>
+                </Button>
+                <Button asChild variant="outline" className="w-full justify-start">
+                  <Link href="/admin/products">
+                    <Package className="mr-2 h-4 w-4" />
+                    Manage Products
+                  </Link>
+                </Button>
+                <Button asChild variant="outline" className="w-full justify-start">
+                  <Link href="/admin/categories">
+                    <BarChart3 className="mr-2 h-4 w-4" />
+                    Manage Categories
+                  </Link>
+                </Button>
+                <Button asChild variant="outline" className="w-full justify-start">
+                  <Link href="/?admin=true">
+                    <Eye className="mr-2 h-4 w-4" />
+                    Customer View
+                  </Link>
+                </Button>
               </CardContent>
             </Card>
 
-            {/* Low Stock Alert */}
+            {/* Recent Products */}
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center gap-2">
-                    <AlertCircle className="h-5 w-5 text-destructive" />
-                    Low Stock Alerts
-                  </CardTitle>
-                  <Link href="/admin/products" className="text-sm text-primary hover:underline">
-                    View all
-                  </Link>
-                </div>
+                <CardTitle>Recent Products</CardTitle>
               </CardHeader>
               <CardContent>
-                {lowStockProducts === 0 ? (
-                  <p className="text-center text-sm text-muted-foreground">All products are well stocked</p>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    {lowStockProducts} {lowStockProducts === 1 ? "product needs" : "products need"} restocking
-                  </p>
-                )}
+                <div className="space-y-4">
+                  {recentProducts.map((product) => (
+                    <div key={product.id} className="flex items-center space-x-4">
+                      <div className="relative h-12 w-12 rounded-lg overflow-hidden bg-muted">
+                        {product.images[0] && (
+                          <img
+                            src={product.images[0].imageUrl}
+                            alt={product.name}
+                            className="h-full w-full object-cover"
+                          />
+                        )}
+                      </div>
+                      <div className="flex-1 space-y-1">
+                        <p className="text-sm font-medium leading-none">
+                          {product.name}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {product.productCategories[0]?.category?.name || 'No Category'} • ₹{product.price.toLocaleString()}
+                        </p>
+                      </div>
+                      <Button size="sm" variant="ghost" asChild>
+                        <Link href={`/admin/products/${product.id}/edit`}>
+                          <Settings className="h-4 w-4" />
+                        </Link>
+                      </Button>
+                    </div>
+                  ))}
+                  {recentProducts.length === 0 && (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      No products yet. Create your first product!
+                    </p>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </div>
