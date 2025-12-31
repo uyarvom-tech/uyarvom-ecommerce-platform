@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label"
 import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
-import { ImageUpload } from "@/components/admin/image-upload-simple"
+import { MultiImageManager } from "@/components/admin/multi-image-manager"
 
 interface Category {
   id: string
@@ -234,27 +234,15 @@ export function ProductForm({ categories, product }: ProductFormProps) {
             <CardHeader>
               <CardTitle>Product Images</CardTitle>
               <p className="text-sm text-muted-foreground">
-                Upload high-quality images. The first image will be used as the primary image.
+                Upload multiple high-quality images. Drag to reorder. First image is the main product image.
               </p>
-              {/* Debug Info */}
-              <div className="text-xs bg-gray-100 p-2 rounded">
-                <strong>Debug:</strong> {images.length} images in state
-                {images.length > 0 && (
-                  <div className="mt-1">
-                    {images.map((img, i) => (
-                      <div key={i} className="truncate">
-                        {i + 1}. {img.imageUrl} {img.isPrimary ? '(PRIMARY)' : ''}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
             </CardHeader>
             <CardContent>
-              <ImageUpload 
+              <MultiImageManager 
                 images={images} 
                 onImagesChange={setImages} 
-                productId={product?.id} 
+                productId={product?.id}
+                maxImages={10}
               />
             </CardContent>
           </Card>

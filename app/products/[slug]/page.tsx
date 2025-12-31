@@ -3,6 +3,7 @@ import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { ProductGallery } from "@/components/product-gallery"
 import { AddToCartButton } from "@/components/add-to-cart-button"
+import { ProductReviews } from "@/components/product-reviews"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Star, Truck } from "lucide-react"
@@ -43,12 +44,25 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       },
       images: {
         orderBy: { sortOrder: 'asc' }
+      },
+      reviews: {
+        select: {
+          rating: true
+        }
       }
     }
   })
 
   if (!product) {
     notFound()
+  }
+
+  // Calculate review statistics
+  const reviewStats = {
+    totalReviews: product.reviews.length,
+    averageRating: product.reviews.length > 0 
+      ? product.reviews.reduce((sum, review) => sum + review.rating, 0) / product.reviews.length 
+      : 0
   }
 
   // Get primary category for display
@@ -73,7 +87,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           {isLowStock && (
             <div className="mb-6 rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-center">
               <p className="font-semibold text-destructive">
-                ⚡ Hurry! Only {product.stock_quantity} left in stock - Order soon to avoid missing out
+                ⚡ Hurry! Only {product.stockQuantity} left in stock - Order soon to avoid missing out
               </p>
             </div>
           )}
@@ -105,15 +119,28 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                 <div className="flex items-center gap-2">
                   <div className="flex items-center">
                     {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="h-5 w-5 fill-amber-400 text-amber-400" />
+                      <Star 
+                        key={i} 
+                        className={`h-5 w-5 ${
+                          i < Math.round(reviewStats.averageRating)
+                            ? 'fill-amber-400 text-amber-400'
+                            : 'text-gray-300'
+                        }`} 
+                      />
                     ))}
                   </div>
-                  <span className="font-bold text-lg">4.9</span>
+                  <span className="font-bold text-lg">
+                    {reviewStats.averageRating > 0 ? reviewStats.averageRating.toFixed(1) : 'No ratings'}
+                  </span>
                 </div>
-                <span className="text-muted-foreground">|</span>
-                <span className="text-sm font-medium text-primary underline cursor-pointer">
-                  Read 247 verified reviews
-                </span>
+                {reviewStats.totalReviews > 0 && (
+                  <>
+                    <span className="text-muted-foreground">|</span>
+                    <span className="text-sm font-medium text-primary underline cursor-pointer">
+                      Read {reviewStats.totalReviews} verified review{reviewStats.totalReviews !== 1 ? 's' : ''}
+                    </span>
+                  </>
+                )}
               </div>
 
               <div className="mb-6 flex flex-wrap items-center gap-4 text-sm">
@@ -197,53 +224,12 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             </div>
           </div>
 
+          {/* Real Reviews Section */}
           <section className="mt-16">
-            <h2 className="mb-8 font-serif text-3xl font-bold">Customer Reviews</h2>
-            <div className="grid gap-6 md:grid-cols-2">
-              <Card>
-                <CardContent className="p-6">
-                  <div className="mb-3 flex items-center gap-1">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />
-                    ))}
-                  </div>
-                  <p className="mb-4 leading-relaxed text-muted-foreground">
-                    "Exceeded my expectations! The quality is incredible and it looks beautiful in my kitchen."
-                  </p>
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center font-semibold text-primary">
-                      AK
-                    </div>
-                    <div>
-                      <p className="font-semibold">Anita Kapoor</p>
-                      <p className="text-sm text-muted-foreground">Verified Purchase • 2 days ago</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-6">
-                  <div className="mb-3 flex items-center gap-1">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />
-                    ))}
-                  </div>
-                  <p className="mb-4 leading-relaxed text-muted-foreground">
-                    "Worth every rupee. The craftsmanship is outstanding and delivery was super fast!"
-                  </p>
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center font-semibold text-primary">
-                      VS
-                    </div>
-                    <div>
-                      <p className="font-semibold">Vikram Singh</p>
-                      <p className="text-sm text-muted-foreground">Verified Purchase • 1 week ago</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+            <ProductReviews 
+              productSlug={product.slug} 
+              currentUserId="cmjmwg4hw0002hluaf0cbp2rs" // Demo user ID - TODO: Get from auth context
+            />
           </section>
         </div>
       </main>

@@ -1,11 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { requireAdmin } from '@/lib/auth-middleware'
 
 // GET /api/admin/categories/[id] - Get single category
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // Check admin access
+  const authResult = await requireAdmin(request)
+  if (authResult instanceof NextResponse) {
+    return authResult // Return error response
+  }
+
   try {
     const { id } = await params
 
@@ -58,6 +65,12 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // Check admin access
+  const authResult = await requireAdmin(request)
+  if (authResult instanceof NextResponse) {
+    return authResult // Return error response
+  }
+
   try {
     const { id } = await params
 

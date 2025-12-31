@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { requireAdmin } from '@/lib/auth-middleware'
 
 // GET /api/admin/products - List all products with pagination and filters
 export async function GET(request: NextRequest) {
+  // Check admin access
+  const authResult = await requireAdmin(request)
+  if (authResult instanceof NextResponse) {
+    return authResult // Return error response
+  }
+
   try {
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
@@ -18,8 +25,8 @@ export async function GET(request: NextRequest) {
     
     if (search) {
       where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { sku: { contains: search, mode: 'insensitive' } }
+        { name: { contains: search } },
+        { sku: { contains: search } }
       ]
     }
     
@@ -88,6 +95,12 @@ export async function GET(request: NextRequest) {
 
 // POST /api/admin/products - Create new product
 export async function POST(request: NextRequest) {
+  // Check admin access
+  const authResult = await requireAdmin(request)
+  if (authResult instanceof NextResponse) {
+    return authResult // Return error response
+  }
+
   try {
     const data = await request.json()
     console.log('🔥 API POST - Received data:', data)
@@ -219,6 +232,12 @@ export async function POST(request: NextRequest) {
 
 // PUT /api/admin/products - Update existing product
 export async function PUT(request: NextRequest) {
+  // Check admin access
+  const authResult = await requireAdmin(request)
+  if (authResult instanceof NextResponse) {
+    return authResult // Return error response
+  }
+
   try {
     const data = await request.json()
     

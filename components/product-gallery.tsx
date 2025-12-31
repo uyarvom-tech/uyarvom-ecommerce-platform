@@ -10,14 +10,14 @@ export function ProductGallery({ images, productName }: { images: any[]; product
   const displayImages =
     images.length > 0
       ? images
-      : [{ image_url: `/placeholder.svg?height=600&width=600&query=${productName}`, alt_text: productName }]
+      : [{ imageUrl: `/placeholder.svg?height=600&width=600&query=${productName}`, altText: productName }]
 
   return (
     <div className="space-y-4">
       <div className="aspect-square overflow-hidden rounded-lg border bg-muted">
         <Image
-          src={displayImages[selectedImage].image_url || "/placeholder.svg"}
-          alt={displayImages[selectedImage].alt_text || productName}
+          src={displayImages[selectedImage].imageUrl || "/placeholder.svg"}
+          alt={displayImages[selectedImage].altText || productName}
           width={600}
           height={600}
           className="h-full w-full object-cover"
@@ -37,8 +37,8 @@ export function ProductGallery({ images, productName }: { images: any[]; product
               )}
             >
               <Image
-                src={image.image_url || "/placeholder.svg"}
-                alt={image.alt_text || `${productName} ${index + 1}`}
+                src={image.imageUrl || "/placeholder.svg"}
+                alt={image.altText || `${productName} ${index + 1}`}
                 width={150}
                 height={150}
                 className="h-full w-full object-cover"

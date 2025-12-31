@@ -5,6 +5,7 @@ import { useEffect, useRef, ReactNode } from 'react'
 interface ScrollStackItemProps {
   children: ReactNode
   className?: string
+  style?: React.CSSProperties
 }
 
 interface ScrollStackProps {
@@ -12,9 +13,9 @@ interface ScrollStackProps {
   className?: string
 }
 
-export function ScrollStackItem({ children, className = '' }: ScrollStackItemProps) {
+export function ScrollStackItem({ children, className = '', style }: ScrollStackItemProps) {
   return (
-    <div className={`scroll-stack-item ${className}`}>
+    <div className={`scroll-stack-item ${className}`} style={style}>
       {children}
     </div>
   )

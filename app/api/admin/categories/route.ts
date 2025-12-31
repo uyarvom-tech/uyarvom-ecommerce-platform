@@ -1,8 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { requireAdmin } from '@/lib/auth-middleware'
 
 // GET /api/admin/categories - List all categories with hierarchy
 export async function GET(request: NextRequest) {
+  console.log('Categories API called')
+  
+  // Check admin access
+  const authResult = await requireAdmin(request)
+  if (authResult instanceof NextResponse) {
+    console.log('Auth failed:', authResult)
+    return authResult // Return error response
+  }
+
+  console.log('Auth passed, fetching categories...')
+
   try {
     const { searchParams } = new URL(request.url)
     const includeProducts = searchParams.get('includeProducts') === 'true'
@@ -23,6 +35,7 @@ export async function GET(request: NextRequest) {
         } : undefined
       })
 
+      console.log('Flat categories found:', categories.length)
       return NextResponse.json({ categories })
     }
 
@@ -54,6 +67,9 @@ export async function GET(request: NextRequest) {
     // Filter to get only root categories (no parent)
     const rootCategories = allCategories.filter(cat => !cat.parentId)
 
+    console.log('All categories found:', allCategories.length)
+    console.log('Root categories found:', rootCategories.length)
+
     return NextResponse.json({ 
       categories: rootCategories,
       total: allCategories.length 
@@ -69,6 +85,12 @@ export async function GET(request: NextRequest) {
 
 // POST /api/admin/categories - Create new category
 export async function POST(request: NextRequest) {
+  // Check admin access
+  const authResult = await requireAdmin(request)
+  if (authResult instanceof NextResponse) {
+    return authResult // Return error response
+  }
+
   try {
     const data = await request.json()
     
@@ -138,6 +160,12 @@ export async function POST(request: NextRequest) {
 
 // PUT /api/admin/categories - Update category
 export async function PUT(request: NextRequest) {
+  // Check admin access
+  const authResult = await requireAdmin(request)
+  if (authResult instanceof NextResponse) {
+    return authResult // Return error response
+  }
+
   try {
     const data = await request.json()
     

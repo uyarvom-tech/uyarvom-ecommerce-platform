@@ -30,17 +30,32 @@ export default async function HomePage() {
     take: 6
   })
 
-  // Fetch active categories for the showcase
-  const showcaseCategories = await prisma.category.findMany({
+  // Fetch all active categories and filter for showcase
+  const allCategories = await prisma.category.findMany({
     where: {
       isActive: true,
       parentId: null // Only root categories
     },
+    include: {
+      _count: {
+        select: {
+          productCategories: true
+        }
+      }
+    },
     orderBy: [
       { displayOrder: 'asc' },
       { name: 'asc' }
-    ],
-    take: 4 // Show top 4 categories in the scroll stack
+    ]
+  })
+
+  // Filter for specific categories (Kids, Kitchen, Home, Safety)
+  const showcaseCategories = allCategories.filter(category => {
+    const name = category.name.toLowerCase()
+    return name.includes('kids') || 
+           name.includes('kitchen') || 
+           name.includes('home') || 
+           name.includes('safety')
   })
 
   // Define colors for category showcase
@@ -151,8 +166,23 @@ export default async function HomePage() {
       <ScrollStack className="">
         {showcaseCategories.map((category, index) => {
           const colors = categoryColors[index] || categoryColors[0]
+          
+          // Create background style with category image or fallback gradient
+          const backgroundStyle: React.CSSProperties = {
+            backgroundImage: category.imageUrl 
+              ? `linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.6)), url(${category.imageUrl})`
+              : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
+            color: 'white'
+          }
+          
           return (
-            <ScrollStackItem key={category.id}>
+            <ScrollStackItem 
+              key={category.id}
+              style={backgroundStyle}
+            >
               <Link href={`/products?category=${category.slug}`} className="block w-full h-full cursor-pointer group relative z-10">
                 <div className="text-center h-full flex flex-col justify-center transition-transform duration-300 group-hover:scale-105 relative z-10">
                   <ScrollFloat
@@ -168,14 +198,43 @@ export default async function HomePage() {
                   <p className="text-xl md:text-2xl text-white/90 max-w-4xl mx-auto group-hover:text-white transition-colors drop-shadow-md leading-relaxed">
                     {category.description || `Discover our premium ${category.name.toLowerCase()} collection. Quality craftsmanship meets modern design.`}
                   </p>
-                  <div className={`mt-8 text-lg font-semibold text-white/80 ${colors.hover} transition-colors drop-shadow-md`}>
-                    Click to Explore →
+                  <div className="mt-8 text-lg font-semibold text-white/80 group-hover:text-white transition-colors drop-shadow-md">
+                    {category._count.productCategories} Products • Click to Explore →
                   </div>
                 </div>
               </Link>
             </ScrollStackItem>
           )
         })}
+        
+        {/* Final "Check All Categories" Card */}
+        <ScrollStackItem 
+          style={{
+            background: 'linear-gradient(135deg, #c9871d 0%, #f5d78e 50%, #c9871d 100%)',
+            color: 'white'
+          }}
+        >
+          <Link href="/categories" className="block w-full h-full cursor-pointer group relative z-10">
+            <div className="text-center h-full flex flex-col justify-center transition-transform duration-300 group-hover:scale-105 relative z-10">
+              <ScrollFloat
+                animationDuration={1}
+                ease="back.inOut(2)"
+                scrollStart="center bottom+=30%"
+                scrollEnd="bottom bottom-=30%"
+                stagger={0.02}
+                className="text-4xl md:text-6xl font-bold mb-6 text-white drop-shadow-lg group-hover:text-amber-100 transition-colors"
+              >
+                Explore All Categories
+              </ScrollFloat>
+              <p className="text-xl md:text-2xl text-white/90 max-w-4xl mx-auto group-hover:text-white transition-colors drop-shadow-md leading-relaxed">
+                Discover our complete collection of premium ceramic cookware, dinnerware, and kitchen essentials.
+              </p>
+              <div className="mt-8 text-lg font-semibold text-white/80 group-hover:text-white transition-colors drop-shadow-md">
+                View All Categories →
+              </div>
+            </div>
+          </Link>
+        </ScrollStackItem>
       </ScrollStack>
 
       {/* Apple-style Testimonials with Scrolling Reviews */}

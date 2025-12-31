@@ -5,20 +5,41 @@ import { ProductCard } from "@/components/product-card"
 import { ProductFilters } from "@/components/product-filters"
 import { AppleReveal } from "@/components/apple-scroll-animations"
 import { AIKitchenMatch } from "@/components/ai-kitchen-match"
+import { ProductsSearch } from "@/components/products-search"
 import { Search } from "lucide-react"
 
 export default async function ProductsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ category?: string; sort?: string; min?: string; max?: string; tab?: string }>
+  searchParams: Promise<{ category?: string; sort?: string; min?: string; max?: string; tab?: string; search?: string }>
 }) {
   const params = await searchParams
 
   // Check if we're on the AI tab
   const isAITab = params.tab === 'ai-match'
+  const searchQuery = params.search
 
   // Build where clause for products
   const where: any = { isActive: true }
+
+  // Add search functionality
+  if (searchQuery && !isAITab) {
+    where.OR = [
+      { name: { contains: searchQuery } },
+      { description: { contains: searchQuery } },
+      { shortDescription: { contains: searchQuery } },
+      { sku: { contains: searchQuery } },
+      {
+        productCategories: {
+          some: {
+            category: {
+              name: { contains: searchQuery }
+            }
+          }
+        }
+      }
+    ]
+  }
 
   // Filter by category (only if not on AI tab)
   if (params.category && !isAITab) {
@@ -114,16 +135,9 @@ export default async function ProductsPage({
           <section className="py-4 border-b border-border/50">
             <div className="max-w-[980px] mx-auto px-6">
               <AppleReveal>
-                {/* Search Bar */}
+                {/* Functional Search Bar */}
                 <div className="mb-6">
-                  <div className="relative max-w-md mx-auto">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                    <input
-                      type="text"
-                      placeholder="Search products..."
-                      className="w-full pl-10 pr-4 py-3 rounded-full border-2 border-primary/20 focus:border-primary focus:outline-none bg-background text-foreground transition-colors"
-                    />
-                  </div>
+                  <ProductsSearch />
                 </div>
                 
                 {params.category && (
@@ -160,6 +174,15 @@ export default async function ProductsPage({
 
                 {/* Product Grid - Full width on mobile, 3/4 on desktop */}
                 <div className="lg:col-span-3">
+                  {/* Search Results Indicator */}
+                  {searchQuery && (
+                    <div className="mb-6 p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                      <p className="text-sm text-primary">
+                        Showing {displayProducts?.length || 0} results for "<strong>{searchQuery}</strong>"
+                      </p>
+                    </div>
+                  )}
+                  
                   {displayProducts && displayProducts.length > 0 ? (
                     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                       {displayProducts.map((product: any, index: number) => (
@@ -176,8 +199,14 @@ export default async function ProductsPage({
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                           </svg>
                         </div>
-                        <h3 className="text-xl font-semibold mb-2">No products found</h3>
+                        <h3 className="text-xl font-semibold mb-2">
+                          {searchQuery ? `No products found for "${searchQuery}"` : "No products found"}
+                        </h3>
                         <p className="apple-body">
+                          {searchQuery 
+                            ? "Try adjusting your search terms or browse our categories below."
+                            : "Try adjusting your filters or browse our categories below."
+                          }
                           {params.category 
                             ? `No products found in ${params.category} category. Try browsing all products.`
                             : "Try adjusting your filters or search terms"

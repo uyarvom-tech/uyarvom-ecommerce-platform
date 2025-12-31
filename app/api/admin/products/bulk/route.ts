@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { requireAdmin } from '@/lib/auth-middleware'
 
 // POST /api/admin/products/bulk - Bulk operations on products
 export async function POST(request: NextRequest) {
+  // Check admin access
+  const authResult = await requireAdmin(request)
+  if (authResult instanceof NextResponse) {
+    return authResult // Return error response
+  }
+
   try {
     const { action, productIds } = await request.json()
 

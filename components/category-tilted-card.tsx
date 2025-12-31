@@ -42,6 +42,7 @@ export function CategoryTiltedCard({ category }: CategoryTiltedCardProps) {
         showMobileWarning={false}
         showTooltip={true}
         displayOverlayContent={true}
+        disableMobileAnimations={true}
         overlayContent={
           <div className="text-white text-center w-full">
             <h3 className="text-xl font-bold mb-2">{category.name}</h3>

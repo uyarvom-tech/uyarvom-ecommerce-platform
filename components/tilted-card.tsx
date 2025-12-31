@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, ReactNode } from 'react'
+import { useState, useRef, useEffect, ReactNode } from 'react'
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
 import Image from 'next/image'
 
@@ -20,6 +20,7 @@ interface TiltedCardProps {
   overlayContent?: ReactNode
   onClick?: () => void
   className?: string
+  disableMobileAnimations?: boolean
 }
 
 export default function TiltedCard({
@@ -37,10 +38,26 @@ export default function TiltedCard({
   displayOverlayContent = true,
   overlayContent,
   onClick,
-  className = ""
+  className = "",
+  disableMobileAnimations = false
 }: TiltedCardProps) {
   const [isHovered, setIsHovered] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
+
+  // Check if mobile on mount
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768) // md breakpoint
+    }
+    
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  // Disable animations on mobile if requested
+  const animationsDisabled = disableMobileAnimations && isMobile
 
   // Motion values for mouse position
   const x = useMotionValue(0)
@@ -56,7 +73,7 @@ export default function TiltedCard({
 
   // Handle mouse move
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!ref.current) return
+    if (!ref.current || animationsDisabled) return
 
     const rect = ref.current.getBoundingClientRect()
     const width = rect.width
@@ -72,12 +89,14 @@ export default function TiltedCard({
   }
 
   const handleMouseLeave = () => {
+    if (animationsDisabled) return
     setIsHovered(false)
     x.set(0)
     y.set(0)
   }
 
   const handleMouseEnter = () => {
+    if (animationsDisabled) return
     setIsHovered(true)
   }
 
@@ -89,12 +108,12 @@ export default function TiltedCard({
         style={{
           height: containerHeight,
           width: containerWidth,
-          rotateX,
-          rotateY,
+          rotateX: animationsDisabled ? 0 : rotateX,
+          rotateY: animationsDisabled ? 0 : rotateY,
           transformStyle: "preserve-3d",
         }}
         animate={{
-          scale: isHovered ? scaleOnHover : 1,
+          scale: animationsDisabled ? 1 : (isHovered ? scaleOnHover : 1),
         }}
         transition={{
           type: "spring",
@@ -121,7 +140,7 @@ export default function TiltedCard({
             fill
             className="object-cover transition-transform duration-700"
             style={{
-              transform: isHovered ? 'scale(1.1)' : 'scale(1)',
+              transform: animationsDisabled ? 'scale(1)' : (isHovered ? 'scale(1.1)' : 'scale(1)'),
             }}
           />
           
@@ -130,8 +149,10 @@ export default function TiltedCard({
             <motion.div
               className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex items-end justify-center p-6"
               initial={{ opacity: 0 }}
-              animate={{ opacity: isHovered ? 1 : 0 }}
-              transition={{ duration: 0.3 }}
+              animate={{ 
+                opacity: animationsDisabled ? 0.9 : (isHovered ? 1 : 0) 
+              }}
+              transition={{ duration: animationsDisabled ? 0 : 0.3 }}
             >
               {overlayContent || (
                 <div className="text-white text-center">
@@ -145,8 +166,8 @@ export default function TiltedCard({
           <motion.div
             className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
             style={{
-              transform: `translateX(${isHovered ? '100%' : '-100%'})`,
-              transition: 'transform 0.6s ease-in-out',
+              transform: animationsDisabled ? 'translateX(-100%)' : `translateX(${isHovered ? '100%' : '-100%'})`,
+              transition: animationsDisabled ? 'none' : 'transform 0.6s ease-in-out',
             }}
           />
         </div>
@@ -174,7 +195,7 @@ export default function TiltedCard({
         )}
 
         {/* Tooltip */}
-        {showTooltip && isHovered && (
+        {showTooltip && isHovered && !animationsDisabled && (
           <motion.div
             className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-black/80 text-white px-3 py-1 rounded-lg text-sm whitespace-nowrap z-50"
             initial={{ opacity: 0, y: 10 }}

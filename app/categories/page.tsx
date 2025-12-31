@@ -44,16 +44,23 @@ export default async function CategoriesPage() {
         <section className="py-16 md:py-24">
           <div className="container mx-auto max-w-7xl px-6">
             <div className="mb-14 text-center">
-              <ScrollFloat
-                animationDuration={1.2}
-                ease="back.inOut(2)"
-                scrollStart="center bottom+=50%"
-                scrollEnd="bottom bottom-=40%"
-                stagger={0.03}
-                className="mb-4 font-serif text-4xl font-light tracking-tight md:text-5xl"
-              >
-                Shop by Category
-              </ScrollFloat>
+              {/* Desktop: Animated, Mobile: Static */}
+              <div className="mb-4 font-serif text-4xl font-light tracking-tight md:text-5xl">
+                <span className="hidden md:block">
+                  <ScrollFloat
+                    animationDuration={1.2}
+                    ease="back.inOut(2)"
+                    scrollStart="center bottom+=50%"
+                    scrollEnd="bottom bottom-=40%"
+                    stagger={0.03}
+                  >
+                    Shop by Category
+                  </ScrollFloat>
+                </span>
+                <span className="block md:hidden">
+                  Shop by Category
+                </span>
+              </div>
               <p className="text-lg text-muted-foreground">Explore our curated collections of premium ceramic pieces</p>
             </div>
 
@@ -68,16 +75,23 @@ export default async function CategoriesPage() {
         {/* CTA Section */}
         <section className="border-t bg-background py-16">
           <div className="container mx-auto max-w-7xl px-6 text-center">
-            <ScrollFloat
-              animationDuration={1}
-              ease="back.inOut(2)"
-              scrollStart="center bottom+=30%"
-              scrollEnd="bottom bottom-=30%"
-              stagger={0.05}
-              className="font-serif text-3xl font-bold tracking-tight"
-            >
-              Can't decide?
-            </ScrollFloat>
+            {/* Desktop: Animated, Mobile: Static */}
+            <div className="font-serif text-3xl font-bold tracking-tight">
+              <span className="hidden md:block">
+                <ScrollFloat
+                  animationDuration={1}
+                  ease="back.inOut(2)"
+                  scrollStart="center bottom+=30%"
+                  scrollEnd="bottom bottom-=30%"
+                  stagger={0.05}
+                >
+                  Can't decide?
+                </ScrollFloat>
+              </span>
+              <span className="block md:hidden">
+                Can't decide?
+              </span>
+            </div>
             <p className="mt-4 text-muted-foreground">
               Browse all products or get in touch for personalized recommendations
             </p>
