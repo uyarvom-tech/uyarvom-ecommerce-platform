@@ -1,5 +1,5 @@
 {
-  "timestamp": "2025-12-29T12:51:34.943Z",
+  "timestamp": "2025-12-31T09:12:15.007Z",
   "users": [
     {
       "id": "cmjmwg4cl0000hluapjrzyxbt",
@@ -22,57 +22,73 @@
       "id": "cmjmwg4hw0002hluaf0cbp2rs",
       "email": "user@example.com",
       "password": "$2b$10$2BGOfk0FHktJNMsHRKylp.8iCmZkiSLKNOVJADIgijkqf1IBX7HDS",
-      "fullName": "John Doe",
+      "fullName": "John durairaj",
       "avatarUrl": null,
       "createdAt": "2025-12-26T13:20:30.404Z",
-      "updatedAt": "2025-12-26T13:20:30.404Z",
+      "updatedAt": "2025-12-31T01:08:12.330Z",
       "adminUser": null
     }
   ],
   "categories": [
     {
       "id": "cmjmwg4i50003hluaikgd59jd",
-      "name": "Cookware",
-      "slug": "cookware",
-      "description": "Premium ceramic pots, pans, and cooking essentials",
-      "imageUrl": "/Cookware.png",
-      "displayOrder": 1,
+      "name": "Kitchen & Dining",
+      "slug": "kitchen-dining",
+      "description": "Cook easy. Dine happy",
+      "imageUrl": "/uploads/categories/category-1767017519367-6h50gt.png",
+      "displayOrder": 2,
       "parentId": null,
+      "isActive": true,
       "createdAt": "2025-12-26T13:20:30.413Z",
-      "updatedAt": "2025-12-26T16:40:48.032Z"
+      "updatedAt": "2025-12-29T14:12:03.335Z"
     },
     {
       "id": "cmjmwg4ie0004hlua95d7iz30",
-      "name": "Dinnerware",
-      "slug": "dinnerware",
-      "description": "Beautiful plates, bowls, and serving pieces",
-      "imageUrl": "/Dinnerware.png",
+      "name": "Bathroom Essentials",
+      "slug": "bathroom-essentials",
+      "description": "Where hygiene meets comfort",
+      "imageUrl": "/uploads/categories/category-1767018253711-2q0t06.png",
       "displayOrder": 2,
       "parentId": null,
+      "isActive": true,
       "createdAt": "2025-12-26T13:20:30.422Z",
-      "updatedAt": "2025-12-26T16:40:48.049Z"
+      "updatedAt": "2025-12-29T14:24:17.307Z"
     },
     {
       "id": "cmjmwg4im0005hluaqu1i4yhs",
-      "name": "Bakeware",
-      "slug": "bakeware",
-      "description": "Ceramic baking dishes and accessories",
-      "imageUrl": "/Bakeware.png",
+      "name": "Home & Living",
+      "slug": "home-living",
+      "description": "Small upgrades. Big comfort",
+      "imageUrl": "/uploads/categories/category-1767017662827-z39cy0.png",
       "displayOrder": 3,
       "parentId": null,
+      "isActive": true,
       "createdAt": "2025-12-26T13:20:30.430Z",
-      "updatedAt": "2025-12-26T16:40:48.057Z"
+      "updatedAt": "2025-12-29T14:15:13.697Z"
     },
     {
-      "id": "cmjmwg4iv0006hlua5o2gou10",
-      "name": "Serveware",
-      "slug": "serveware",
-      "description": "Elegant serving bowls and platters",
-      "imageUrl": "/Serveware.png",
-      "displayOrder": 4,
+      "id": "cmjr925yr000danjtumzjz5zn",
+      "name": "Kids zone",
+      "slug": "kids-zone",
+      "description": "Colorful, safe, and made for growing minds",
+      "imageUrl": "/uploads/categories/category-1767018276050-igwpp1.png",
+      "displayOrder": 0,
       "parentId": null,
-      "createdAt": "2025-12-26T13:20:30.439Z",
-      "updatedAt": "2025-12-26T16:40:48.065Z"
+      "isActive": true,
+      "createdAt": "2025-12-29T14:24:38.835Z",
+      "updatedAt": "2025-12-29T14:24:38.835Z"
+    },
+    {
+      "id": "cmjr9dw9i000e11aj05jmyk7v",
+      "name": "Safety & Industrial",
+      "slug": "safety-industrial",
+      "description": "Protection you can trust",
+      "imageUrl": "/uploads/categories/category-1767018824552-4vah8f.png",
+      "displayOrder": 5,
+      "parentId": null,
+      "isActive": true,
+      "createdAt": "2025-12-29T14:33:46.134Z",
+      "updatedAt": "2025-12-29T14:33:46.134Z"
     }
   ],
   "products": [
@@ -91,7 +107,6 @@
       "dimensions": null,
       "isActive": true,
       "isFeatured": true,
-      "categoryId": "cmjmwg4ie0004hlua95d7iz30",
       "createdAt": "2025-12-29T07:54:29.801Z",
       "updatedAt": "2025-12-29T08:13:30.654Z",
       "images": [
@@ -105,17 +120,27 @@
           "createdAt": "2025-12-29T08:19:48.928Z"
         }
       ],
-      "category": {
-        "id": "cmjmwg4ie0004hlua95d7iz30",
-        "name": "Dinnerware",
-        "slug": "dinnerware",
-        "description": "Beautiful plates, bowls, and serving pieces",
-        "imageUrl": "/Dinnerware.png",
-        "displayOrder": 2,
-        "parentId": null,
-        "createdAt": "2025-12-26T13:20:30.422Z",
-        "updatedAt": "2025-12-26T16:40:48.049Z"
-      }
+      "productCategories": [
+        {
+          "id": "cmjtd3al20001w4i2cp9rnj69",
+          "productId": "cmjqv4ffy00014ycsn8yw98bl",
+          "categoryId": "cmjmwg4ie0004hlua95d7iz30",
+          "isPrimary": true,
+          "createdAt": "2025-12-31T01:53:02.294Z",
+          "category": {
+            "id": "cmjmwg4ie0004hlua95d7iz30",
+            "name": "Bathroom Essentials",
+            "slug": "bathroom-essentials",
+            "description": "Where hygiene meets comfort",
+            "imageUrl": "/uploads/categories/category-1767018253711-2q0t06.png",
+            "displayOrder": 2,
+            "parentId": null,
+            "isActive": true,
+            "createdAt": "2025-12-26T13:20:30.422Z",
+            "updatedAt": "2025-12-29T14:24:17.307Z"
+          }
+        }
+      ]
     },
     {
       "id": "cmjqw75rf00054y6ivxhoya15",
@@ -132,31 +157,40 @@
       "dimensions": null,
       "isActive": true,
       "isFeatured": false,
-      "categoryId": "cmjmwg4iv0006hlua5o2gou10",
       "createdAt": "2025-12-29T08:24:36.840Z",
-      "updatedAt": "2025-12-29T08:30:04.282Z",
+      "updatedAt": "2025-12-29T14:34:53.127Z",
       "images": [
         {
-          "id": "cmjqwjc4900074y6ip5ky94ws",
+          "id": "cmjr9fbyw000n11aj5ih8kqmb",
           "productId": "cmjqw75rf00054y6ivxhoya15",
           "imageUrl": "/uploads/products/1766997244867-yg5ocj.png",
           "altText": "Gemini_Generated_Image_4a4qyl4a4qyl4a4q",
           "isPrimary": true,
           "sortOrder": 0,
-          "createdAt": "2025-12-29T08:34:04.951Z"
+          "createdAt": "2025-12-29T14:34:53.127Z"
         }
       ],
-      "category": {
-        "id": "cmjmwg4iv0006hlua5o2gou10",
-        "name": "Serveware",
-        "slug": "serveware",
-        "description": "Elegant serving bowls and platters",
-        "imageUrl": "/Serveware.png",
-        "displayOrder": 4,
-        "parentId": null,
-        "createdAt": "2025-12-26T13:20:30.439Z",
-        "updatedAt": "2025-12-26T16:40:48.065Z"
-      }
+      "productCategories": [
+        {
+          "id": "cmjtd3als0003w4i245u9gqnw",
+          "productId": "cmjqw75rf00054y6ivxhoya15",
+          "categoryId": "cmjr9dw9i000e11aj05jmyk7v",
+          "isPrimary": true,
+          "createdAt": "2025-12-31T01:53:02.320Z",
+          "category": {
+            "id": "cmjr9dw9i000e11aj05jmyk7v",
+            "name": "Safety & Industrial",
+            "slug": "safety-industrial",
+            "description": "Protection you can trust",
+            "imageUrl": "/uploads/categories/category-1767018824552-4vah8f.png",
+            "displayOrder": 5,
+            "parentId": null,
+            "isActive": true,
+            "createdAt": "2025-12-29T14:33:46.134Z",
+            "updatedAt": "2025-12-29T14:33:46.134Z"
+          }
+        }
+      ]
     },
     {
       "id": "cmjqwsc4b00094y6ijk6x0ibc",
@@ -173,31 +207,40 @@
       "dimensions": null,
       "isActive": true,
       "isFeatured": true,
-      "categoryId": "cmjmwg4iv0006hlua5o2gou10",
       "createdAt": "2025-12-29T08:41:04.850Z",
-      "updatedAt": "2025-12-29T08:41:04.850Z",
+      "updatedAt": "2025-12-29T14:34:21.398Z",
       "images": [
         {
-          "id": "cmjqwsc4c000a4y6irwr6f5m6",
+          "id": "cmjr9enh6000k11ajueuhesdh",
           "productId": "cmjqwsc4b00094y6ijk6x0ibc",
           "imageUrl": "/uploads/products/1766997649204-an1ltq.png",
           "altText": "3-piece condiments jar set with stand",
           "isPrimary": true,
           "sortOrder": 0,
-          "createdAt": "2025-12-29T08:41:04.850Z"
+          "createdAt": "2025-12-29T14:34:21.398Z"
         }
       ],
-      "category": {
-        "id": "cmjmwg4iv0006hlua5o2gou10",
-        "name": "Serveware",
-        "slug": "serveware",
-        "description": "Elegant serving bowls and platters",
-        "imageUrl": "/Serveware.png",
-        "displayOrder": 4,
-        "parentId": null,
-        "createdAt": "2025-12-26T13:20:30.439Z",
-        "updatedAt": "2025-12-26T16:40:48.065Z"
-      }
+      "productCategories": [
+        {
+          "id": "cmjtd3amh0005w4i2nwtaklfx",
+          "productId": "cmjqwsc4b00094y6ijk6x0ibc",
+          "categoryId": "cmjmwg4i50003hluaikgd59jd",
+          "isPrimary": true,
+          "createdAt": "2025-12-31T01:53:02.346Z",
+          "category": {
+            "id": "cmjmwg4i50003hluaikgd59jd",
+            "name": "Kitchen & Dining",
+            "slug": "kitchen-dining",
+            "description": "Cook easy. Dine happy",
+            "imageUrl": "/uploads/categories/category-1767017519367-6h50gt.png",
+            "displayOrder": 2,
+            "parentId": null,
+            "isActive": true,
+            "createdAt": "2025-12-26T13:20:30.413Z",
+            "updatedAt": "2025-12-29T14:12:03.335Z"
+          }
+        }
+      ]
     },
     {
       "id": "cmjqwyio0000c4y6i9sts0o5y",
@@ -214,31 +257,40 @@
       "dimensions": null,
       "isActive": true,
       "isFeatured": false,
-      "categoryId": "cmjmwg4iv0006hlua5o2gou10",
       "createdAt": "2025-12-29T08:45:53.275Z",
-      "updatedAt": "2025-12-29T08:45:53.275Z",
+      "updatedAt": "2025-12-29T14:34:05.654Z",
       "images": [
         {
-          "id": "cmjqwyio0000d4y6igarubq44",
+          "id": "cmjr9ebbv000h11ajgp21kcic",
           "productId": "cmjqwyio0000c4y6i9sts0o5y",
           "imageUrl": "/uploads/products/1766997943091-sjvwzr.png",
           "altText": "Gemini Generated Image 6496fa6496fa6496",
           "isPrimary": true,
           "sortOrder": 0,
-          "createdAt": "2025-12-29T08:45:53.275Z"
+          "createdAt": "2025-12-29T14:34:05.654Z"
         }
       ],
-      "category": {
-        "id": "cmjmwg4iv0006hlua5o2gou10",
-        "name": "Serveware",
-        "slug": "serveware",
-        "description": "Elegant serving bowls and platters",
-        "imageUrl": "/Serveware.png",
-        "displayOrder": 4,
-        "parentId": null,
-        "createdAt": "2025-12-26T13:20:30.439Z",
-        "updatedAt": "2025-12-26T16:40:48.065Z"
-      }
+      "productCategories": [
+        {
+          "id": "cmjtd3an40007w4i2z4rpcphh",
+          "productId": "cmjqwyio0000c4y6i9sts0o5y",
+          "categoryId": "cmjr9dw9i000e11aj05jmyk7v",
+          "isPrimary": true,
+          "createdAt": "2025-12-31T01:53:02.369Z",
+          "category": {
+            "id": "cmjr9dw9i000e11aj05jmyk7v",
+            "name": "Safety & Industrial",
+            "slug": "safety-industrial",
+            "description": "Protection you can trust",
+            "imageUrl": "/uploads/categories/category-1767018824552-4vah8f.png",
+            "displayOrder": 5,
+            "parentId": null,
+            "isActive": true,
+            "createdAt": "2025-12-29T14:33:46.134Z",
+            "updatedAt": "2025-12-29T14:33:46.134Z"
+          }
+        }
+      ]
     },
     {
       "id": "cmjqzpxs1000f4y6iddat6anz",
@@ -255,31 +307,40 @@
       "dimensions": null,
       "isActive": true,
       "isFeatured": true,
-      "categoryId": "cmjmwg4iv0006hlua5o2gou10",
       "createdAt": "2025-12-29T10:03:11.802Z",
-      "updatedAt": "2025-12-29T10:03:11.802Z",
+      "updatedAt": "2025-12-29T14:30:25.024Z",
       "images": [
         {
-          "id": "cmjqzpxs2000g4y6iqjhclnj7",
+          "id": "cmjr99l34000c11ajqyd5k9em",
           "productId": "cmjqzpxs1000f4y6iddat6anz",
           "imageUrl": "/uploads/products/1767002578192-owhyo3.png",
           "altText": "4 Layer Plastic Storage Box with Wheels (59×40×92 cm)",
           "isPrimary": true,
           "sortOrder": 0,
-          "createdAt": "2025-12-29T10:03:11.802Z"
+          "createdAt": "2025-12-29T14:30:25.024Z"
         }
       ],
-      "category": {
-        "id": "cmjmwg4iv0006hlua5o2gou10",
-        "name": "Serveware",
-        "slug": "serveware",
-        "description": "Elegant serving bowls and platters",
-        "imageUrl": "/Serveware.png",
-        "displayOrder": 4,
-        "parentId": null,
-        "createdAt": "2025-12-26T13:20:30.439Z",
-        "updatedAt": "2025-12-26T16:40:48.065Z"
-      }
+      "productCategories": [
+        {
+          "id": "cmjtd3anv0009w4i2fqnx8q1c",
+          "productId": "cmjqzpxs1000f4y6iddat6anz",
+          "categoryId": "cmjmwg4im0005hluaqu1i4yhs",
+          "isPrimary": true,
+          "createdAt": "2025-12-31T01:53:02.395Z",
+          "category": {
+            "id": "cmjmwg4im0005hluaqu1i4yhs",
+            "name": "Home & Living",
+            "slug": "home-living",
+            "description": "Small upgrades. Big comfort",
+            "imageUrl": "/uploads/categories/category-1767017662827-z39cy0.png",
+            "displayOrder": 3,
+            "parentId": null,
+            "isActive": true,
+            "createdAt": "2025-12-26T13:20:30.430Z",
+            "updatedAt": "2025-12-29T14:15:13.697Z"
+          }
+        }
+      ]
     },
     {
       "id": "cmjqzydoh000i4y6ioc3nskyr",
@@ -296,31 +357,40 @@
       "dimensions": null,
       "isActive": true,
       "isFeatured": false,
-      "categoryId": "cmjmwg4iv0006hlua5o2gou10",
       "createdAt": "2025-12-29T10:09:45.661Z",
-      "updatedAt": "2025-12-29T10:11:45.328Z",
+      "updatedAt": "2025-12-29T14:30:14.841Z",
       "images": [
         {
-          "id": "cmjr00y0j000m4y6ipsnnll2t",
+          "id": "cmjr99d89000911ajzmspeolz",
           "productId": "cmjqzydoh000i4y6ioc3nskyr",
           "imageUrl": "/uploads/products/1767003093212-zb6wq2.jpg",
           "altText": "6PC Plastic Bath Set – Mix Color (PP Material)",
           "isPrimary": true,
           "sortOrder": 0,
-          "createdAt": "2025-12-29T10:11:45.328Z"
+          "createdAt": "2025-12-29T14:30:14.841Z"
         }
       ],
-      "category": {
-        "id": "cmjmwg4iv0006hlua5o2gou10",
-        "name": "Serveware",
-        "slug": "serveware",
-        "description": "Elegant serving bowls and platters",
-        "imageUrl": "/Serveware.png",
-        "displayOrder": 4,
-        "parentId": null,
-        "createdAt": "2025-12-26T13:20:30.439Z",
-        "updatedAt": "2025-12-26T16:40:48.065Z"
-      }
+      "productCategories": [
+        {
+          "id": "cmjtd3aoh000bw4i25ffjfd9k",
+          "productId": "cmjqzydoh000i4y6ioc3nskyr",
+          "categoryId": "cmjmwg4im0005hluaqu1i4yhs",
+          "isPrimary": true,
+          "createdAt": "2025-12-31T01:53:02.418Z",
+          "category": {
+            "id": "cmjmwg4im0005hluaqu1i4yhs",
+            "name": "Home & Living",
+            "slug": "home-living",
+            "description": "Small upgrades. Big comfort",
+            "imageUrl": "/uploads/categories/category-1767017662827-z39cy0.png",
+            "displayOrder": 3,
+            "parentId": null,
+            "isActive": true,
+            "createdAt": "2025-12-26T13:20:30.430Z",
+            "updatedAt": "2025-12-29T14:15:13.697Z"
+          }
+        }
+      ]
     },
     {
       "id": "cmjr081lf000o4y6izpyqzfde",
@@ -337,37 +407,65 @@
       "dimensions": null,
       "isActive": true,
       "isFeatured": false,
-      "categoryId": "cmjmwg4iv0006hlua5o2gou10",
       "createdAt": "2025-12-29T10:17:16.560Z",
-      "updatedAt": "2025-12-29T10:17:16.560Z",
+      "updatedAt": "2025-12-29T14:29:55.690Z",
       "images": [
         {
-          "id": "cmjr081lf000p4y6i18enqjqr",
+          "id": "cmjr98yga000611aj5kmstb77",
           "productId": "cmjr081lf000o4y6izpyqzfde",
           "imageUrl": "/uploads/products/1767003423575-14sfag.png",
           "altText": "Plastic Storage Box – Mix Color (OPP Bag Packing)",
           "isPrimary": true,
           "sortOrder": 0,
-          "createdAt": "2025-12-29T10:17:16.560Z"
+          "createdAt": "2025-12-29T14:29:55.690Z"
         }
       ],
-      "category": {
-        "id": "cmjmwg4iv0006hlua5o2gou10",
-        "name": "Serveware",
-        "slug": "serveware",
-        "description": "Elegant serving bowls and platters",
-        "imageUrl": "/Serveware.png",
-        "displayOrder": 4,
-        "parentId": null,
-        "createdAt": "2025-12-26T13:20:30.439Z",
-        "updatedAt": "2025-12-26T16:40:48.065Z"
-      }
+      "productCategories": [
+        {
+          "id": "cmjtd3ap5000dw4i25ay8tkf8",
+          "productId": "cmjr081lf000o4y6izpyqzfde",
+          "categoryId": "cmjmwg4i50003hluaikgd59jd",
+          "isPrimary": true,
+          "createdAt": "2025-12-31T01:53:02.441Z",
+          "category": {
+            "id": "cmjmwg4i50003hluaikgd59jd",
+            "name": "Kitchen & Dining",
+            "slug": "kitchen-dining",
+            "description": "Cook easy. Dine happy",
+            "imageUrl": "/uploads/categories/category-1767017519367-6h50gt.png",
+            "displayOrder": 2,
+            "parentId": null,
+            "isActive": true,
+            "createdAt": "2025-12-26T13:20:30.413Z",
+            "updatedAt": "2025-12-29T14:12:03.335Z"
+          }
+        },
+        {
+          "id": "cmjtd3apd000fw4i2es4cts0m",
+          "productId": "cmjr081lf000o4y6izpyqzfde",
+          "categoryId": "cmjr925yr000danjtumzjz5zn",
+          "isPrimary": false,
+          "createdAt": "2025-12-31T01:53:02.449Z",
+          "category": {
+            "id": "cmjr925yr000danjtumzjz5zn",
+            "name": "Kids zone",
+            "slug": "kids-zone",
+            "description": "Colorful, safe, and made for growing minds",
+            "imageUrl": "/uploads/categories/category-1767018276050-igwpp1.png",
+            "displayOrder": 0,
+            "parentId": null,
+            "isActive": true,
+            "createdAt": "2025-12-29T14:24:38.835Z",
+            "updatedAt": "2025-12-29T14:24:38.835Z"
+          }
+        }
+      ]
     },
     {
       "id": "cmjr0bwj1000r4y6i0ewmnic2",
-      "name": "Plastic Stool – Multi Color (4–5 Color Mix)",
-      "slug": "plastic-stool-multi-color-4-5-color-mix",
-      "description": "The Plastic Stool – Multi Color is a practical seating solution designed for everyday use. Made from strong and durable plastic, it provides reliable support while remaining lightweight and easy to move.\n\nAvailable in a 4–5 color mix, the stool adds a simple and functional touch to any space. Its stable design ensures safe and comfortable seating for homes, kitchens, bathrooms, shops, offices, and outdoor areas.\n\nEasy to clean and maintain, this plastic stool is suitable for daily household use as well as commercial environments. A cost-effective, durable, and versatile seating option.",
+      "name": "Plastic Stool – Multi Color ",
+      "slug": "plastic-stool-multi-color",
+      "description": "The Plastic Stool – Multi Color is a practical seating solution designed for everyday use. Made from strong and durable plastic, it provides reliable support while remaining lightweight and easy to move.\n\nAvailable in a color mix, the stool adds a simple and functional touch to any space. Its stable design ensures safe and comfortable seating for homes, kitchens, bathrooms, shops, offices, and outdoor areas.\n\nEasy to clean and maintain, this plastic stool is suitable for daily household use as well as commercial environments. A cost-effective, durable, and versatile seating option.",
       "shortDescription": "Sturdy plastic stool with durable build and mixed color design. Lightweight, stable, and suitable for everyday indoor and outdoor use.",
       "price": 2599,
       "compareAtPrice": 3500,
@@ -378,31 +476,30 @@
       "dimensions": null,
       "isActive": true,
       "isFeatured": true,
-      "categoryId": "cmjmwg4iv0006hlua5o2gou10",
       "createdAt": "2025-12-29T10:20:16.622Z",
-      "updatedAt": "2025-12-29T10:23:57.572Z",
-      "images": [
+      "updatedAt": "2025-12-31T08:04:39.538Z",
+      "images": [],
+      "productCategories": [
         {
-          "id": "cmjr0gn0l000u4y6iy2etibqj",
+          "id": "cmjtqd793000oilvo1u9yznrb",
           "productId": "cmjr0bwj1000r4y6i0ewmnic2",
-          "imageUrl": "/uploads/products/1767003809495-76yhch.png",
-          "altText": "Plastic Stool – Multi Color (4–5 Color Mix)",
+          "categoryId": "cmjr925yr000danjtumzjz5zn",
           "isPrimary": true,
-          "sortOrder": 0,
-          "createdAt": "2025-12-29T10:23:57.572Z"
+          "createdAt": "2025-12-31T08:04:39.538Z",
+          "category": {
+            "id": "cmjr925yr000danjtumzjz5zn",
+            "name": "Kids zone",
+            "slug": "kids-zone",
+            "description": "Colorful, safe, and made for growing minds",
+            "imageUrl": "/uploads/categories/category-1767018276050-igwpp1.png",
+            "displayOrder": 0,
+            "parentId": null,
+            "isActive": true,
+            "createdAt": "2025-12-29T14:24:38.835Z",
+            "updatedAt": "2025-12-29T14:24:38.835Z"
+          }
         }
-      ],
-      "category": {
-        "id": "cmjmwg4iv0006hlua5o2gou10",
-        "name": "Serveware",
-        "slug": "serveware",
-        "description": "Elegant serving bowls and platters",
-        "imageUrl": "/Serveware.png",
-        "displayOrder": 4,
-        "parentId": null,
-        "createdAt": "2025-12-26T13:20:30.439Z",
-        "updatedAt": "2025-12-26T16:40:48.065Z"
-      }
+      ]
     },
     {
       "id": "cmjr5b1hb000w4y6i59athwzr",
@@ -419,40 +516,40 @@
       "dimensions": null,
       "isActive": true,
       "isFeatured": false,
-      "categoryId": "cmjmwg4iv0006hlua5o2gou10",
       "createdAt": "2025-12-29T12:39:34.460Z",
-      "updatedAt": "2025-12-29T12:39:34.460Z",
+      "updatedAt": "2025-12-29T14:19:12.285Z",
       "images": [
         {
-          "id": "cmjr5b1hc000x4y6iay2574cb",
+          "id": "cmjr8v5zx000banjtk86pkkkp",
           "productId": "cmjr5b1hb000w4y6i59athwzr",
           "imageUrl": "/uploads/products/1767011959683-r04uyy.png",
           "altText": "Gemini Generated Image vr2bohvr2bohvr2b",
           "isPrimary": true,
           "sortOrder": 0,
-          "createdAt": "2025-12-29T12:39:34.460Z"
-        },
-        {
-          "id": "cmjr5b1hc000y4y6in4w5vqct",
-          "productId": "cmjr5b1hb000w4y6i59athwzr",
-          "imageUrl": "/uploads/products/1767011971361-isaen6.png",
-          "altText": "Gemini Generated Image ow06w2ow06w2ow06",
-          "isPrimary": false,
-          "sortOrder": 1,
-          "createdAt": "2025-12-29T12:39:34.460Z"
+          "createdAt": "2025-12-29T14:19:12.285Z"
         }
       ],
-      "category": {
-        "id": "cmjmwg4iv0006hlua5o2gou10",
-        "name": "Serveware",
-        "slug": "serveware",
-        "description": "Elegant serving bowls and platters",
-        "imageUrl": "/Serveware.png",
-        "displayOrder": 4,
-        "parentId": null,
-        "createdAt": "2025-12-26T13:20:30.439Z",
-        "updatedAt": "2025-12-26T16:40:48.065Z"
-      }
+      "productCategories": [
+        {
+          "id": "cmjtd3aqo000jw4i21k2en384",
+          "productId": "cmjr5b1hb000w4y6i59athwzr",
+          "categoryId": "cmjmwg4im0005hluaqu1i4yhs",
+          "isPrimary": true,
+          "createdAt": "2025-12-31T01:53:02.497Z",
+          "category": {
+            "id": "cmjmwg4im0005hluaqu1i4yhs",
+            "name": "Home & Living",
+            "slug": "home-living",
+            "description": "Small upgrades. Big comfort",
+            "imageUrl": "/uploads/categories/category-1767017662827-z39cy0.png",
+            "displayOrder": 3,
+            "parentId": null,
+            "isActive": true,
+            "createdAt": "2025-12-26T13:20:30.430Z",
+            "updatedAt": "2025-12-29T14:15:13.697Z"
+          }
+        }
+      ]
     },
     {
       "id": "cmjr5hg2900104y6ij1tqmj42",
@@ -468,32 +565,77 @@
       "weight": 0.5,
       "dimensions": null,
       "isActive": true,
-      "isFeatured": false,
-      "categoryId": "cmjmwg4iv0006hlua5o2gou10",
+      "isFeatured": true,
       "createdAt": "2025-12-29T12:44:33.295Z",
-      "updatedAt": "2025-12-29T12:44:33.295Z",
+      "updatedAt": "2025-12-31T07:32:19.219Z",
       "images": [
         {
-          "id": "cmjr5hg2900114y6iolnv7vic",
+          "id": "cmjtp7m38000iilvopw9p9o4z",
           "productId": "cmjr5hg2900104y6ij1tqmj42",
-          "imageUrl": "/uploads/products/1767012269169-w3scz2.jpg",
+          "imageUrl": "/uploads/products/1767140617875-rmr8xn.jpg",
           "altText": "fishplate",
           "isPrimary": true,
           "sortOrder": 0,
-          "createdAt": "2025-12-29T12:44:33.295Z"
+          "createdAt": "2025-12-31T07:32:19.219Z"
+        },
+        {
+          "id": "cmjtp7m38000jilvox5sppk51",
+          "productId": "cmjr5hg2900104y6ij1tqmj42",
+          "imageUrl": "/uploads/products/1767166281900-b1xhhz.png",
+          "altText": "Gemini Generated Image ow06w2ow06w2ow06",
+          "isPrimary": false,
+          "sortOrder": 1,
+          "createdAt": "2025-12-31T07:32:19.219Z"
+        },
+        {
+          "id": "cmjtp7m38000kilvo0utbqw0w",
+          "productId": "cmjr5hg2900104y6ij1tqmj42",
+          "imageUrl": "/uploads/products/1767166281667-6mdpl6.jpg",
+          "altText": "fishplate",
+          "isPrimary": false,
+          "sortOrder": 1,
+          "createdAt": "2025-12-31T07:32:19.219Z"
+        },
+        {
+          "id": "cmjtp7m38000lilvoi02izeid",
+          "productId": "cmjr5hg2900104y6ij1tqmj42",
+          "imageUrl": "/uploads/products/1767166281674-9i3rve.jpg",
+          "altText": "unnamed",
+          "isPrimary": false,
+          "sortOrder": 1,
+          "createdAt": "2025-12-31T07:32:19.219Z"
+        },
+        {
+          "id": "cmjtp7m38000milvopw7t6wir",
+          "productId": "cmjr5hg2900104y6ij1tqmj42",
+          "imageUrl": "/uploads/products/1767166281819-5f7rer.png",
+          "altText": "Gemini Generated Image rcqygvrcqygvrcqy",
+          "isPrimary": false,
+          "sortOrder": 1,
+          "createdAt": "2025-12-31T07:32:19.219Z"
         }
       ],
-      "category": {
-        "id": "cmjmwg4iv0006hlua5o2gou10",
-        "name": "Serveware",
-        "slug": "serveware",
-        "description": "Elegant serving bowls and platters",
-        "imageUrl": "/Serveware.png",
-        "displayOrder": 4,
-        "parentId": null,
-        "createdAt": "2025-12-26T13:20:30.439Z",
-        "updatedAt": "2025-12-26T16:40:48.065Z"
-      }
+      "productCategories": [
+        {
+          "id": "cmjtp7m38000hilvo24u2pmei",
+          "productId": "cmjr5hg2900104y6ij1tqmj42",
+          "categoryId": "cmjmwg4i50003hluaikgd59jd",
+          "isPrimary": true,
+          "createdAt": "2025-12-31T07:32:19.219Z",
+          "category": {
+            "id": "cmjmwg4i50003hluaikgd59jd",
+            "name": "Kitchen & Dining",
+            "slug": "kitchen-dining",
+            "description": "Cook easy. Dine happy",
+            "imageUrl": "/uploads/categories/category-1767017519367-6h50gt.png",
+            "displayOrder": 2,
+            "parentId": null,
+            "isActive": true,
+            "createdAt": "2025-12-26T13:20:30.413Z",
+            "updatedAt": "2025-12-29T14:12:03.335Z"
+          }
+        }
+      ]
     }
   ],
   "orders": []

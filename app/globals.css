@@ -889,3 +889,143 @@
   animation: twinkle 2s ease-in-out infinite reverse;
   pointer-events: none;
 }
+/* Flipkart-style Color Dots */
+.color-dot {
+  position: relative;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  /* Prevent layout shifts by using fixed dimensions */
+  width: 32px !important;
+  height: 32px !important;
+  flex-shrink: 0;
+}
+
+.color-dot:hover {
+  /* Use box-shadow instead of transform to avoid layout shifts */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.color-dot.selected {
+  /* Use box-shadow and border instead of transform */
+  box-shadow: 0 0 0 3px #c9871d, 0 0 0 5px rgba(201, 135, 29, 0.2);
+  border-width: 3px !important;
+}
+
+.color-dot.out-of-stock {
+  position: relative;
+  opacity: 0.5;
+}
+
+.color-dot.out-of-stock::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 10%;
+  right: 10%;
+  height: 2px;
+  background: #ef4444;
+  transform: translateY(-50%) rotate(45deg);
+}
+
+/* Image thumbnail hover effects */
+.image-thumbnail {
+  transition: all 0.2s ease-in-out;
+  /* Prevent layout shifts */
+  flex-shrink: 0;
+}
+
+.image-thumbnail:hover {
+  /* Use box-shadow instead of transform */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.image-thumbnail.selected {
+  box-shadow: 0 0 0 2px #c9871d, 0 0 0 4px rgba(201, 135, 29, 0.2);
+}
+
+/* Fixed layout container */
+.color-selector-container {
+  width: 48px; /* Fixed width to prevent layout shifts */
+  flex-shrink: 0;
+}
+/* Image Thumbnail Styles */
+.image-thumbnail {
+  transition: all 0.2s ease;
+}
+
+.image-thumbnail:hover {
+  transform: scale(1.05);
+}
+
+.image-thumbnail.selected {
+  border-color: #c9871d;
+  transform: scale(1.05);
+}
+/* Default Color Button Styles */
+.color-selector-container button:not(.color-dot) {
+  font-size: 0.75rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.color-selector-container button:not(.color-dot):hover {
+  transform: scale(1.05);
+}
+
+/* Color Selector Styles */
+.color-selector-container {
+  min-width: 60px;
+}
+
+.color-dot {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.color-dot:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.color-dot.selected {
+  border-color: #c9871d;
+  box-shadow: 0 0 0 2px rgba(201, 135, 29, 0.3);
+  transform: scale(1.05);
+}
+
+.color-dot.out-of-stock {
+  opacity: 0.4;
+  cursor: not-allowed;
+  position: relative;
+}
+
+.color-dot.out-of-stock::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 10%;
+  right: 10%;
+  height: 2px;
+  background: #ef4444;
+  transform: translateY(-50%) rotate(45deg);
+}
+
+/* Image thumbnail styles */
+.image-thumbnail {
+  transition: all 0.2s ease;
+}
+
+.image-thumbnail:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.image-thumbnail.selected {
+  border-color: #c9871d !important;
+  box-shadow: 0 0 0 2px rgba(201, 135, 29, 0.3);
+}

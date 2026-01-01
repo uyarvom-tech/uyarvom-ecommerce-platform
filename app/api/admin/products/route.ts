@@ -119,11 +119,15 @@ export async function POST(request: NextRequest) {
       categoryIds, // Array of category IDs
       isActive,
       isFeatured,
-      images
+      images,
+      hasColorVariants,
+      colorVariants
     } = data
 
     console.log('🖼️ API POST - Images received:', images)
     console.log('📊 API POST - Images count:', images?.length || 0)
+    console.log('🎨 API POST - Has color variants:', hasColorVariants)
+    console.log('🎨 API POST - Color variants:', colorVariants)
     console.log('🏷️ API POST - Category IDs:', categoryIds)
 
     // Validate that at least one category is provided
@@ -163,12 +167,33 @@ export async function POST(request: NextRequest) {
     }
 
     // Prepare images for creation
-    const imagesToCreate = images?.map((img: any, index: number) => ({
-      imageUrl: img.imageUrl,
-      altText: img.altText || '',
-      isPrimary: img.isPrimary || index === 0, // Ensure first image is primary if none specified
-      sortOrder: img.sortOrder || index
-    })) || []
+    let imagesToCreate = []
+    
+    if (hasColorVariants && colorVariants && colorVariants.length > 0) {
+      // Use color variant images
+      console.log('🎨 Using color variant images')
+      colorVariants.forEach((variant: any) => {
+        if (variant.images && variant.images.length > 0) {
+          variant.images.forEach((img: any, index: number) => {
+            imagesToCreate.push({
+              imageUrl: img.imageUrl,
+              altText: img.altText || `${variant.colorName} - View ${index + 1}`,
+              isPrimary: imagesToCreate.length === 0, // First image overall is primary
+              sortOrder: imagesToCreate.length
+            })
+          })
+        }
+      })
+    } else {
+      // Use regular images
+      console.log('🖼️ Using regular images')
+      imagesToCreate = images?.map((img: any, index: number) => ({
+        imageUrl: img.imageUrl,
+        altText: img.altText || '',
+        isPrimary: img.isPrimary || index === 0,
+        sortOrder: img.sortOrder || index
+      })) || []
+    }
 
     console.log('🖼️ API POST - Images to create:', imagesToCreate)
 
@@ -208,6 +233,29 @@ export async function POST(request: NextRequest) {
         }
       }
     })
+
+    // Create color variants if they exist
+    if (hasColorVariants && colorVariants && colorVariants.length > 0) {
+      console.log('🎨 Creating color variants...')
+      for (let i = 0; i < colorVariants.length; i++) {
+        const variant = colorVariants[i]
+        if (variant.colorName && variant.colorCode) {
+          await prisma.productVariant.create({
+            data: {
+              productId: product.id,
+              name: 'Color',
+              value: variant.colorName,
+              colorCode: variant.colorCode,
+              colorImage: variant.images?.[0]?.imageUrl || null,
+              stock: 100, // Default stock
+              sortOrder: i,
+              isActive: true
+            }
+          })
+          console.log(`✅ Created color variant: ${variant.colorName}`)
+        }
+      }
+    }
 
     console.log('✅ API POST - Product created:', product.id)
     console.log('🖼️ API POST - Created images:', product.images)
@@ -256,7 +304,9 @@ export async function PUT(request: NextRequest) {
       categoryIds, // Array of category IDs
       isActive,
       isFeatured,
-      images
+      images,
+      hasColorVariants,
+      colorVariants
     } = data
 
     console.log('🔄 API PUT - Updating product:', id)
@@ -327,12 +377,38 @@ export async function PUT(request: NextRequest) {
         },
         images: {
           deleteMany: {}, // Delete existing images
-          create: images?.map((img: any, index: number) => ({
-            imageUrl: img.imageUrl,
-            altText: img.altText || '',
-            isPrimary: img.isPrimary || index === 0, // Ensure first image is primary if none specified
-            sortOrder: img.sortOrder || index
-          })) || []
+          create: (() => {
+            let imagesToCreate = []
+            
+            if (hasColorVariants && colorVariants && colorVariants.length > 0) {
+              // Use color variant images
+              console.log('🎨 Using color variant images for update')
+              colorVariants.forEach((variant: any) => {
+                if (variant.images && variant.images.length > 0) {
+                  variant.images.forEach((img: any, index: number) => {
+                    imagesToCreate.push({
+                      imageUrl: img.imageUrl,
+                      altText: img.altText || `${variant.colorName} - View ${index + 1}`,
+                      isPrimary: imagesToCreate.length === 0, // First image overall is primary
+                      sortOrder: imagesToCreate.length
+                    })
+                  })
+                }
+              })
+            } else {
+              // Use regular images
+              console.log('🖼️ Using regular images for update')
+              imagesToCreate = images?.map((img: any, index: number) => ({
+                imageUrl: img.imageUrl,
+                altText: img.altText || '',
+                isPrimary: img.isPrimary || index === 0,
+                sortOrder: img.sortOrder || index
+              })) || []
+            }
+            
+            console.log('📸 Images to create:', imagesToCreate)
+            return imagesToCreate
+          })()
         }
       },
       include: {
@@ -346,6 +422,64 @@ export async function PUT(request: NextRequest) {
         }
       }
     })
+
+    // Handle color variants with proper image storage
+    if (hasColorVariants && colorVariants && colorVariants.length > 0) {
+      console.log('🎨 Creating color variants with images...')
+      
+      // Delete existing color variants and their images
+      await prisma.productVariant.deleteMany({
+        where: {
+          productId: id,
+          name: 'Color'
+        }
+      })
+      
+      // Create new color variants with their images
+      for (let i = 0; i < colorVariants.length; i++) {
+        const variant = colorVariants[i]
+        if (variant.colorName && variant.colorCode) {
+          // Create the variant first
+          const createdVariant = await prisma.productVariant.create({
+            data: {
+              productId: id,
+              name: 'Color',
+              value: variant.colorName,
+              colorCode: variant.colorCode,
+              colorImage: variant.images?.[0]?.imageUrl || null, // Keep for backward compatibility
+              stock: 100,
+              sortOrder: i,
+              isActive: true
+            }
+          })
+          
+          // Create images for this variant
+          if (variant.images && variant.images.length > 0) {
+            const variantImages = variant.images.map((img: any, imgIndex: number) => ({
+              variantId: createdVariant.id,
+              imageUrl: img.imageUrl,
+              altText: img.altText || `${variant.colorName} - View ${imgIndex + 1}`,
+              sortOrder: imgIndex
+            }))
+            
+            await prisma.productVariantImage.createMany({
+              data: variantImages
+            })
+            
+            console.log(`✅ Created variant ${variant.colorName} with ${variant.images.length} images`)
+          }
+        }
+      }
+    } else {
+      // If no color variants, delete any existing ones
+      await prisma.productVariant.deleteMany({
+        where: {
+          productId: id,
+          name: 'Color'
+        }
+      })
+      console.log('🗑️ Removed all color variants (hasColorVariants is false)')
+    }
 
     // Transform response to include categories array
     const transformedProduct = {

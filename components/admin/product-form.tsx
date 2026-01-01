@@ -9,10 +9,11 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft, Palette, Plus, X } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
 import { MultiImageManager } from "@/components/admin/multi-image-manager"
+import ColorVariantImageManager from "@/components/admin/color-variant-image-manager"
 
 interface Category {
   id: string
@@ -54,14 +55,19 @@ export function ProductForm({ categories, product }: ProductFormProps) {
   })
 
   const [images, setImages] = useState<ProductImage[]>(
-    product?.images?.map((img: any, index: number) => ({
-      id: img.id,
-      imageUrl: img.imageUrl,
-      altText: img.altText || '',
-      isPrimary: img.isPrimary,
-      sortOrder: img.sortOrder || index
-    })) || []
+    // Only show regular images if the product doesn't have color variants
+    (!product?.hasColorVariants && product?.images) ? 
+      product.images.map((img: any, index: number) => ({
+        id: img.id,
+        imageUrl: img.imageUrl,
+        altText: img.altText || '',
+        isPrimary: img.isPrimary,
+        sortOrder: img.sortOrder || index
+      })) : []
   )
+
+  const [hasColorVariants, setHasColorVariants] = useState(product?.hasColorVariants || false)
+  const [colorVariants, setColorVariants] = useState<any[]>(product?.colorVariants || [])
 
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => {
@@ -98,20 +104,34 @@ export function ProductForm({ categories, product }: ProductFormProps) {
         throw new Error('Please fill in all required fields and select at least one category')
       }
 
-      // Validate that we have at least one image
-      const validImages = images.filter(img => img.imageUrl && img.imageUrl.trim() !== '')
-      console.log('✅ Valid Images (non-empty URLs):', validImages)
+      // Validate that we have images (either regular or color variants)
+      let validImages = []
       
-      if (validImages.length === 0) {
-        throw new Error('Please upload at least one product image')
-      }
-      
-      // Ensure at least one image is marked as primary
-      const hasPrimary = validImages.some(img => img.isPrimary)
-      console.log('⭐ Has Primary Image:', hasPrimary)
-      if (!hasPrimary) {
-        validImages[0].isPrimary = true
-        console.log('🔧 Auto-set first image as primary')
+      if (!hasColorVariants) {
+        validImages = images.filter(img => img.imageUrl && img.imageUrl.trim() !== '')
+        console.log('✅ Valid Images (non-empty URLs):', validImages)
+        
+        if (validImages.length === 0) {
+          throw new Error('Please upload at least one product image')
+        }
+        
+        // Ensure at least one image is marked as primary
+        const hasPrimary = validImages.some(img => img.isPrimary)
+        console.log('⭐ Has Primary Image:', hasPrimary)
+        if (!hasPrimary) {
+          validImages[0].isPrimary = true
+          console.log('🔧 Auto-set first image as primary')
+        }
+      } else {
+        // Validate color variants
+        if (colorVariants.length === 0) {
+          throw new Error('Please add at least one color variant')
+        }
+        
+        const hasImagesInVariants = colorVariants.some(variant => variant.images && variant.images.length > 0)
+        if (!hasImagesInVariants) {
+          throw new Error('Please upload images for at least one color variant')
+        }
       }
 
       const productData = {
@@ -121,10 +141,13 @@ export function ProductForm({ categories, product }: ProductFormProps) {
         stockQuantity: parseInt(formData.stockQuantity),
         lowStockThreshold: parseInt(formData.lowStockThreshold),
         weight: formData.weight ? parseFloat(formData.weight) : null,
-        images: validImages
+        images: hasColorVariants ? [] : validImages, // Use regular images only if no color variants
+        hasColorVariants: hasColorVariants,
+        colorVariants: hasColorVariants ? colorVariants : []
       }
 
       console.log('📦 Final Product Data to Send:', productData)
+      console.log('🎨 Color Variants to Send:', productData.colorVariants)
       console.log('🖼️ Images in Product Data:', productData.images)
 
       const url = '/api/admin/products'
@@ -153,8 +176,22 @@ export function ProductForm({ categories, product }: ProductFormProps) {
       console.log('✅ API Success Response:', result)
       console.log('🖼️ Saved Product Images:', result.images)
       
-      toast.success(product ? 'Product updated successfully!' : 'Product created successfully!')
-      router.push('/admin/products')
+      if (product) {
+        toast.success('Product updated successfully!')
+        router.push('/admin/products')
+      } else {
+        toast.success('Product created successfully!')
+        
+        // If color variants were enabled, redirect to edit mode to add them
+        if (hasColorVariants) {
+          toast.success('Redirecting to add color variants...', { duration: 2000 })
+          setTimeout(() => {
+            router.push(`/admin/products/${result.id}/edit`)
+          }, 1500)
+        } else {
+          router.push('/admin/products')
+        }
+      }
     } catch (error: any) {
       console.error('💥 FORM SUBMISSION ERROR:', error)
       toast.error(error.message || 'Failed to save product. Please try again.')
@@ -234,18 +271,86 @@ export function ProductForm({ categories, product }: ProductFormProps) {
             <CardHeader>
               <CardTitle>Product Images</CardTitle>
               <p className="text-sm text-muted-foreground">
-                Upload multiple high-quality images. Drag to reorder. First image is the main product image.
+                {hasColorVariants 
+                  ? "Color variant images are managed below. You can still add general product images here."
+                  : "Upload multiple high-quality images. Drag to reorder. First image is the main product image."
+                }
               </p>
             </CardHeader>
             <CardContent>
-              <MultiImageManager 
-                images={images} 
-                onImagesChange={setImages} 
-                productId={product?.id}
-                maxImages={10}
-              />
+              {!hasColorVariants ? (
+                // Default image upload
+                <div className="space-y-4">
+                  <MultiImageManager 
+                    images={images} 
+                    onImagesChange={setImages} 
+                    productId={product?.id}
+                    maxImages={10}
+                  />
+                  
+                  <div className="text-center pt-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        // Automatically add first color variant when switching
+                        const firstVariant = {
+                          id: `color-${Date.now()}`,
+                          colorName: '',
+                          colorCode: '#000000',
+                          images: []
+                        }
+                        setHasColorVariants(true)
+                        setColorVariants([firstVariant])
+                      }}
+                      className="flex items-center gap-2"
+                    >
+                      <Palette className="h-4 w-4" />
+                      Upload Multiple Color Variants Instead
+                    </Button>
+                    <p className="text-xs text-gray-600 mt-2">
+                      Switch to color variant mode if your product comes in different colors
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                // Color variant mode
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 border rounded-lg bg-blue-50">
+                    <div>
+                      <h4 className="font-medium text-blue-900">Color Variant Mode Active</h4>
+                      <p className="text-sm text-blue-700">
+                        Upload images for each color variant below
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        setHasColorVariants(false)
+                        setColorVariants([])
+                      }}
+                      className="flex items-center gap-2"
+                    >
+                      <X className="h-4 w-4" />
+                      Switch to Simple Images
+                    </Button>
+                  </div>
+                  
+                  <ColorVariantImageManager
+                    onVariantsChange={setColorVariants}
+                    initialVariants={colorVariants}
+                  />
+                </div>
+              )}
             </CardContent>
           </Card>
+
+          {/* Product Variants - Remove the old section */}
         </div>
 
         {/* Sidebar */}

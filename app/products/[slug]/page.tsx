@@ -1,7 +1,8 @@
 import { prisma } from "@/lib/prisma"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
-import { ProductGallery } from "@/components/product-gallery"
+import FlipkartProductGallery from "@/components/flipkart-product-gallery"
+import ProductSizeSelector from "@/components/product-size-selector"
 import { AddToCartButton } from "@/components/add-to-cart-button"
 import { ProductReviews } from "@/components/product-reviews"
 import { Badge } from "@/components/ui/badge"
@@ -93,8 +94,14 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           )}
 
           <div className="grid gap-8 lg:grid-cols-2">
-            {/* Product Images */}
-            <ProductGallery images={sortedImages} productName={product.name} />
+            {/* Product Images with Integrated Variants */}
+            <FlipkartProductGallery 
+              images={sortedImages} 
+              productName={product.name}
+              productId={product.id}
+              productSlug={product.slug}
+              productPrice={product.price}
+            />
 
             {/* Product Details */}
             <div className="flex flex-col">
@@ -177,6 +184,14 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               {product.shortDescription && (
                 <p className="mb-6 text-lg leading-relaxed text-muted-foreground">{product.shortDescription}</p>
               )}
+
+              {/* Size and Other Variants */}
+              <div className="mb-6">
+                <ProductSizeSelector 
+                  productId={product.id} 
+                  productPrice={product.price}
+                />
+              </div>
 
               <div className="mb-6">
                 <AddToCartButton product={product} />

@@ -17,7 +17,9 @@ async function backupData() {
     const products = await prisma.product.findMany({
       include: {
         images: true,
-        category: true
+        productCategories: {
+          include: { category: true }
+        }
       }
     })
     

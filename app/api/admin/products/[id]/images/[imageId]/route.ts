@@ -25,7 +25,8 @@ export async function DELETE(
     })
 
     if (!image) {
-      return NextResponse.json({ error: 'Image not found' }, { status: 404 })
+      // If image doesn't exist, just return success (it might have been replaced)
+      return NextResponse.json({ message: 'Image not found, possibly already deleted' }, { status: 200 })
     }
 
     // Get all images for this product
@@ -108,7 +109,8 @@ export async function PUT(
     })
 
     if (!image) {
-      return NextResponse.json({ error: 'Image not found' }, { status: 404 })
+      // If image doesn't exist, just return success (it might have been replaced)
+      return NextResponse.json({ message: 'Image not found, possibly replaced' }, { status: 200 })
     }
 
     // If setting as primary, update other images
