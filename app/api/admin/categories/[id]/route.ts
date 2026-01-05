@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { requireAdmin } from '@/lib/auth-middleware'
+import { requireStaffAccess, requireAdminRole } from '@/lib/auth-middleware'
 
 // GET /api/admin/categories/[id] - Get single category
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  // Check admin access
-  const authResult = await requireAdmin(request)
+  // Check staff access (both admin and staff can view categories)
+  const authResult = await requireStaffAccess(request)
   if (authResult instanceof NextResponse) {
     return authResult // Return error response
   }
@@ -19,28 +19,9 @@ export async function GET(
     const category = await prisma.category.findUnique({
       where: { id },
       include: {
-        parent: true,
-        children: {
-          orderBy: [
-            { displayOrder: 'asc' },
-            { name: 'asc' }
-          ]
-        },
-        productCategories: {
-          include: {
-            product: {
-              include: {
-                images: {
-                  where: { isPrimary: true }
-                }
-              }
-            }
-          }
-        },
         _count: {
           select: {
-            productCategories: true,
-            children: true
+            productCategories: true
           }
         }
       }
@@ -50,7 +31,13 @@ export async function GET(
       return NextResponse.json({ error: 'Category not found' }, { status: 404 })
     }
 
-    return NextResponse.json(category)
+    // Transform category to include product count
+    const categoryWithCount = {
+      ...category,
+      productCount: category._count.productCategories
+    }
+
+    return NextResponse.json(categoryWithCount)
   } catch (error) {
     console.error('Error fetching category:', error)
     return NextResponse.json(
@@ -60,13 +47,13 @@ export async function GET(
   }
 }
 
-// DELETE /api/admin/categories/[id] - Delete category
+// DELETE /api/admin/categories/[id] - Delete single category (Admin only)
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  // Check admin access
-  const authResult = await requireAdmin(request)
+  // Check admin role (only admins can delete categories directly)
+  const authResult = await requireAdminRole(request)
   if (authResult instanceof NextResponse) {
     return authResult // Return error response
   }
@@ -74,12 +61,15 @@ export async function DELETE(
   try {
     const { id } = await params
 
-    // Check if category exists
+    // Check if category exists and has products
     const category = await prisma.category.findUnique({
       where: { id },
       include: {
-        children: true,
-        productCategories: true
+        _count: {
+          select: {
+            productCategories: true
+          }
+        }
       }
     })
 
@@ -87,18 +77,9 @@ export async function DELETE(
       return NextResponse.json({ error: 'Category not found' }, { status: 404 })
     }
 
-    // Check if category has children
-    if (category.children.length > 0) {
+    if (category._count.productCategories > 0) {
       return NextResponse.json(
-        { error: 'Cannot delete category with subcategories. Please delete or move subcategories first.' },
-        { status: 400 }
-      )
-    }
-
-    // Check if category has products
-    if (category.productCategories.length > 0) {
-      return NextResponse.json(
-        { error: `Cannot delete category with ${category.productCategories.length} products. Please move products to other categories first.` },
+        { error: 'Cannot delete category with products. Please move products to other categories first.' },
         { status: 400 }
       )
     }

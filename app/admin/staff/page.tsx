@@ -1,50 +1,70 @@
-import { createClient } from "@/lib/supabase/server"
+import { prisma } from "@/lib/prisma"
 import { AdminHeader } from "@/components/admin-header"
 import { StaffManagement } from "@/components/admin/staff-management"
+import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 
-export default async function AdminStaffPage() {
+export default async function StaffPage() {
+  // Check if user is admin
   const supabase = await createClient()
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect("/auth/login?redirect=/admin/staff")
+    redirect('/auth/signin')
   }
 
-  // Temporary: Allow any logged-in user to access admin
-  const { data: adminUser } = await supabase.from("admin_users").select("*").eq("id", user.id).single()
-  
-  // For now, create a temporary admin user object if none exists
-  const currentAdmin = adminUser || {
+  // Get user's admin role
+  const adminUser = await prisma.user.findUnique({
+    where: { email: user.email! },
+    include: { adminUser: true }
+  })
+
+  // Only admins can access staff management
+  if (!adminUser?.adminUser || adminUser.adminUser.role !== 'admin') {
+    redirect('/admin') // Redirect staff to main admin page
+  }
+
+  // Fetch all staff members (users with admin roles)
+  const staff = await prisma.user.findMany({
+    where: {
+      adminUser: {
+        isNot: null
+      }
+    },
+    include: {
+      adminUser: true
+    },
+    orderBy: {
+      createdAt: 'desc'
+    }
+  })
+
+  // Transform data for the component
+  const staffWithDetails = staff.map(user => ({
     id: user.id,
-    role: 'super_admin', // Give super_admin access for testing
-    permissions: ['all'],
-    created_at: new Date().toISOString()
-  }
-
-  // Temporary: Comment out role restriction for testing
-  // if (currentAdmin.role !== 'super_admin') {
-  //   redirect("/admin")
-  // }
-
-  const { data: staffMembers } = await supabase
-    .from("admin_users")
-    .select(`
-      *,
-      profiles:profiles(full_name, email, avatar_url)
-    `)
-    .order("created_at", { ascending: false })
+    email: user.email,
+    fullName: user.fullName || 'No Name',
+    avatarUrl: user.avatarUrl,
+    role: user.adminUser?.role || 'staff',
+    permissions: user.adminUser?.permissions || '[]',
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
+    isActive: true // We'll add this field later if needed
+  }))
 
   return (
-    <div className="flex min-h-screen flex-col bg-muted/30">
+    <div className="flex min-h-screen flex-col bg-background">
       <AdminHeader />
-      <main className="flex-1 px-6 py-8">
-        <div className="container mx-auto max-w-7xl">
-          <StaffManagement staffMembers={staffMembers || []} currentUser={currentAdmin} />
+      
+      <main className="flex-1 container mx-auto px-6 py-8 max-w-7xl">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold tracking-tight">Staff Management</h1>
+          <p className="text-muted-foreground">
+            Create and manage staff accounts with role-based permissions
+          </p>
         </div>
+
+        <StaffManagement staff={staffWithDetails} />
       </main>
     </div>
   )

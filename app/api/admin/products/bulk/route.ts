@@ -1,15 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { requireAdmin } from '@/lib/auth-middleware'
+import { requireStaffAccess, requireAdminRole } from '@/lib/auth-middleware'
 
 // POST /api/admin/products/bulk - Bulk operations on products
 export async function POST(request: NextRequest) {
-  // Check admin access
-  const authResult = await requireAdmin(request)
-  if (authResult instanceof NextResponse) {
-    return authResult // Return error response
-  }
-
   try {
     const { action, productIds } = await request.json()
 
@@ -18,6 +12,20 @@ export async function POST(request: NextRequest) {
         { error: 'Invalid request data' },
         { status: 400 }
       )
+    }
+
+    // For delete operations, require admin role
+    if (action === 'delete') {
+      const authResult = await requireAdminRole(request)
+      if (authResult instanceof NextResponse) {
+        return authResult // Return error response
+      }
+    } else {
+      // For other operations (activate, deactivate, feature), require staff access
+      const authResult = await requireStaffAccess(request)
+      if (authResult instanceof NextResponse) {
+        return authResult // Return error response
+      }
     }
 
     let result

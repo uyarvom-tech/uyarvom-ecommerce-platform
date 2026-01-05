@@ -1,79 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { requireAdmin } from '@/lib/auth-middleware'
+import { requireStaffAccess } from '@/lib/auth-middleware'
 
-// GET /api/admin/categories - List all categories with hierarchy
+// GET /api/admin/categories - List all categories
 export async function GET(request: NextRequest) {
-  console.log('Categories API called')
-  
-  // Check admin access
-  const authResult = await requireAdmin(request)
+  // Check staff access (both admin and staff can view categories)
+  const authResult = await requireStaffAccess(request)
   if (authResult instanceof NextResponse) {
-    console.log('Auth failed:', authResult)
     return authResult // Return error response
   }
 
-  console.log('Auth passed, fetching categories...')
-
   try {
-    const { searchParams } = new URL(request.url)
-    const includeProducts = searchParams.get('includeProducts') === 'true'
-    const flat = searchParams.get('flat') === 'true'
-
-    if (flat) {
-      // Return flat list for dropdowns
-      const categories = await prisma.category.findMany({
-        where: { isActive: true },
-        orderBy: [
-          { displayOrder: 'asc' },
-          { name: 'asc' }
-        ],
-        include: includeProducts ? {
-          productCategories: {
-            include: { product: true }
+    const categories = await prisma.category.findMany({
+      include: {
+        _count: {
+          select: {
+            productCategories: true
           }
-        } : undefined
-      })
-
-      console.log('Flat categories found:', categories.length)
-      return NextResponse.json({ categories })
-    }
-
-    // Return hierarchical structure
-    const allCategories = await prisma.category.findMany({
+        }
+      },
       orderBy: [
         { displayOrder: 'asc' },
         { name: 'asc' }
-      ],
-      include: {
-        children: {
-          orderBy: [
-            { displayOrder: 'asc' },
-            { name: 'asc' }
-          ]
-        },
-        productCategories: includeProducts ? {
-          include: { product: true }
-        } : undefined,
-        _count: {
-          select: {
-            productCategories: true,
-            children: true
-          }
-        }
-      }
+      ]
     })
 
-    // Filter to get only root categories (no parent)
-    const rootCategories = allCategories.filter(cat => !cat.parentId)
+    // Transform categories to include product count
+    const categoriesWithCount = categories.map(category => ({
+      ...category,
+      productCount: category._count.productCategories
+    }))
 
-    console.log('All categories found:', allCategories.length)
-    console.log('Root categories found:', rootCategories.length)
-
-    return NextResponse.json({ 
-      categories: rootCategories,
-      total: allCategories.length 
-    })
+    return NextResponse.json({ categories: categoriesWithCount })
   } catch (error) {
     console.error('Error fetching categories:', error)
     return NextResponse.json(
@@ -85,23 +43,21 @@ export async function GET(request: NextRequest) {
 
 // POST /api/admin/categories - Create new category
 export async function POST(request: NextRequest) {
-  // Check admin access
-  const authResult = await requireAdmin(request)
+  // Check staff access (both admin and staff can create categories)
+  const authResult = await requireStaffAccess(request)
   if (authResult instanceof NextResponse) {
     return authResult // Return error response
   }
 
   try {
     const data = await request.json()
-    
     const {
       name,
       slug,
       description,
       imageUrl,
-      parentId,
       displayOrder,
-      isActive = true
+      isActive
     } = data
 
     // Check if slug already exists
@@ -116,35 +72,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // If no display order provided, set it to the next available
-    let finalDisplayOrder = displayOrder
-    if (finalDisplayOrder === undefined) {
-      const lastCategory = await prisma.category.findFirst({
-        where: { parentId },
-        orderBy: { displayOrder: 'desc' }
-      })
-      finalDisplayOrder = (lastCategory?.displayOrder || 0) + 1
-    }
-
+    // Create category
     const category = await prisma.category.create({
       data: {
         name,
         slug,
         description,
         imageUrl,
-        parentId,
-        displayOrder: finalDisplayOrder,
+        displayOrder,
         isActive
-      },
-      include: {
-        parent: true,
-        children: true,
-        _count: {
-          select: {
-            productCategories: true,
-            children: true
-          }
-        }
       }
     })
 
@@ -158,24 +94,22 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PUT /api/admin/categories - Update category
+// PUT /api/admin/categories - Update existing category
 export async function PUT(request: NextRequest) {
-  // Check admin access
-  const authResult = await requireAdmin(request)
+  // Check staff access (both admin and staff can update categories)
+  const authResult = await requireStaffAccess(request)
   if (authResult instanceof NextResponse) {
     return authResult // Return error response
   }
 
   try {
     const data = await request.json()
-    
     const {
       id,
       name,
       slug,
       description,
       imageUrl,
-      parentId,
       displayOrder,
       isActive
     } = data
@@ -195,14 +129,7 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    // Prevent category from being its own parent
-    if (parentId === id) {
-      return NextResponse.json(
-        { error: 'Category cannot be its own parent' },
-        { status: 400 }
-      )
-    }
-
+    // Update category
     const category = await prisma.category.update({
       where: { id },
       data: {
@@ -210,19 +137,8 @@ export async function PUT(request: NextRequest) {
         slug,
         description,
         imageUrl,
-        parentId,
         displayOrder,
         isActive
-      },
-      include: {
-        parent: true,
-        children: true,
-        _count: {
-          select: {
-            productCategories: true,
-            children: true
-          }
-        }
       }
     })
 

@@ -24,6 +24,8 @@ interface Category {
 interface ProductFormProps {
   categories: Category[]
   product?: any // For edit mode
+  defaultCategoryId?: string // For setting default category
+  redirectPath?: string // Custom redirect path after creation/update
 }
 
 interface ProductImage {
@@ -34,7 +36,7 @@ interface ProductImage {
   sortOrder?: number
 }
 
-export function ProductForm({ categories, product }: ProductFormProps) {
+export function ProductForm({ categories, product, defaultCategoryId, redirectPath }: ProductFormProps) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   
@@ -49,7 +51,7 @@ export function ProductForm({ categories, product }: ProductFormProps) {
     lowStockThreshold: product?.lowStockThreshold || '10',
     sku: product?.sku || '',
     weight: product?.weight || '',
-    categoryIds: product?.categoryIds || [], // Array of category IDs
+    categoryIds: product?.categoryIds || (defaultCategoryId ? [defaultCategoryId] : []), // Use default category if provided
     isActive: product?.isActive ?? true,
     isFeatured: product?.isFeatured ?? false
   })
@@ -178,7 +180,7 @@ export function ProductForm({ categories, product }: ProductFormProps) {
       
       if (product) {
         toast.success('Product updated successfully!')
-        router.push('/admin/products')
+        router.push(redirectPath || '/admin/products')
       } else {
         toast.success('Product created successfully!')
         
@@ -189,7 +191,7 @@ export function ProductForm({ categories, product }: ProductFormProps) {
             router.push(`/admin/products/${result.id}/edit`)
           }, 1500)
         } else {
-          router.push('/admin/products')
+          router.push(redirectPath || '/admin/products')
         }
       }
     } catch (error: any) {

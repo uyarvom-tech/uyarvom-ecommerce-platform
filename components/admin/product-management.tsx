@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
+import { DeletionTicketModal } from "@/components/admin/deletion-ticket-modal"
 import { 
   Plus, 
   Search, 
@@ -69,9 +70,10 @@ interface ProductManagementProps {
     total: number
     pages: number
   }
+  userRole?: string // Add user role prop
 }
 
-export function ProductManagement({ initialProducts, categories, pagination }: ProductManagementProps) {
+export function ProductManagement({ initialProducts, categories, pagination, userRole = 'staff' }: ProductManagementProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [allProducts, setAllProducts] = useState<Product[]>(initialProducts) // Store all products
@@ -81,6 +83,13 @@ export function ProductManagement({ initialProducts, categories, pagination }: P
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [productToDelete, setProductToDelete] = useState<string | null>(null)
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false)
+  const [deletionTicketOpen, setDeletionTicketOpen] = useState(false)
+  const [ticketProductId, setTicketProductId] = useState<string | null>(null)
+  const [ticketProductName, setTicketProductName] = useState<string>('')
+  const [bulkTicketOpen, setBulkTicketOpen] = useState(false)
+  
+  // Check if user is admin (can delete directly)
+  const isAdmin = userRole === 'super_admin'
   
   // Filter states - don't use URL params for initial state to avoid conflicts
   const [searchQuery, setSearchQuery] = useState('')
@@ -179,7 +188,11 @@ export function ProductManagement({ initialProducts, categories, pagination }: P
     }
 
     if (action === 'delete') {
-      setBulkDeleteDialogOpen(true)
+      if (isAdmin) {
+        setBulkDeleteDialogOpen(true)
+      } else {
+        setBulkTicketOpen(true)
+      }
       return
     }
 
@@ -276,8 +289,18 @@ export function ProductManagement({ initialProducts, categories, pagination }: P
 
   // Handle single product delete
   const handleDelete = (productId: string) => {
-    setProductToDelete(productId)
-    setDeleteDialogOpen(true)
+    const product = allProducts.find(p => p.id === productId)
+    if (!product) return
+
+    if (isAdmin) {
+      setProductToDelete(productId)
+      setDeleteDialogOpen(true)
+    } else {
+      // Staff users create deletion ticket
+      setTicketProductId(productId)
+      setTicketProductName(product.name)
+      setDeletionTicketOpen(true)
+    }
   }
 
   // Handle single delete confirmation
@@ -344,6 +367,41 @@ export function ProductManagement({ initialProducts, categories, pagination }: P
   const getPrimaryImage = (product: Product) => {
     const primaryImage = product.images.find(img => img.isPrimary)
     return primaryImage?.imageUrl || product.images[0]?.imageUrl || '/placeholder-product.png'
+  }
+
+  // Handle bulk deletion ticket creation
+  const handleBulkTicketCreation = async () => {
+    if (selectedProducts.length === 0) return
+
+    setIsLoading(true)
+    setBulkTicketOpen(false)
+    
+    try {
+      const selectedProductsData = allProducts.filter(p => selectedProducts.includes(p.id))
+      
+      // Create deletion tickets for all selected products
+      const promises = selectedProductsData.map(product => 
+        fetch('/api/admin/deletion-tickets', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'product',
+            itemId: product.id,
+            itemName: product.name,
+            reason: `Bulk deletion request for ${selectedProducts.length} products`
+          })
+        })
+      )
+
+      await Promise.all(promises)
+      toast.success(`Deletion requests submitted for ${selectedProducts.length} products`)
+      setSelectedProducts([])
+    } catch (error: any) {
+      console.error('Bulk ticket creation error:', error)
+      toast.error('Failed to create deletion requests')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -493,6 +551,7 @@ export function ProductManagement({ initialProducts, categories, pagination }: P
                 onClick={() => handleBulkAction('delete')}
                 disabled={isLoading}
               >
+                <Trash2 className="mr-1 h-3 w-3" />
                 Delete
               </Button>
             </div>
@@ -605,6 +664,7 @@ export function ProductManagement({ initialProducts, categories, pagination }: P
                             variant="ghost"
                             onClick={() => handleDelete(product.id)}
                             disabled={isLoading}
+                            title={isAdmin ? "Delete product" : "Request deletion"}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -705,6 +765,39 @@ export function ProductManagement({ initialProducts, categories, pagination }: P
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Bulk Deletion Request Dialog for Staff */}
+      <AlertDialog open={bulkTicketOpen} onOpenChange={setBulkTicketOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Request Bulk Deletion</AlertDialogTitle>
+            <AlertDialogDescription>
+              You're about to request deletion of {selectedProducts.length} selected products. These requests will be sent to an admin for review.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleBulkTicketCreation}
+              className="bg-orange-600 hover:bg-orange-700"
+            >
+              Submit {selectedProducts.length} Requests
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Single Product Deletion Ticket Modal */}
+      <DeletionTicketModal
+        isOpen={deletionTicketOpen}
+        onClose={() => setDeletionTicketOpen(false)}
+        type="product"
+        itemId={ticketProductId || ''}
+        itemName={ticketProductName}
+        onTicketCreated={() => {
+          toast.success('Deletion request submitted successfully!')
+        }}
+      />
     </div>
   )
 }

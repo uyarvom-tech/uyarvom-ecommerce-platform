@@ -25,6 +25,8 @@ model User {
   cartItems CartItem[]
   reviews   Review[]
   adminUser AdminUser?
+  deletionTicketsRequested DeletionTicket[] @relation("DeletionRequester")
+  deletionTicketsReviewed  DeletionTicket[] @relation("DeletionReviewer")
 
   @@map("users")
 }
@@ -32,7 +34,7 @@ model User {
 model AdminUser {
   id          String   @id @default(cuid())
   userId      String   @unique
-  role        String   @default("moderator") // super_admin, admin, moderator
+  role        String   @default("staff") // admin, staff
   permissions String   @default("[]") // JSON string of permissions array
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -266,4 +268,24 @@ model Review {
 
   @@unique([userId, productId]) // One review per user per product
   @@map("reviews")
+}
+
+// Deletion Request System
+model DeletionTicket {
+  id          String   @id @default(cuid())
+  type        String   // "product" or "category"
+  itemId      String   // ID of the product or category
+  itemName    String   // Name of the item for reference
+  reason      String   // Reason for deletion request
+  status      String   @default("pending") // pending, approved, rejected
+  requestedBy String   // Staff member who requested
+  reviewedBy  String?  // Admin who reviewed (optional)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  requester User  @relation("DeletionRequester", fields: [requestedBy], references: [id])
+  reviewer  User? @relation("DeletionReviewer", fields: [reviewedBy], references: [id])
+
+  @@map("deletion_tickets")
 }

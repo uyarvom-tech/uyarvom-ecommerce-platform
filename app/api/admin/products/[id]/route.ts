@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { requireAdmin } from '@/lib/auth-middleware'
+import { requireStaffAccess, requireAdminRole } from '@/lib/auth-middleware'
 
 // GET /api/admin/products/[id] - Get single product
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  // Check admin access
-  const authResult = await requireAdmin(request)
+  // Check staff access (both admin and staff can view products)
+  const authResult = await requireStaffAccess(request)
   if (authResult instanceof NextResponse) {
     return authResult // Return error response
   }
@@ -58,8 +58,8 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  // Check admin access
-  const authResult = await requireAdmin(request)
+  // Check staff access (both admin and staff can update products)
+  const authResult = await requireStaffAccess(request)
   if (authResult instanceof NextResponse) {
     return authResult // Return error response
   }
@@ -218,13 +218,13 @@ export async function PUT(
   }
 }
 
-// DELETE /api/admin/products/[id] - Delete single product
+// DELETE /api/admin/products/[id] - Delete single product (Admin only)
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  // Check admin access
-  const authResult = await requireAdmin(request)
+  // Check admin role (only admins can delete products directly)
+  const authResult = await requireAdminRole(request)
   if (authResult instanceof NextResponse) {
     return authResult // Return error response
   }

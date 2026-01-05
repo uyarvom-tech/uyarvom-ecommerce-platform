@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { requireAdmin } from '@/lib/auth-middleware'
+import { requireStaffAccess } from '@/lib/auth-middleware'
 
 // GET /api/admin/products - List all products with pagination and filters
 export async function GET(request: NextRequest) {
-  // Check admin access
-  const authResult = await requireAdmin(request)
+  // Check staff access (both admin and staff can view products)
+  const authResult = await requireStaffAccess(request)
   if (authResult instanceof NextResponse) {
     return authResult // Return error response
   }
@@ -95,8 +95,8 @@ export async function GET(request: NextRequest) {
 
 // POST /api/admin/products - Create new product
 export async function POST(request: NextRequest) {
-  // Check admin access
-  const authResult = await requireAdmin(request)
+  // Check staff access (both admin and staff can create products)
+  const authResult = await requireStaffAccess(request)
   if (authResult instanceof NextResponse) {
     return authResult // Return error response
   }
@@ -280,8 +280,8 @@ export async function POST(request: NextRequest) {
 
 // PUT /api/admin/products - Update existing product
 export async function PUT(request: NextRequest) {
-  // Check admin access
-  const authResult = await requireAdmin(request)
+  // Check staff access (both admin and staff can update products)
+  const authResult = await requireStaffAccess(request)
   if (authResult instanceof NextResponse) {
     return authResult // Return error response
   }

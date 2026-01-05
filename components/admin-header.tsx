@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
+import { prisma } from "@/lib/prisma"
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
@@ -21,6 +22,16 @@ export async function AdminHeader() {
     data: { user },
   } = await supabase.auth.getUser()
 
+  // Get user's admin role
+  let isAdmin = false
+  if (user) {
+    const adminUser = await prisma.user.findUnique({
+      where: { email: user.email! },
+      include: { adminUser: true }
+    })
+    isAdmin = adminUser?.adminUser?.role === 'super_admin'
+  }
+
   return (
     <header className="premium-global-nav">
       <div className="max-w-[980px] mx-auto px-6">
@@ -41,18 +52,23 @@ export async function AdminHeader() {
             <Link href="/admin" className="premium-nav-link">
               Dashboard
             </Link>
-            <Link href="/admin/products" className="premium-nav-link">
-              Products
-            </Link>
-            <Link href="/admin/categories" className="premium-nav-link">
-              Categories
+            <Link href="/admin/catalog" className="premium-nav-link">
+              Catalog
             </Link>
             <Link href="/admin/orders" className="premium-nav-link">
               Orders
             </Link>
-            <Link href="/admin/staff" className="premium-nav-link">
-              Staff
-            </Link>
+            {/* Only show Staff and Tickets tabs for admins */}
+            {isAdmin && (
+              <>
+                <Link href="/admin/staff" className="premium-nav-link">
+                  Staff
+                </Link>
+                <Link href="/admin/tickets" className="premium-nav-link">
+                  Tickets
+                </Link>
+              </>
+            )}
             <Link href="/admin/inventory" className="premium-nav-link">
               Inventory
             </Link>

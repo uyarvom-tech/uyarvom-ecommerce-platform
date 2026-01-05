@@ -120,21 +120,21 @@ export default async function AdminDashboard() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <Button asChild className="w-full justify-start">
-                  <Link href="/admin/products/new">
+                  <Link href="/admin/catalog">
                     <Plus className="mr-2 h-4 w-4" />
+                    Manage Catalog
+                  </Link>
+                </Button>
+                <Button asChild variant="outline" className="w-full justify-start">
+                  <Link href="/admin/products/new">
+                    <Package className="mr-2 h-4 w-4" />
                     Add New Product
                   </Link>
                 </Button>
                 <Button asChild variant="outline" className="w-full justify-start">
-                  <Link href="/admin/products">
-                    <Package className="mr-2 h-4 w-4" />
-                    Manage Products
-                  </Link>
-                </Button>
-                <Button asChild variant="outline" className="w-full justify-start">
-                  <Link href="/admin/categories">
+                  <Link href="/admin/orders">
                     <BarChart3 className="mr-2 h-4 w-4" />
-                    Manage Categories
+                    View Orders
                   </Link>
                 </Button>
                 <Button asChild variant="outline" className="w-full justify-start">
