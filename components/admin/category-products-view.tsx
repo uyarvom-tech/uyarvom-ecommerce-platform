@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -76,6 +76,11 @@ export function CategoryProductsView({ category, products: initialProducts, user
   
   // Debug logging
   console.log('CategoryProductsView - userRole:', userRole, 'isAdmin:', isAdmin)
+  
+  // Add effect to log when userRole changes
+  useEffect(() => {
+    console.log('CategoryProductsView - userRole changed to:', userRole, 'isAdmin:', isAdmin)
+  }, [userRole, isAdmin])
 
   // Filter products based on search
   const filteredProducts = products.filter(product =>

@@ -29,6 +29,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'File size must be less than 25MB' }, { status: 400 })
     }
 
+    // For Vercel deployment, check if we're in production
+    if (process.env.VERCEL) {
+      // In Vercel, we should use Vercel Blob Storage or external storage
+      // For now, return an error suggesting external storage setup
+      return NextResponse.json({ 
+        error: 'File upload requires external storage configuration in production. Please set up Vercel Blob Storage or AWS S3.',
+        suggestion: 'For production deployment, configure Vercel Blob Storage in your project settings.'
+      }, { status: 501 })
+    }
+
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
@@ -37,7 +47,7 @@ export async function POST(request: NextRequest) {
     const validTypes = ['products', 'category', 'categories']
     const folderName = validTypes.includes(uploadType) ? (uploadType === 'category' ? 'categories' : uploadType) : 'products'
 
-    // Create uploads directory if it doesn't exist
+    // Create uploads directory if it doesn't exist (local development only)
     const uploadsDir = join(process.cwd(), 'public', 'uploads', folderName)
     if (!existsSync(uploadsDir)) {
       await mkdir(uploadsDir, { recursive: true })
@@ -51,17 +61,20 @@ export async function POST(request: NextRequest) {
     
     const filepath = join(uploadsDir, filename)
     
-    // Write file
+    // Write file (local development only)
     await writeFile(filepath, buffer)
     
     // Return the public URL
     const url = `/uploads/${folderName}/${filename}`
     
+    console.log('✅ File uploaded (local):', url)
+    
     return NextResponse.json({ 
       url,
       filename,
       size: file.size,
-      type: file.type
+      type: file.type,
+      message: 'File uploaded successfully (local development)'
     })
 
   } catch (error) {

@@ -1,23 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { cookies } from 'next/headers'
+import { createClient } from '@/lib/supabase/server'
 
 export async function requireAdmin(request: NextRequest) {
   try {
-    // Temporarily bypass session check for debugging
-    console.log('Auth middleware called for:', request.url)
+    // Get current user from Supabase (which uses demo auth in development)
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
     
-    // Check if there's an admin user in the database
+    console.log('Auth middleware - current user:', user?.email)
+    
+    if (!user) {
+      console.log('No user found')
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
+    // Find the admin user record for this user
     const adminUser = await prisma.adminUser.findFirst({
+      where: {
+        user: {
+          email: user.email
+        }
+      },
       include: {
         user: true
       }
     })
 
-    console.log('Admin user found:', !!adminUser)
+    console.log('Admin user found:', !!adminUser, 'role:', adminUser?.role)
 
     if (!adminUser) {
-      console.log('No admin user found in database')
+      console.log('User is not an admin')
       return NextResponse.json(
         { error: 'Admin access required' },
         { status: 403 }
@@ -115,13 +132,30 @@ export async function checkAdminAccess() {
 // Get current user role for client-side components
 export async function getCurrentUserRole() {
   try {
-    // This is a simplified version for development
-    // In production, you would get the current user from session/auth
+    // Get current user from Supabase (which uses demo auth in development)
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    
+    console.log('getCurrentUserRole - current user:', user?.email)
+    
+    if (!user) {
+      console.log('No user found')
+      return null
+    }
+
+    // Find the admin user record for this user
     const adminUser = await prisma.adminUser.findFirst({
+      where: {
+        user: {
+          email: user.email
+        }
+      },
       include: {
         user: true
       }
     })
+
+    console.log('getCurrentUserRole - admin user found:', !!adminUser, 'role:', adminUser?.role)
 
     return adminUser?.role || null
   } catch (error) {

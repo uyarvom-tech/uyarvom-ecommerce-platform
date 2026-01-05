@@ -30,6 +30,7 @@ export async function AdminHeader() {
       include: { adminUser: true }
     })
     isAdmin = adminUser?.adminUser?.role === 'super_admin'
+    console.log('AdminHeader - user:', user.email, 'isAdmin:', isAdmin, 'role:', adminUser?.adminUser?.role)
   }
 
   return (
