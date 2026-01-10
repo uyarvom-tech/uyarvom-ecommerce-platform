@@ -41,7 +41,7 @@ export default async function CheckoutPage() {
 
   const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single()
 
-  const subtotal = cartItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0)
+  const subtotal = cartItems.reduce((sum: number, item: any) => sum + item.product.price * item.quantity, 0)
   const shippingCost = subtotal >= 999 ? 0 : 50
   const tax = Math.round(subtotal * 0.18) // 18% GST
   const total = subtotal + shippingCost + tax
@@ -76,7 +76,7 @@ export default async function CheckoutPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-3">
-                    {cartItems.map((item) => {
+                    {cartItems.map((item: any) => {
                       const primaryImage =
                         item.product.images?.find((img: any) => img.is_primary) || item.product.images?.[0]
                       return (

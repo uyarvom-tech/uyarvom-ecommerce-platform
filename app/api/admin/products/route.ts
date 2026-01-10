@@ -116,7 +116,8 @@ export async function POST(request: NextRequest) {
       lowStockThreshold,
       sku,
       weight,
-      categoryIds, // Array of category IDs
+      mainCategoryId, // Main category ID (required)
+      subCategoryId,  // Sub category ID (required)
       isActive,
       isFeatured,
       images,
@@ -128,12 +129,26 @@ export async function POST(request: NextRequest) {
     console.log('📊 API POST - Images count:', images?.length || 0)
     console.log('🎨 API POST - Has color variants:', hasColorVariants)
     console.log('🎨 API POST - Color variants:', colorVariants)
-    console.log('🏷️ API POST - Category IDs:', categoryIds)
+    console.log('🏷️ API POST - Main Category ID:', mainCategoryId)
+    console.log('🏷️ API POST - Sub Category ID:', subCategoryId)
 
-    // Validate that at least one category is provided
-    if (!categoryIds || !Array.isArray(categoryIds) || categoryIds.length === 0) {
+    // Validate that both main and sub categories are provided
+    if (!mainCategoryId || !subCategoryId) {
       return NextResponse.json(
-        { error: 'At least one category must be selected' },
+        { error: 'Both main category and sub-category must be selected' },
+        { status: 400 }
+      )
+    }
+
+    // Validate that the sub-category belongs to the main category
+    const subCategory = await prisma.category.findUnique({
+      where: { id: subCategoryId },
+      include: { parent: true }
+    })
+
+    if (!subCategory || subCategory.parentId !== mainCategoryId) {
+      return NextResponse.json(
+        { error: 'Invalid category hierarchy: sub-category must belong to the selected main category' },
         { status: 400 }
       )
     }
@@ -213,10 +228,16 @@ export async function POST(request: NextRequest) {
         isActive,
         isFeatured,
         productCategories: {
-          create: categoryIds.map((categoryId: string, index: number) => ({
-            categoryId,
-            isPrimary: index === 0 // First category is primary
-          }))
+          create: [
+            {
+              categoryId: mainCategoryId,
+              isPrimary: true
+            },
+            {
+              categoryId: subCategoryId,
+              isPrimary: false
+            }
+          ]
         },
         images: {
           create: imagesToCreate

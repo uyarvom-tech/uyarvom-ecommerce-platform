@@ -70,7 +70,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const primaryCategory = product.productCategories.find(pc => pc.isPrimary)?.category || product.productCategories[0]?.category
 
   const hasDiscount = product.compareAtPrice && product.compareAtPrice > product.price
-  const discountPercent = hasDiscount
+  const discountPercent = hasDiscount && product.compareAtPrice
     ? Math.round(((product.compareAtPrice - product.price) / product.compareAtPrice) * 100)
     : 0
 
@@ -162,7 +162,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               <div className="mb-6 rounded-lg bg-secondary/30 p-4">
                 <div className="flex items-baseline gap-3">
                   <span className="font-serif text-4xl font-bold">₹{product.price.toLocaleString("en-IN")}</span>
-                  {hasDiscount && (
+                  {hasDiscount && product.compareAtPrice && (
                     <>
                       <span className="text-xl text-muted-foreground line-through">
                         ₹{product.compareAtPrice.toLocaleString("en-IN")}
@@ -173,7 +173,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                     </>
                   )}
                 </div>
-                {hasDiscount && (
+                {hasDiscount && product.compareAtPrice && (
                   <p className="mt-2 text-sm font-medium text-green-600">
                     You save ₹{(product.compareAtPrice - product.price).toLocaleString("en-IN")} on this purchase!
                   </p>

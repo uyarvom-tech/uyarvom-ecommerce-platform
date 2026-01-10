@@ -10,8 +10,8 @@ interface CategoryTiltedCardProps {
     id: string
     name: string
     slug: string
-    description: string
-    imageUrl?: string
+    description: string | null
+    imageUrl: string | null | undefined
     products?: any[]
     _count?: {
       productCategories: number

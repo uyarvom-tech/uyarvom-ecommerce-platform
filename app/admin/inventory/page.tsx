@@ -68,7 +68,7 @@ export default async function AdminInventoryPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {products?.map((product) => {
+                    {products?.map((product: any) => {
                       const isLowStock = product.stock_quantity <= product.low_stock_threshold
                       const isOutOfStock = product.stock_quantity <= 0
 
@@ -111,7 +111,7 @@ export default async function AdminInventoryPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {recentLogs?.slice(0, 5).map((log) => (
+                    {recentLogs?.slice(0, 5).map((log: any) => (
                       <div key={log.id} className="rounded-lg border p-3">
                         <p className="text-sm font-medium">{log.product?.name}</p>
                         <p className="text-xs text-muted-foreground capitalize">
@@ -140,13 +140,13 @@ export default async function AdminInventoryPage() {
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Out of Stock</span>
                       <span className="font-bold text-destructive">
-                        {products?.filter((p) => p.stock_quantity <= 0).length || 0}
+                        {products?.filter((p: any) => p.stock_quantity <= 0).length || 0}
                       </span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Low Stock</span>
                       <span className="font-bold text-yellow-600">
-                        {products?.filter((p) => p.stock_quantity > 0 && p.stock_quantity <= p.low_stock_threshold)
+                        {products?.filter((p: any) => p.stock_quantity > 0 && p.stock_quantity <= p.low_stock_threshold)
                           .length || 0}
                       </span>
                     </div>

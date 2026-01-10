@@ -3,9 +3,18 @@ import { AdminHeader } from "@/components/admin-header"
 import { ProductForm } from "@/components/admin/product-form"
 
 export default async function NewProductPage() {
-  // Get categories for the form
+  // Get categories with hierarchy for the form
   const categories = await prisma.category.findMany({
     where: { isActive: true },
+    include: {
+      children: {
+        where: { isActive: true },
+        orderBy: [
+          { displayOrder: 'asc' },
+          { name: 'asc' }
+        ]
+      }
+    },
     orderBy: [
       { displayOrder: 'asc' },
       { name: 'asc' }

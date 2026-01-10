@@ -47,8 +47,8 @@ export default async function StaffPage() {
     avatarUrl: user.avatarUrl,
     role: user.adminUser?.role || 'staff',
     permissions: user.adminUser?.permissions || '[]',
-    createdAt: user.createdAt,
-    updatedAt: user.updatedAt,
+    createdAt: user.createdAt.toISOString(),
+    updatedAt: user.updatedAt.toISOString(),
     isActive: true // We'll add this field later if needed
   }))
 

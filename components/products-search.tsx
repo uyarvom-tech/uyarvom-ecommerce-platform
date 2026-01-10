@@ -86,7 +86,7 @@ export function ProductsSearch() {
 
     const params = new URLSearchParams(searchParams.toString())
     params.set('search', queryToSearch.trim())
-    router.push(`/products?${params.toString()}`)
+    router.push(`/?${params.toString()}`)
     setShowSuggestions(false)
     inputRef.current?.blur()
   }
@@ -127,7 +127,7 @@ export function ProductsSearch() {
     setShowSuggestions(false)
     const params = new URLSearchParams(searchParams.toString())
     params.delete('search')
-    router.push(`/products?${params.toString()}`)
+    router.push(`/?${params.toString()}`)
   }
 
   const selectSuggestion = (suggestion: Suggestion) => {

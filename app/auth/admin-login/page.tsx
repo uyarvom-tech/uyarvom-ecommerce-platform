@@ -2,7 +2,6 @@
 
 import type React from "react"
 
-import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -21,25 +20,32 @@ export default function AdminLoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    const supabase = createClient()
     setIsLoading(true)
     setError(null)
 
     try {
-      // Sign in with Supabase
-      const { error: signInError, data } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      // Use the demo authentication API
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
       })
-      if (signInError) throw signInError
 
-      // In demo mode, check user role from user metadata
-      const user = data.user
-      if (!user?.user_metadata?.role || (user.user_metadata.role !== 'admin' && user.user_metadata.role !== 'staff')) {
-        // Not an admin/staff, sign out
-        await supabase.auth.signOut()
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Login failed')
+      }
+
+      // Check if user has admin or staff role
+      if (!['admin', 'staff'].includes(data.user.role)) {
         throw new Error("Access denied. This account does not have admin or staff privileges.")
       }
+
+      // Store user in localStorage for demo auth
+      localStorage.setItem('demo-user', JSON.stringify(data.user))
 
       // Redirect to admin dashboard
       router.push("/admin")

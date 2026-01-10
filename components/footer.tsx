@@ -26,18 +26,18 @@ export function Footer() {
             <h4 className="font-semibold mb-4 text-[17px]">Shop</h4>
             <ul className="space-y-2">
               <li>
-                <Link href="/products" className="apple-link transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-primary/20 inline-block no-underline">
+                <Link href="/" className="apple-link transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-primary/20 inline-block no-underline">
                   All Products
                 </Link>
               </li>
               <li>
-                <Link href="/categories" className="apple-link transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-primary/20 inline-block no-underline">
-                  Categories
+                <Link href="/?tab=ai-match" className="apple-link transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-primary/20 inline-block no-underline">
+                  ✨ AI Kitchen Match
                 </Link>
               </li>
               <li>
-                <Link href="/products?featured=true" className="apple-link transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-primary/20 inline-block no-underline">
-                  Featured
+                <Link href="/?featured=true" className="apple-link transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-primary/20 inline-block no-underline">
+                  Featured Products
                 </Link>
               </li>
             </ul>
@@ -46,6 +46,11 @@ export function Footer() {
           <div>
             <h4 className="font-semibold mb-4 text-[17px]">Support</h4>
             <ul className="space-y-2">
+              <li>
+                <Link href="/support" className="apple-link transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-primary/20 inline-block no-underline">
+                  Help Center
+                </Link>
+              </li>
               <li>
                 <Link href="/contact" className="apple-link transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-primary/20 inline-block no-underline">
                   Contact Us
@@ -61,17 +66,17 @@ export function Footer() {
                   Returns & Exchanges
                 </Link>
               </li>
-              <li>
-                <Link href="/warranty" className="apple-link transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-primary/20 inline-block no-underline">
-                  Warranty
-                </Link>
-              </li>
             </ul>
           </div>
           
           <div>
             <h4 className="font-semibold mb-4 text-[17px]">Company</h4>
             <ul className="space-y-2">
+              <li>
+                <Link href="/hero" className="apple-link transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-primary/20 inline-block no-underline">
+                  Hero Page
+                </Link>
+              </li>
               <li>
                 <Link href="/about" className="apple-link transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-primary/20 inline-block no-underline">
                   About Us

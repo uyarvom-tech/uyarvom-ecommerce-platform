@@ -91,7 +91,7 @@ export default async function AdminProductDetailPage({ params }: { params: { id:
                 <CardContent>
                   {inventoryLogs && inventoryLogs.length > 0 ? (
                     <div className="space-y-3">
-                      {inventoryLogs.map((log) => (
+                      {inventoryLogs.map((log: any) => (
                         <div key={log.id} className="flex items-center justify-between rounded-lg border p-3">
                           <div>
                             <p className="text-sm font-medium capitalize">{log.change_type}</p>

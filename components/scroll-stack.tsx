@@ -36,17 +36,17 @@ export default function ScrollStack({ children, className = '' }: ScrollStackPro
       const containerHeight = containerRect.height
       const windowHeight = window.innerHeight
 
-      // Calculate overall progress through the container with better bounds
-      const scrollStart = windowHeight
-      const scrollEnd = containerHeight + windowHeight
+      // Calculate overall progress through the container with adjusted bounds for shorter height
+      const scrollStart = windowHeight * 0.8 // Start earlier
+      const scrollEnd = containerHeight + windowHeight * 0.6 // End earlier
       const scrollProgress = Math.max(0, Math.min(1, (scrollStart - containerTop) / scrollEnd))
 
       items.forEach((item, index) => {
         const element = item as HTMLElement
         
-        // Adjust timing so each card has more time to settle
-        const itemStartProgress = (index * 0.8) / items.length // Slower progression
-        const itemEndProgress = ((index + 1) * 0.8) / items.length
+        // Adjust timing for faster progression due to shorter height
+        const itemStartProgress = (index * 0.6) / items.length // Faster progression
+        const itemEndProgress = ((index + 1) * 0.6) / items.length
         
         // Calculate individual item progress with better bounds
         let itemProgress = 0
@@ -60,11 +60,11 @@ export default function ScrollStack({ children, className = '' }: ScrollStackPro
           ? 2 * itemProgress * itemProgress 
           : 1 - Math.pow(-2 * itemProgress + 2, 3) / 2
         
-        // Calculate transforms for upward stacking effect
-        const translateY = (1 - easeProgress) * 30 // Reduced movement
-        const scale = 0.9 + (easeProgress * 0.1) // Less dramatic scaling
-        const opacity = easeProgress < 0.2 ? 0 : 1 // Better visibility threshold
-        const rotate = (1 - easeProgress) * 2 // Reduced rotation
+        // Calculate transforms for upward stacking effect (adjusted for shorter height)
+        const translateY = (1 - easeProgress) * 20 // Further reduced movement for shorter cards
+        const scale = 0.92 + (easeProgress * 0.08) // Subtle scaling
+        const opacity = easeProgress < 0.15 ? 0 : 1 // Earlier visibility threshold
+        const rotate = (1 - easeProgress) * 1.5 // Minimal rotation
         
         // Apply transforms
         element.style.transform = `translateY(${translateY}%) scale(${scale}) rotate(${rotate}deg)`

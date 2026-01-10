@@ -93,7 +93,7 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
 
           {/* Orders List */}
           <div className="space-y-4">
-            {orders?.map((order) => (
+            {orders?.map((order: any) => (
               <Link key={order.id} href={`/admin/orders/${order.id}`}>
                 <Card className="transition-all hover:shadow-lg">
                   <CardContent className="p-6">

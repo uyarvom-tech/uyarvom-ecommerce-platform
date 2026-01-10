@@ -7,13 +7,17 @@ export default async function CatalogPage() {
   // Get current user role
   const userRole = await getCurrentUserRole()
 
-  // Fetch all categories with product counts
+  // Fetch main categories with product and sub-category counts
   const categories = await prisma.category.findMany({
-    where: { isActive: true },
+    where: { 
+      isActive: true,
+      parentId: null // Only main categories
+    },
     include: {
       _count: {
         select: {
-          productCategories: true
+          productCategories: true,
+          children: true
         }
       }
     },
@@ -23,25 +27,21 @@ export default async function CatalogPage() {
     ]
   })
 
-  // Transform categories to include product count
+  // Transform categories to include counts
   const categoriesWithCount = categories.map(category => ({
     ...category,
-    productCount: category._count.productCategories
+    productCount: category._count.productCategories,
+    subCategoryCount: category._count.children
   }))
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="flex min-h-screen flex-col bg-muted/30">
       <AdminHeader />
       
-      <main className="flex-1 container mx-auto px-6 py-8 max-w-7xl">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight">Catalog Management</h1>
-          <p className="text-muted-foreground">
-            Manage your product categories and inventory
-          </p>
+      <main className="flex-1 px-6 py-8">
+        <div className="container mx-auto max-w-6xl">
+          <CatalogView categories={categoriesWithCount} userRole={userRole || 'staff'} />
         </div>
-
-        <CatalogView categories={categoriesWithCount} userRole={userRole || 'staff'} />
       </main>
     </div>
   )

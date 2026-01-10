@@ -54,6 +54,7 @@ export async function GET() {
     })
   } catch (error) {
     console.error('DEBUG API Error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
 }

@@ -44,11 +44,11 @@ export default function CardNav({
   const menuRef = useRef<HTMLDivElement>(null)
   const overlayRef = useRef<HTMLDivElement>(null)
   const cardsRef = useRef<HTMLDivElement[]>([])
-  const tl = useRef<gsap.core.Timeline>()
+  const tl = useRef<gsap.core.Timeline | null>(null)
 
   useEffect(() => {
     // Initialize timeline
-    tl.current = gsap.timeline({ paused: true })
+    tl.current = gsap.timeline({ paused: true } as gsap.TimelineVars)
     
     if (overlayRef.current && cardsRef.current.length > 0) {
       // Set initial states

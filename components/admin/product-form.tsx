@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -19,6 +19,8 @@ interface Category {
   id: string
   name: string
   slug: string
+  parentId: string | null
+  children?: Category[]
 }
 
 interface ProductFormProps {
@@ -38,7 +40,12 @@ interface ProductImage {
 
 export function ProductForm({ categories, product, defaultCategoryId, redirectPath }: ProductFormProps) {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(false)
+  
+  // Get URL parameters for pre-selecting categories
+  const mainCategoryParam = searchParams.get('mainCategory')
+  const subCategoryParam = searchParams.get('subCategory')
   
   const [formData, setFormData] = useState({
     name: product?.name || '',
@@ -51,7 +58,8 @@ export function ProductForm({ categories, product, defaultCategoryId, redirectPa
     lowStockThreshold: product?.lowStockThreshold || '10',
     sku: product?.sku || '',
     weight: product?.weight || '',
-    categoryIds: product?.categoryIds || (defaultCategoryId ? [defaultCategoryId] : []), // Use default category if provided
+    mainCategoryId: product?.mainCategoryId || mainCategoryParam || defaultCategoryId || '',
+    subCategoryId: product?.subCategoryId || subCategoryParam || '',
     isActive: product?.isActive ?? true,
     isFeatured: product?.isFeatured ?? false
   })
@@ -71,9 +79,29 @@ export function ProductForm({ categories, product, defaultCategoryId, redirectPa
   const [hasColorVariants, setHasColorVariants] = useState(product?.hasColorVariants || false)
   const [colorVariants, setColorVariants] = useState<any[]>(product?.colorVariants || [])
 
+  // Organize categories into main and sub categories
+  const mainCategories = categories.filter(cat => !cat.parentId)
+  const subCategoriesByParent = categories
+    .filter(cat => cat.parentId)
+    .reduce((acc, cat) => {
+      if (!acc[cat.parentId!]) acc[cat.parentId!] = []
+      acc[cat.parentId!].push(cat)
+      return acc
+    }, {} as Record<string, Category[]>)
+
+  // Get available sub-categories for selected main category
+  const availableSubCategories = formData.mainCategoryId 
+    ? subCategoriesByParent[formData.mainCategoryId] || []
+    : []
+
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => {
       const newData = { ...prev, [field]: value }
+      
+      // If main category changes, reset sub-category
+      if (field === 'mainCategoryId') {
+        newData.subCategoryId = ''
+      }
       
       // Auto-generate slug from name
       if (field === 'name' && !product) {
@@ -102,12 +130,12 @@ export function ProductForm({ categories, product, defaultCategoryId, redirectPa
 
     try {
       // Validate required fields
-      if (!formData.name || !formData.slug || !formData.price || !formData.categoryIds.length) {
-        throw new Error('Please fill in all required fields and select at least one category')
+      if (!formData.name || !formData.slug || !formData.price || !formData.mainCategoryId || !formData.subCategoryId) {
+        throw new Error('Please fill in all required fields including main category and sub-category')
       }
 
       // Validate that we have images (either regular or color variants)
-      let validImages = []
+      let validImages: any[] = []
       
       if (!hasColorVariants) {
         validImages = images.filter(img => img.imageUrl && img.imageUrl.trim() !== '')
@@ -437,47 +465,76 @@ export function ProductForm({ categories, product, defaultCategoryId, redirectPa
               <CardTitle>Organization</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="categories">Categories *</Label>
-                <div className="space-y-2">
-                  <div className="text-sm text-muted-foreground">
-                    Select one or more categories (first selected will be primary)
-                  </div>
-                  <div className="border rounded-lg p-3 max-h-48 overflow-y-auto">
-                    {categories.map((category) => (
-                      <div key={category.id} className="flex items-center space-x-2 py-1">
-                        <Checkbox
-                          id={`category-${category.id}`}
-                          checked={formData.categoryIds.includes(category.id)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              handleInputChange('categoryIds', [...formData.categoryIds, category.id])
-                            } else {
-                              handleInputChange('categoryIds', formData.categoryIds.filter(id => id !== category.id))
-                            }
-                          }}
-                        />
-                        <Label 
-                          htmlFor={`category-${category.id}`}
-                          className="text-sm font-normal cursor-pointer flex-1"
-                        >
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <Label htmlFor="mainCategory">Main Category *</Label>
+                  <Select 
+                    value={formData.mainCategoryId} 
+                    onValueChange={(value) => handleInputChange('mainCategoryId', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select main category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {mainCategories.map((category) => (
+                        <SelectItem key={category.id} value={category.id}>
                           {category.name}
-                          {formData.categoryIds[0] === category.id && (
-                            <span className="ml-2 text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded">
-                              PRIMARY
-                            </span>
-                          )}
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                  {formData.categoryIds.length > 0 && (
-                    <div className="text-xs text-muted-foreground">
-                      Selected: {formData.categoryIds.length} categories
-                    </div>
-                  )}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Choose the primary category for this product
+                  </p>
+                </div>
+                
+                <div>
+                  <Label htmlFor="subCategory">Sub-Category *</Label>
+                  <Select 
+                    value={formData.subCategoryId} 
+                    onValueChange={(value) => handleInputChange('subCategoryId', value)}
+                    disabled={!formData.mainCategoryId}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={
+                        !formData.mainCategoryId 
+                          ? "Select main category first" 
+                          : availableSubCategories.length === 0
+                            ? "No sub-categories available"
+                            : "Select sub-category"
+                      } />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableSubCategories.map((category) => (
+                        <SelectItem key={category.id} value={category.id}>
+                          {category.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {!formData.mainCategoryId 
+                      ? "Select a main category first"
+                      : availableSubCategories.length === 0
+                        ? "No sub-categories available for this main category"
+                        : "Choose the specific sub-category for this product"
+                    }
+                  </p>
                 </div>
               </div>
+              
+              {/* Category Hierarchy Display */}
+              {formData.mainCategoryId && formData.subCategoryId && (
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm font-medium text-blue-800 mb-1">Product Category Path:</p>
+                  <p className="text-sm text-blue-700">
+                    {mainCategories.find(c => c.id === formData.mainCategoryId)?.name} 
+                    {' → '}
+                    {availableSubCategories.find(c => c.id === formData.subCategoryId)?.name}
+                  </p>
+                </div>
+              )}
+              
               <div>
                 <Label htmlFor="weight">Weight (kg)</Label>
                 <Input

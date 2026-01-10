@@ -1,29 +1,26 @@
 {
-  "name": "my-v0-project",
-  "version": "0.1.0",
+  "name": "uyarvom-ecommerce-platform",
+  "version": "1.0.0",
   "private": true,
+  "description": "Modern e-commerce platform for Uyarvom",
   "scripts": {
-    "build": "prisma generate && next build",
     "dev": "next dev",
-    "lint": "eslint .",
+    "build": "next build",
     "start": "next start",
-    "postinstall": "prisma generate",
-    "db:migrate": "prisma migrate deploy",
-    "db:seed": "prisma db seed",
-    "backup:create": "node backup-system/cli.js create",
-    "backup:list": "node backup-system/cli.js list",
-    "backup:restore": "node backup-system/cli.js restore",
-    "backup:auto": "node backup-system/cli.js auto",
-    "db:status": "node check-status.js",
-    "db:safe-migrate": "node -e \"const {SafeOperations} = require('./backup-system/safe-operations'); new SafeOperations().safeMigration().then(() => process.exit(0)).catch(e => {console.error(e); process.exit(1)})\""
-  },
-  "prisma": {
-    "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
+    "lint": "eslint .",
+    "type-check": "tsc --noEmit",
+    "db:migrate": "npx prisma migrate dev",
+    "db:seed": "npx prisma db seed",
+    "db:studio": "npx prisma studio",
+    "db:generate": "npx prisma generate",
+    "db:push": "npx prisma db push",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.490.0",
+    "@aws-sdk/s3-request-presigner": "^3.490.0",
     "@hello-pangea/dnd": "^18.0.1",
     "@hookform/resolvers": "^3.10.0",
-    "@prisma/client": "^5.22.0",
     "@radix-ui/react-accordion": "1.2.2",
     "@radix-ui/react-alert-dialog": "^1.1.4",
     "@radix-ui/react-aspect-ratio": "1.1.1",

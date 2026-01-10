@@ -18,14 +18,12 @@ export async function GET(request: NextRequest) {
         OR: [
           {
             name: {
-              contains: searchTerm,
-              mode: 'insensitive'
+              contains: searchTerm
             }
           },
           {
             sku: {
-              contains: searchTerm,
-              mode: 'insensitive'
+              contains: searchTerm
             }
           },
           {
@@ -33,8 +31,7 @@ export async function GET(request: NextRequest) {
               some: {
                 category: {
                   name: {
-                    contains: searchTerm,
-                    mode: 'insensitive'
+                    contains: searchTerm
                   }
                 }
               }

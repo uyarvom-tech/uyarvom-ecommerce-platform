@@ -45,13 +45,13 @@ export function AddressesList({ addresses, userId }: { addresses: any[]; userId:
     let error
 
     if (editingAddress) {
-      const result = await supabase.from("addresses").update(addressData).eq("id", editingAddress.id)
+      const result = await (supabase.from("addresses").update(addressData).eq("id", editingAddress.id) as any)
       error = result.error
     } else {
-      const result = await supabase.from("addresses").insert({
+      const result = await (supabase.from("addresses").insert({
         ...addressData,
         is_default: addresses.length === 0,
-      })
+      }) as any)
       error = result.error
     }
 
@@ -67,7 +67,7 @@ export function AddressesList({ addresses, userId }: { addresses: any[]; userId:
   }
 
   const handleDelete = async (id: string) => {
-    const { error } = await supabase.from("addresses").delete().eq("id", id)
+    const { error } = await (supabase.from("addresses").delete().eq("id", id) as any)
 
     if (error) {
       toast.error("Failed to delete address")

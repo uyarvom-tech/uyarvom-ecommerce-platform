@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma"
-import { ProductsHeader } from "@/components/products-header"
+import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { ProductCard } from "@/components/product-card"
 import { ProductFilters } from "@/components/product-filters"
@@ -127,7 +127,7 @@ export default async function ProductsPage({
 
   return (
     <div className="flex min-h-screen flex-col bg-background apple-scroll-snap">
-      <ProductsHeader categories={categories || []} />
+      <Header />
       
       <main className="flex-1">
         {/* Search Bar Section - Only show for regular products, not AI tab */}

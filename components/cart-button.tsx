@@ -12,14 +12,13 @@ export function CartButton({ initialCount }: { initialCount: number }) {
   const supabase = createClient()
 
   useEffect(() => {
-    const channel = supabase
+    const channel = (supabase as any)
       .channel("cart_changes")
       .on("postgres_changes", { event: "*", schema: "public", table: "cart_items" }, async () => {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser()
+        const result = await (supabase as any).auth.getUser()
+        const user = result.data?.user
         if (user) {
-          const { count: newCount } = await supabase
+          const { count: newCount } = await (supabase as any)
             .from("cart_items")
             .select("*", { count: "exact", head: true })
             .eq("user_id", user.id)

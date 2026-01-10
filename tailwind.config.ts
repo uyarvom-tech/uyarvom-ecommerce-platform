@@ -18,12 +18,13 @@ const config: Config = {
       },
     },
     extend: {
-      // Apple's font system
+      // Lato font system
       fontFamily: {
         sans: [
+          "var(--font-lato)",
+          "Lato",
           "-apple-system",
           "BlinkMacSystemFont",
-          "SF Pro Display",
           "Segoe UI",
           "Roboto",
           "Helvetica Neue",
@@ -79,12 +80,17 @@ const config: Config = {
           foreground: "rgb(var(--card-foreground))",
         },
       },
-      // Apple's border radius system
+      // Square corners system
       borderRadius: {
-        lg: "var(--radius-lg)",
-        md: "var(--radius-md)",
-        sm: "var(--radius-sm)",
-        xl: "var(--radius-xl)",
+        'none': '0',
+        'sm': '0',
+        'md': '0',
+        'lg': '0',
+        'xl': '0',
+        '2xl': '0',
+        '3xl': '0',
+        'full': '0',
+        DEFAULT: '0'
       },
       // Apple's animation system
       keyframes: {

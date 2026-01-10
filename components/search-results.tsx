@@ -9,7 +9,7 @@ interface Product {
   slug: string
   price: number
   compare_at_price?: number
-  short_description?: string
+  short_description: string | null | undefined
   stock_quantity: number
   category?: { name: string; slug: string }
   images: Array<{ image_url: string; alt_text?: string; is_primary: boolean }>

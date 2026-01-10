@@ -6,7 +6,7 @@ import Image from "next/image"
 import { Menu, X, Heart } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { AuthButton } from "@/components/auth-button"
-import { ThemeToggle } from "@/components/theme-toggle"
+import { ProductsSearch } from "@/components/products-search"
 import { gsap } from "gsap"
 import type { User } from "@supabase/supabase-js"
 
@@ -144,94 +144,23 @@ export function MobileMenu({ user }: MobileMenuProps) {
             {/* Mobile Navigation Links */}
             <nav className="flex-1 px-6 py-6">
               <div className="space-y-2">
+                {/* Mobile Search Bar */}
                 <div 
                   ref={(el) => { if (el) linksRef.current[0] = el }}
-                  className="transform"
+                  className="transform mb-6"
                 >
-                  <Link 
-                    href="/" 
-                    className="block py-4 px-4 text-lg font-medium text-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-all duration-200"
-                    onClick={closeMobileMenu}
-                  >
-                    Home
-                  </Link>
-                </div>
-                
-                <div 
-                  ref={(el) => { if (el) linksRef.current[1] = el }}
-                  className="transform"
-                >
-                  <Link 
-                    href="/products" 
-                    className="block py-4 px-4 text-lg font-medium text-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-all duration-200"
-                    onClick={closeMobileMenu}
-                  >
-                    Store
-                  </Link>
-                </div>
-                
-                <div 
-                  ref={(el) => { if (el) linksRef.current[2] = el }}
-                  className="transform"
-                >
-                  <Link 
-                    href="/categories" 
-                    className="block py-4 px-4 text-lg font-medium text-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-all duration-200"
-                    onClick={closeMobileMenu}
-                  >
-                    Categories
-                  </Link>
-                </div>
-                
-                <div 
-                  ref={(el) => { if (el) linksRef.current[3] = el }}
-                  className="transform"
-                >
-                  <Link 
-                    href="/products?tab=ai-match" 
-                    className="flex items-center gap-3 py-4 px-4 text-lg font-medium text-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-all duration-200"
-                    onClick={closeMobileMenu}
-                  >
-                    <span className="text-xl">✨</span>
-                    AI Kitchen Match
-                  </Link>
-                </div>
-                
-                <div 
-                  ref={(el) => { if (el) linksRef.current[4] = el }}
-                  className="transform"
-                >
-                  <Link 
-                    href="/about" 
-                    className="block py-4 px-4 text-lg font-medium text-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-all duration-200"
-                    onClick={closeMobileMenu}
-                  >
-                    About
-                  </Link>
-                </div>
-                
-                <div 
-                  ref={(el) => { if (el) linksRef.current[5] = el }}
-                  className="transform"
-                >
-                  <Link 
-                    href="/support" 
-                    className="block py-4 px-4 text-lg font-medium text-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-all duration-200"
-                    onClick={closeMobileMenu}
-                  >
-                    Support
-                  </Link>
+                  <ProductsSearch />
                 </div>
 
                 {/* Mobile Menu Divider */}
                 <div 
-                  ref={(el) => { if (el) linksRef.current[6] = el }}
+                  ref={(el) => { if (el) linksRef.current[1] = el }}
                   className="border-t border-border/50 my-6 transform"
                 ></div>
 
                 {/* Mobile Menu Actions */}
                 <div 
-                  ref={(el) => { if (el) linksRef.current[7] = el }}
+                  ref={(el) => { if (el) linksRef.current[2] = el }}
                   className="space-y-2 transform"
                 >
                   <Link 
@@ -242,18 +171,13 @@ export function MobileMenu({ user }: MobileMenuProps) {
                     <Heart className="h-5 w-5" />
                     Wishlist
                   </Link>
-                  
-                  <div className="flex items-center justify-between py-4 px-4">
-                    <span className="text-lg font-medium text-foreground">Theme</span>
-                    <ThemeToggle />
-                  </div>
                 </div>
               </div>
             </nav>
 
             {/* Mobile Menu Footer - Auth Section */}
             <div 
-              ref={(el) => { if (el) linksRef.current[8] = el }}
+              ref={(el) => { if (el) linksRef.current[3] = el }}
               className="p-6 border-t border-border/50 transform"
             >
               {user ? (

@@ -37,6 +37,28 @@ export default async function TicketsPage() {
     ]
   })
 
+  // Transform tickets to match the interface
+  const transformedTickets = tickets.map(ticket => ({
+    id: ticket.id,
+    type: ticket.type as 'product' | 'category',
+    itemId: ticket.itemId,
+    itemName: ticket.itemName,
+    reason: ticket.reason,
+    status: ticket.status as 'pending' | 'approved' | 'rejected',
+    createdAt: ticket.createdAt.toISOString(),
+    updatedAt: ticket.updatedAt.toISOString(),
+    requester: {
+      id: ticket.requester.id,
+      email: ticket.requester.email,
+      fullName: ticket.requester.fullName || undefined
+    },
+    reviewer: ticket.reviewer ? {
+      id: ticket.reviewer.id,
+      email: ticket.reviewer.email,
+      fullName: ticket.reviewer.fullName || undefined
+    } : undefined
+  }))
+
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <AdminHeader />
@@ -49,7 +71,7 @@ export default async function TicketsPage() {
           </p>
         </div>
 
-        <TicketManagement tickets={tickets} />
+        <TicketManagement tickets={transformedTickets} />
       </main>
     </div>
   )

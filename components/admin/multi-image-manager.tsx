@@ -23,7 +23,7 @@ interface ProductImage {
   imageUrl: string
   altText: string
   isPrimary: boolean
-  sortOrder: number
+  sortOrder?: number
 }
 
 interface MultiImageManagerProps {

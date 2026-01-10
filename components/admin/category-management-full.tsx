@@ -265,7 +265,7 @@ export function CategoryManagementFull() {
               variant="outline"
               size="sm"
               onClick={() => handleDelete(category)}
-              disabled={category._count?.children > 0 || category._count?.productCategories > 0}
+              disabled={(category._count?.children ?? 0) > 0 || (category._count?.productCategories ?? 0) > 0}
             >
               <Trash2 className="h-4 w-4" />
             </Button>
@@ -334,7 +334,7 @@ export function CategoryManagementFull() {
               <div>
                 <p className="text-sm font-medium">With Products</p>
                 <p className="text-2xl font-bold">
-                  {flatCategories.filter(c => c._count?.productCategories > 0).length}
+                  {flatCategories.filter(c => (c._count?.productCategories ?? 0) > 0).length}
                 </p>
               </div>
             </div>
@@ -514,12 +514,12 @@ export function CategoryManagementFull() {
             <AlertDialogTitle>Delete Category</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to delete "{categoryToDelete?.name}"? This action cannot be undone.
-              {categoryToDelete?._count?.children > 0 && (
+              {categoryToDelete?._count?.children && categoryToDelete._count.children > 0 && (
                 <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded text-amber-800">
                   This category has {categoryToDelete._count.children} subcategories. Please delete or move them first.
                 </div>
               )}
-              {categoryToDelete?._count?.productCategories > 0 && (
+              {categoryToDelete?._count?.productCategories && categoryToDelete._count.productCategories > 0 && (
                 <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-red-800">
                   This category has {categoryToDelete._count.productCategories} products. Please move them to other categories first.
                 </div>

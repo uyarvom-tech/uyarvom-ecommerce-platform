@@ -1,25 +1,30 @@
 # Uyarvom E-commerce Platform
 
-A modern e-commerce platform built with Next.js, React, and Tailwind CSS.
+Modern e-commerce platform built with Next.js 16, TypeScript, and Prisma.
 
-## How to Run
+## Quick Start
 
-1. **Install dependencies:**
-   ```bash
-   npm install
-   ```
+```bash
+npm install
+cp .env.example .env.local
+npx prisma migrate dev
+npm run dev
+```
 
-2. **Run the development server:**
-   ```bash
-   npm run dev
-   ```
+Visit `http://localhost:3000`
 
-3. **Open your browser:**
-   Navigate to [http://localhost:3000](http://localhost:3000)
+## Admin Access
 
-## Available Scripts
+- Email: `admin@uyarvom.com`
+- Password: `admin123`
 
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm start` - Start production server
-- `npm run lint` - Run ESLint
+## Documentation
+
+See [docs/README.md](./docs/README.md) for complete documentation.
+
+## Tech Stack
+
+- Next.js 16 + TypeScript
+- Prisma + SQLite/PostgreSQL  
+- Supabase Auth
+- Tailwind CSS + Radix UI

@@ -68,7 +68,7 @@ export default async function OrdersPage() {
             </Card>
           ) : (
             <div className="space-y-4">
-              {orders.map((order) => {
+              {orders.map((order: any) => {
                 const firstItem = order.items?.[0]
                 const primaryImage =
                   firstItem?.product?.images?.find((img: any) => img.is_primary) || firstItem?.product?.images?.[0]

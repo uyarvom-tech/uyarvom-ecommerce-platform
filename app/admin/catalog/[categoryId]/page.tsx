@@ -1,67 +1,67 @@
 import { prisma } from "@/lib/prisma"
 import { AdminHeader } from "@/components/admin-header"
-import { CategoryProductsView } from "@/components/admin/category-products-view"
+import { CategoryDetailView } from "@/components/admin/category-detail-view"
 import { getCurrentUserRole } from "@/lib/auth-middleware"
 import { notFound } from "next/navigation"
 
-interface CategoryDetailPageProps {
+export default async function CategoryDetailPage({
+  params,
+}: {
   params: Promise<{ categoryId: string }>
-}
-
-export default async function CategoryDetailPage({ params }: CategoryDetailPageProps) {
+}) {
   const { categoryId } = await params
 
   // Get current user role
   const userRole = await getCurrentUserRole()
 
-  // Fetch category with products
-  const category = await prisma.category.findUnique({
-    where: { id: categoryId },
-    include: {
-      productCategories: {
-        include: {
-          product: {
-            include: {
-              images: {
-                orderBy: { sortOrder: 'asc' }
-              },
-              productCategories: {
-                include: {
-                  category: true
-                },
-                orderBy: { isPrimary: 'desc' }
-              }
-            }
-          }
-        }
-      }
+  // Get the main category
+  const mainCategory = await prisma.category.findUnique({
+    where: { 
+      id: categoryId,
+      parentId: null // Ensure it's a main category
     }
   })
 
-  if (!category) {
+  if (!mainCategory) {
     notFound()
   }
 
-  // Transform products data
-  const products = category.productCategories.map(pc => ({
-    ...pc.product,
-    categories: pc.product.productCategories.map(pcat => ({
-      id: pcat.category.id,
-      name: pcat.category.name,
-      isPrimary: pcat.isPrimary
-    }))
+  // Get sub-categories for this main category
+  const subCategories = await prisma.category.findMany({
+    where: { 
+      parentId: categoryId,
+      isActive: true 
+    },
+    include: {
+      _count: {
+        select: {
+          productCategories: true
+        }
+      }
+    },
+    orderBy: [
+      { displayOrder: 'asc' },
+      { name: 'asc' }
+    ]
+  })
+
+  // Transform sub-categories to include product count
+  const subCategoriesWithCount = subCategories.map(subCategory => ({
+    ...subCategory,
+    productCount: subCategory._count.productCategories
   }))
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="flex min-h-screen flex-col bg-muted/30">
       <AdminHeader />
-      
-      <main className="flex-1 container mx-auto px-6 py-8 max-w-7xl">
-        <CategoryProductsView 
-          category={category}
-          products={products}
-          userRole={userRole || 'staff'}
-        />
+      <main className="flex-1 px-6 py-8">
+        <div className="container mx-auto max-w-6xl">
+          <CategoryDetailView 
+            mainCategory={mainCategory}
+            subCategories={subCategoriesWithCount}
+            userRole={userRole || 'staff'}
+          />
+        </div>
       </main>
     </div>
   )

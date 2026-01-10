@@ -1,13 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { cookies } from 'next/headers'
-import { createClient } from '@/lib/supabase/server'
+import { getUserById } from '@/lib/demo-users'
+
+// Helper function to get current user from demo auth cookie
+async function getCurrentDemoUser(request: NextRequest) {
+  try {
+    const cookieStore = await cookies()
+    const userCookie = cookieStore.get('demo-user')
+    
+    if (!userCookie?.value) {
+      return null
+    }
+
+    const user = JSON.parse(userCookie.value)
+    return user
+  } catch (error) {
+    console.error('Error parsing demo user cookie:', error)
+    return null
+  }
+}
 
 export async function requireAdmin(request: NextRequest) {
   try {
-    // Get current user from Supabase (which uses demo auth in development)
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    // Get current user from demo auth cookie
+    const user = await getCurrentDemoUser(request)
     
     console.log('Auth middleware - current user:', user?.email)
     
@@ -19,30 +36,19 @@ export async function requireAdmin(request: NextRequest) {
       )
     }
 
-    // Find the admin user record for this user
-    const adminUser = await prisma.adminUser.findFirst({
-      where: {
-        user: {
-          email: user.email
-        }
-      },
-      include: {
-        user: true
-      }
-    })
-
-    console.log('Admin user found:', !!adminUser, 'role:', adminUser?.role)
-
-    if (!adminUser) {
-      console.log('User is not an admin')
+    // Check if user has admin or staff role
+    if (!['admin', 'staff'].includes(user.role)) {
+      console.log('User is not an admin or staff')
       return NextResponse.json(
         { error: 'Admin access required' },
         { status: 403 }
       )
     }
 
-    // Return the admin user for use in the route
-    return { user: adminUser.user, adminUser }
+    console.log('Admin user found:', user.email, 'role:', user.role)
+
+    // Return the user for use in the route
+    return { user, adminUser: { role: user.role === 'admin' ? 'super_admin' : 'moderator' } }
   } catch (error) {
     console.error('Auth middleware error:', error)
     return NextResponse.json(
@@ -62,10 +68,10 @@ export async function requireAdminRole(request: NextRequest) {
       return authResult
     }
 
-    const { adminUser } = authResult
+    const { user } = authResult
     
-    // Only users with 'super_admin' role can perform admin-only actions
-    if (adminUser.role !== 'super_admin') {
+    // Only users with 'admin' role can perform admin-only actions
+    if (user.role !== 'admin') {
       return NextResponse.json(
         { error: 'Admin role required for this action' },
         { status: 403 }
@@ -92,10 +98,10 @@ export async function requireStaffAccess(request: NextRequest) {
       return authResult
     }
 
-    const { adminUser } = authResult
+    const { user } = authResult
     
-    // Both 'super_admin' and 'moderator' roles can access staff-level features
-    if (!['super_admin', 'moderator'].includes(adminUser.role)) {
+    // Both 'admin' and 'staff' roles can access staff-level features
+    if (!['admin', 'staff'].includes(user.role)) {
       return NextResponse.json(
         { error: 'Staff access required' },
         { status: 403 }
@@ -115,14 +121,8 @@ export async function requireStaffAccess(request: NextRequest) {
 // Simplified auth check for client-side components
 export async function checkAdminAccess() {
   try {
-    // Check if there's an admin user in the database
-    const adminUser = await prisma.adminUser.findFirst({
-      include: {
-        user: true
-      }
-    })
-
-    return !!adminUser
+    // For demo mode, we'll always return true if there are demo users
+    return true
   } catch (error) {
     console.error('Admin access check failed:', error)
     return false
@@ -132,32 +132,18 @@ export async function checkAdminAccess() {
 // Get current user role for client-side components
 export async function getCurrentUserRole() {
   try {
-    // Get current user from Supabase (which uses demo auth in development)
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const cookieStore = await cookies()
+    const userCookie = cookieStore.get('demo-user')
     
-    console.log('getCurrentUserRole - current user:', user?.email)
-    
-    if (!user) {
-      console.log('No user found')
+    if (!userCookie?.value) {
+      console.log('No user cookie found')
       return null
     }
 
-    // Find the admin user record for this user
-    const adminUser = await prisma.adminUser.findFirst({
-      where: {
-        user: {
-          email: user.email
-        }
-      },
-      include: {
-        user: true
-      }
-    })
+    const user = JSON.parse(userCookie.value)
+    console.log('getCurrentUserRole - current user:', user.email, 'role:', user.role)
 
-    console.log('getCurrentUserRole - admin user found:', !!adminUser, 'role:', adminUser?.role)
-
-    return adminUser?.role || null
+    return user.role === 'admin' ? 'super_admin' : user.role === 'staff' ? 'moderator' : null
   } catch (error) {
     console.error('Get user role failed:', error)
     return null

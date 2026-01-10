@@ -27,7 +27,7 @@ interface StaffMember {
   id: string
   email: string
   fullName: string
-  avatarUrl?: string
+  avatarUrl: string | null
   role: string
   permissions: string
   createdAt: string

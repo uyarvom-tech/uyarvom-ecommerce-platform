@@ -34,7 +34,7 @@ export default async function CartPage() {
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
 
-  const subtotal = cartItems?.reduce((sum, item) => sum + item.product.price * item.quantity, 0) || 0
+  const subtotal = cartItems?.reduce((sum: number, item: any) => sum + item.product.price * item.quantity, 0) || 0
 
   const shippingCost = subtotal >= 999 ? 0 : 50
   const total = subtotal + shippingCost

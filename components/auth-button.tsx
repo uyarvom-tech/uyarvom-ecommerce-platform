@@ -1,6 +1,5 @@
 "use client"
 
-import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -11,50 +10,78 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { User, LogOut, Package, Settings, Shield, Users, Crown } from "lucide-react"
+import { User, LogOut, Package, Settings, Shield, Crown } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useEffect, useState, useMemo } from "react"
+import { useEffect, useState } from "react"
+
+interface DemoUser {
+  id: string
+  email: string
+  full_name: string
+  role: 'admin' | 'customer' | 'staff'
+  phone?: string
+}
 
 export function AuthButton() {
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<DemoUser | null>(null)
   const [loading, setLoading] = useState(true)
   const [mounted, setMounted] = useState(false)
   const router = useRouter()
-  
-  // Memoize the supabase client to prevent recreation on every render
-  const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => {
     setMounted(true)
     
-    const getUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      setUser(user)
+    const getUser = () => {
+      // Check for demo user in localStorage
+      const savedUser = localStorage.getItem('demo-user')
+      if (savedUser) {
+        try {
+          const demoUser = JSON.parse(savedUser)
+          setUser(demoUser)
+        } catch (e) {
+          localStorage.removeItem('demo-user')
+          setUser(null)
+        }
+      } else {
+        setUser(null)
+      }
       setLoading(false)
     }
 
     getUser()
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
-      setLoading(false)
-    })
+    // Listen for storage changes (when user logs in/out in another tab)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'demo-user') {
+        getUser()
+      }
+    }
 
-    return () => subscription.unsubscribe()
-  }, [supabase])
+    window.addEventListener('storage', handleStorageChange)
+    return () => window.removeEventListener('storage', handleStorageChange)
+  }, [])
 
   const handleSignOut = async () => {
     setLoading(true)
-    await supabase.auth.signOut()
-    setUser(null)
-    setLoading(false)
-    router.push("/")
-    router.refresh()
+    
+    try {
+      // Call logout API
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+      })
+      
+      // Clear localStorage
+      localStorage.removeItem('demo-user')
+      setUser(null)
+      
+      router.push("/")
+      router.refresh()
+    } catch (error) {
+      console.error('Logout error:', error)
+    } finally {
+      setLoading(false)
+    }
   }
 
   // Prevent hydration mismatch by not rendering until mounted
@@ -78,17 +105,17 @@ export function AuthButton() {
     return (
       <div className="flex items-center gap-2">
         <Button variant="ghost" size="sm" asChild>
-          <Link href="/auth/login">Sign In</Link>
+          <Link href="/auth/admin-login">Admin Login</Link>
         </Button>
         <Button size="sm" asChild>
-          <Link href="/auth/sign-up">Sign Up</Link>
+          <Link href="/auth/login">Customer Login</Link>
         </Button>
       </div>
     )
   }
 
-  const userRole = user.user_metadata?.role || 'customer'
-  const userName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'User'
+  const userRole = user.role || 'customer'
+  const userName = user.full_name || user.email?.split('@')[0] || 'User'
   const isAdmin = userRole === 'admin'
   const isStaff = userRole === 'staff'
   const canAccessAdmin = isAdmin || isStaff
@@ -165,15 +192,6 @@ export function AuthButton() {
           <Link href="/orders" className="cursor-pointer">
             <Package className="mr-2 h-4 w-4" />
             My Orders
-          </Link>
-        </DropdownMenuItem>
-        
-        {/* Demo Login Link for Easy Role Switching */}
-        <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link href="/demo-login" className="cursor-pointer text-muted-foreground">
-            <Users className="mr-2 h-4 w-4" />
-            Switch User (Demo)
           </Link>
         </DropdownMenuItem>
         

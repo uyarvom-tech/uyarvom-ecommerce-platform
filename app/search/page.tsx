@@ -65,9 +65,19 @@ export default async function SearchPage({
 
   // Transform products for compatibility
   const transformedProducts = products.map(product => ({
-    ...product,
+    id: product.id,
+    name: product.name,
+    slug: product.slug,
+    price: product.price,
+    compare_at_price: product.compareAtPrice || undefined,
+    short_description: product.shortDescription,
+    stock_quantity: product.stockQuantity,
     category: product.productCategories.find(pc => pc.isPrimary)?.category || product.productCategories[0]?.category,
-    categories: product.productCategories.map(pc => pc.category)
+    images: product.images.map(img => ({
+      image_url: img.imageUrl,
+      alt_text: img.altText || undefined,
+      is_primary: img.isPrimary
+    }))
   }))
 
   return (

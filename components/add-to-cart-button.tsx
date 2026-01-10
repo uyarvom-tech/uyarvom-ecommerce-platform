@@ -48,11 +48,11 @@ export function AddToCartButton({ product }: { product: any }) {
       }
     } else {
       // Insert new item
-      const { error } = await supabase.from("cart_items").insert({
+      const { error } = await (supabase.from("cart_items").insert({
         user_id: user.id,
         product_id: product.id,
         quantity,
-      })
+      }) as any)
 
       if (error) {
         toast.error("Failed to add to cart")

@@ -4,9 +4,45 @@ import Link from "next/link"
 import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
 import { Star } from "lucide-react"
+import { useState, useEffect } from "react"
 
 export function ProductCard({ product }: { product: any }) {
-  const primaryImage = product.images?.find((img: any) => img.isPrimary || img.is_primary) || product.images?.[0]
+  const [currentImageIndex, setCurrentImageIndex] = useState(0)
+  const [isHovering, setIsHovering] = useState(false)
+  
+  // Filter to get only main product images (not color variant images)
+  // Main product images are in product.images, color variant images are in product.variants[].images
+  const mainImages = (product.images || []).filter((img: any) => 
+    img && (img.imageUrl || img.image_url) && (img.imageUrl || img.image_url).trim() !== ''
+  )
+  
+  const hasMultipleImages = mainImages.length > 1
+  
+  // Create a safe placeholder URL
+  const placeholderUrl = `/placeholder.svg?height=400&width=400&query=${encodeURIComponent(product.name || 'product')}`
+  
+  // Use main images if available, otherwise use placeholder
+  const displayImages = mainImages.length > 0 ? mainImages : [{ imageUrl: placeholderUrl, altText: product.name }]
+  
+  // Auto-cycle through images on hover (only if we have actual multiple images)
+  useEffect(() => {
+    if (!isHovering || !hasMultipleImages || mainImages.length <= 1) return
+    
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prev) => (prev + 1) % mainImages.length)
+    }, 2000) // Change image every 2 seconds for better viewing
+    
+    return () => clearInterval(interval)
+  }, [isHovering, hasMultipleImages, mainImages.length])
+  
+  // Reset to first image when not hovering
+  useEffect(() => {
+    if (!isHovering) {
+      setCurrentImageIndex(0)
+    }
+  }, [isHovering])
+  
+  const currentImage = displayImages[currentImageIndex] || displayImages[0]
   
   // Fix discount calculation logic
   const comparePrice = product.compareAtPrice || product.compare_at_price
@@ -20,109 +56,128 @@ export function ProductCard({ product }: { product: any }) {
   const isLowStock = (product.stockQuantity || product.stock_quantity) <= (product.lowStockThreshold || product.low_stock_threshold || 10) && (product.stockQuantity || product.stock_quantity) > 0
   const isNew = new Date(product.createdAt || product.created_at) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // Last 30 days
 
-  // Create a safe placeholder URL
-  const placeholderUrl = `/placeholder.svg?height=400&width=400&query=${encodeURIComponent(product.name || 'product')}`
-  
-  // Try multiple ways to get the image URL
-  let imageUrl = placeholderUrl
-  if (primaryImage?.imageUrl) {
-    imageUrl = primaryImage.imageUrl
-  } else if (primaryImage?.image_url) {
-    imageUrl = primaryImage.image_url
-  } else if (product.images && product.images.length > 0) {
-    // If no primary image, use the first available image
-    imageUrl = product.images[0].imageUrl || product.images[0].image_url || placeholderUrl
-  }
-
   return (
-    <Link href={`/products/${product.slug}`} className="group block h-full">
-      <div className="apple-card p-0 h-full apple-hover-lift flex flex-col">
-        {/* Apple-style Product Image */}
-        <div className="relative aspect-[4/3] overflow-hidden bg-secondary/20 rounded-t-[20px] flex-shrink-0">
-          <Image
-            src={imageUrl}
-            alt={primaryImage?.altText || primaryImage?.alt_text || product.name}
-            width={400}
-            height={300}
-            className="h-full w-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
-          />
+    <Link href={`/products/${product.slug}`} className="group block">
+      <div 
+        className="apple-card p-0 apple-hover-lift"
+        onMouseEnter={() => setIsHovering(true)}
+        onMouseLeave={() => setIsHovering(false)}
+      >
+        {/* Compact Product Card - Image with overlaid info */}
+        <div className="relative aspect-square overflow-hidden bg-secondary/20 rounded-[20px]">
+          {/* Single Image Display with Smooth Transitions */}
+          <div className="relative w-full h-full">
+            {displayImages.map((image, index) => (
+              <div
+                key={index}
+                className={`absolute inset-0 transition-all duration-500 ease-in-out ${
+                  index === currentImageIndex 
+                    ? 'opacity-100 translate-x-0' 
+                    : index < currentImageIndex 
+                      ? 'opacity-0 -translate-x-full' 
+                      : 'opacity-0 translate-x-full'
+                }`}
+              >
+                <Image
+                  src={image?.imageUrl || image?.image_url || placeholderUrl}
+                  alt={image?.altText || image?.alt_text || product.name}
+                  width={400}
+                  height={400}
+                  className="h-full w-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
+                />
+              </div>
+            ))}
+          </div>
 
-          {/* Apple-style Badges */}
-          <div className="absolute right-3 top-3 flex flex-col gap-2">
+          {/* Image Indicators - Show dots if multiple main images */}
+          {hasMultipleImages && mainImages.length > 1 && (
+            <div className="absolute top-2 left-1/2 transform -translate-x-1/2 flex gap-1">
+              {mainImages.map((_, index) => (
+                <div
+                  key={index}
+                  className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
+                    index === currentImageIndex 
+                      ? 'bg-white shadow-lg' 
+                      : 'bg-white/40'
+                  }`}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Top Badges */}
+          <div className="absolute right-2 top-2 flex flex-col gap-1">
             {hasDiscount && (
-              <Badge className="bg-destructive text-destructive-foreground border-0 px-2 py-1 text-xs font-semibold rounded-full apple-shadow">
-                {discountPercent}% OFF
+              <Badge className="bg-destructive text-destructive-foreground border-0 px-1.5 py-0.5 text-[10px] font-semibold rounded-full apple-shadow">
+                {discountPercent}%
               </Badge>
             )}
             {isNew && (
-              <Badge className="bg-primary text-primary-foreground border-0 px-2 py-1 text-xs font-semibold rounded-full apple-shadow">
+              <Badge className="bg-primary text-primary-foreground border-0 px-1.5 py-0.5 text-[10px] font-semibold rounded-full apple-shadow">
                 NEW
-              </Badge>
-            )}
-            {(product.stockQuantity || product.stock_quantity) <= 0 && (
-              <Badge className="bg-muted text-muted-foreground border-0 px-2 py-1 text-xs font-semibold rounded-full apple-shadow">
-                Out of Stock
               </Badge>
             )}
           </div>
 
+          {/* Stock Badge */}
           {isLowStock && (
-            <div className="absolute bottom-3 left-3">
-              <Badge className="bg-amber-500/90 text-white border-0 px-2 py-1 text-xs font-semibold rounded-full apple-shadow backdrop-blur-sm">
-                ⚡ Only {product.stockQuantity || product.stock_quantity} left
+            <div className="absolute top-2 left-2">
+              <Badge className="bg-amber-500/90 text-white border-0 px-1.5 py-0.5 text-[10px] font-semibold rounded-full apple-shadow backdrop-blur-sm">
+                {product.stockQuantity || product.stock_quantity} left
               </Badge>
             </div>
           )}
 
-          {/* Apple-style Hover Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 transition-all duration-300 group-hover:opacity-100" />
-        </div>
+          {/* Out of Stock Overlay */}
+          {(product.stockQuantity || product.stock_quantity) <= 0 && (
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center rounded-[20px]">
+              <Badge className="bg-white/90 text-black border-0 px-3 py-1 text-xs font-semibold rounded-full">
+                Out of Stock
+              </Badge>
+            </div>
+          )}
 
-        {/* Apple-style Product Info */}
-        <div className="p-4 flex flex-col flex-1">
-          <p className="text-xs font-semibold uppercase tracking-wider text-primary mb-2">
-            {product.primaryCategory?.name || product.categories?.[0]?.name || product.category?.name || 'Uncategorized'}
-          </p>
-          
-          <h3 className="text-lg font-semibold mb-2 leading-tight group-hover:text-primary transition-colors duration-300 min-h-[3.5rem] flex items-start">
-            <span className="line-clamp-2">{product.name}</span>
-          </h3>
-          
-          <p className="apple-body text-sm mb-3 line-clamp-2 leading-relaxed flex-1 min-h-[2.5rem]">
-            {product.shortDescription || product.short_description}
-          </p>
-
-          {/* Apple-style Pricing */}
-          <div className="flex items-center justify-between mb-3 mt-auto">
-            <div>
-              <div className="flex items-baseline gap-2">
-                <span className="text-xl font-semibold tracking-tight">
+          {/* Bottom Info Overlay */}
+          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-3 rounded-b-[20px]">
+            {/* Product Name */}
+            <h3 className="text-white text-sm font-semibold leading-tight line-clamp-1 mb-1">
+              {product.name}
+            </h3>
+            
+            {/* Price and Rating Row */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-baseline gap-1">
+                <span className="text-white text-base font-bold tracking-tight">
                   ₹{product.price.toLocaleString("en-IN")}
                 </span>
                 {hasDiscount && (
-                  <span className="text-sm text-muted-foreground line-through">
+                  <span className="text-white/70 text-xs line-through">
                     ₹{(product.compareAtPrice || product.compare_at_price).toLocaleString("en-IN")}
                   </span>
                 )}
               </div>
-              {hasDiscount && (
-                <span className="text-xs font-medium text-green-600">
-                  Save ₹{((product.compareAtPrice || product.compare_at_price) - product.price).toLocaleString("en-IN")}
-                </span>
+
+              <div className="flex items-center gap-1">
+                <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                <span className="text-white font-semibold text-xs">4.8</span>
+              </div>
+            </div>
+
+            {/* Category and Image Count */}
+            <div className="flex items-center justify-between mt-1">
+              <p className="text-white/80 text-[10px] font-medium uppercase tracking-wider">
+                {product.productCategories?.[0]?.category?.name || 'Uncategorized'}
+              </p>
+              {hasMultipleImages && mainImages.length > 1 && (
+                <p className="text-white/60 text-[10px] font-medium">
+                  {mainImages.length} photos
+                </p>
               )}
             </div>
-
-            <div className="flex items-center gap-1">
-              <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-              <span className="font-semibold text-sm">4.8</span>
-            </div>
           </div>
 
-          {/* Apple-style Social Proof */}
-          <div className="flex items-center gap-2 text-xs text-muted-foreground pt-2 border-t border-border/50">
-            <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
-            <span>43 people viewing this</span>
-          </div>
+          {/* Hover Overlay */}
+          <div className="absolute inset-0 bg-primary/10 opacity-0 transition-all duration-300 group-hover:opacity-100 rounded-[20px]" />
         </div>
       </div>
     </Link>

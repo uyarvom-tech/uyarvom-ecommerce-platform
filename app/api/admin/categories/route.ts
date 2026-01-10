@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireStaffAccess } from '@/lib/auth-middleware'
 
-// GET /api/admin/categories - List all categories
+// GET /api/admin/categories - List all categories with hierarchy
 export async function GET(request: NextRequest) {
   // Check staff access (both admin and staff can view categories)
   const authResult = await requireStaffAccess(request)
@@ -15,8 +15,33 @@ export async function GET(request: NextRequest) {
       include: {
         _count: {
           select: {
-            productCategories: true
+            productCategories: true,
+            children: true
           }
+        },
+        parent: {
+          select: {
+            id: true,
+            name: true,
+            slug: true
+          }
+        },
+        children: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            isActive: true,
+            _count: {
+              select: {
+                productCategories: true
+              }
+            }
+          },
+          orderBy: [
+            { displayOrder: 'asc' },
+            { name: 'asc' }
+          ]
         }
       },
       orderBy: [
@@ -25,10 +50,15 @@ export async function GET(request: NextRequest) {
       ]
     })
 
-    // Transform categories to include product count
+    // Transform categories to include product count and hierarchy info
     const categoriesWithCount = categories.map(category => ({
       ...category,
-      productCount: category._count.productCategories
+      productCount: category._count.productCategories,
+      subCategoryCount: category._count.children,
+      children: category.children.map(child => ({
+        ...child,
+        productCount: child._count.productCategories
+      }))
     }))
 
     return NextResponse.json({ categories: categoriesWithCount })
@@ -41,7 +71,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/admin/categories - Create new category
+// POST /api/admin/categories - Create new category (main or sub-category)
 export async function POST(request: NextRequest) {
   // Check staff access (both admin and staff can create categories)
   const authResult = await requireStaffAccess(request)
@@ -57,7 +87,8 @@ export async function POST(request: NextRequest) {
       description,
       imageUrl,
       displayOrder,
-      isActive
+      isActive,
+      parentId
     } = data
 
     // Check if slug already exists
@@ -72,6 +103,28 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // If parentId is provided, validate that parent exists
+    if (parentId) {
+      const parentCategory = await prisma.category.findUnique({
+        where: { id: parentId }
+      })
+
+      if (!parentCategory) {
+        return NextResponse.json(
+          { error: 'Parent category not found' },
+          { status: 400 }
+        )
+      }
+
+      // Prevent creating sub-categories of sub-categories (max 2 levels)
+      if (parentCategory.parentId) {
+        return NextResponse.json(
+          { error: 'Cannot create sub-categories of sub-categories. Maximum 2 levels allowed.' },
+          { status: 400 }
+        )
+      }
+    }
+
     // Create category
     const category = await prisma.category.create({
       data: {
@@ -80,7 +133,17 @@ export async function POST(request: NextRequest) {
         description,
         imageUrl,
         displayOrder,
-        isActive
+        isActive,
+        parentId: parentId || null
+      },
+      include: {
+        parent: {
+          select: {
+            id: true,
+            name: true,
+            slug: true
+          }
+        }
       }
     })
 
@@ -111,7 +174,8 @@ export async function PUT(request: NextRequest) {
       description,
       imageUrl,
       displayOrder,
-      isActive
+      isActive,
+      parentId
     } = data
 
     // Check if slug already exists for different category
@@ -129,6 +193,48 @@ export async function PUT(request: NextRequest) {
       )
     }
 
+    // If parentId is provided, validate that parent exists and prevent circular references
+    if (parentId) {
+      const parentCategory = await prisma.category.findUnique({
+        where: { id: parentId }
+      })
+
+      if (!parentCategory) {
+        return NextResponse.json(
+          { error: 'Parent category not found' },
+          { status: 400 }
+        )
+      }
+
+      // Prevent circular references (category cannot be its own parent or grandparent)
+      if (parentId === id) {
+        return NextResponse.json(
+          { error: 'Category cannot be its own parent' },
+          { status: 400 }
+        )
+      }
+
+      // Prevent creating sub-categories of sub-categories (max 2 levels)
+      if (parentCategory.parentId) {
+        return NextResponse.json(
+          { error: 'Cannot create sub-categories of sub-categories. Maximum 2 levels allowed.' },
+          { status: 400 }
+        )
+      }
+
+      // Check if this category has children - if so, it cannot become a sub-category
+      const hasChildren = await prisma.category.findFirst({
+        where: { parentId: id }
+      })
+
+      if (hasChildren) {
+        return NextResponse.json(
+          { error: 'Categories with sub-categories cannot be moved under another category' },
+          { status: 400 }
+        )
+      }
+    }
+
     // Update category
     const category = await prisma.category.update({
       where: { id },
@@ -138,7 +244,17 @@ export async function PUT(request: NextRequest) {
         description,
         imageUrl,
         displayOrder,
-        isActive
+        isActive,
+        parentId: parentId || null
+      },
+      include: {
+        parent: {
+          select: {
+            id: true,
+            name: true,
+            slug: true
+          }
+        }
       }
     })
 

@@ -3,6 +3,11 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Lato Font Configuration */
+* {
+  font-family: 'Lato', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+}
+
 /* Apple Design System - Inspired by apple.com with Gold Theme */
 :root {
   /* Warm background with subtle gold tint */
@@ -45,8 +50,12 @@
   --chart-4: 166 114 22;
   --chart-5: 139 94 20;
 
-  /* Apple's generous rounded corners */
-  --radius: 18px;
+  /* Square corners */
+  --radius: 0px;
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
 }
 
 .dark {
@@ -625,104 +634,218 @@
     animation: apple-scale-in 0.5s cubic-bezier(0.28, 0.11, 0.32, 1) forwards;
   }
 }
-/* Scroll Stack Styles */
-.scroll-stack-container {
+/* Category Carousel Styles */
+.category-carousel-container {
   position: relative;
-  height: 400vh; /* Increased to give more scroll space */
-  padding: 0;
+  width: 100vw;
+  margin-left: calc(-50vw + 50%);
+  height: 60vh;
+  overflow: hidden;
+  border-radius: 0; /* Square corners */
 }
 
-.scroll-stack {
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  perspective: 1000px;
+.category-carousel-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
   overflow: hidden;
 }
 
-.scroll-stack-item {
-  position: absolute;
-  width: 95%;
-  max-width: 1200px;
-  height: 75vh;
-  border-radius: 20px;
-  padding: 3rem;
+.category-carousel-track {
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
+
+.category-carousel-slide {
+  flex: 0 0 100%;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  border-radius: 0; /* Square corners */
+}
+
+.category-carousel-content {
+  display: block;
+  width: 100%;
+  height: 100%;
+  text-decoration: none;
+  color: white;
+  transition: transform 0.3s ease;
+}
+
+.category-carousel-content:hover {
+  transform: scale(1.02);
+}
+
+.category-carousel-text {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  height: 100%;
   text-align: center;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  will-change: transform, opacity;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  overflow: hidden;
-  background-size: cover !important;
-  background-position: center !important;
-  background-repeat: no-repeat !important;
+  padding: 3rem;
+  position: relative;
+  z-index: 2;
 }
 
-.scroll-stack-item:hover {
-  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.35);
-  transform: translateY(-5px) !important;
+.category-carousel-title {
+  font-size: 4rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  color: white;
 }
 
-.scroll-stack-item::before {
-  content: '';
+.category-carousel-description {
+  font-size: 1.5rem;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+  max-width: 600px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.category-carousel-cta {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.category-carousel-indicators {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.6));
-  border-radius: 20px;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 0.75rem;
+  z-index: 10;
+}
+
+.category-carousel-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 0; /* Square corners */
+  background: rgba(255, 255, 255, 0.4);
+  border: none;
+  cursor: pointer;
   transition: all 0.3s ease;
 }
 
-.scroll-stack-item:hover::before {
-  background: linear-gradient(135deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.5));
+.category-carousel-indicator.active {
+  background: rgba(255, 255, 255, 0.9);
+  transform: scale(1.2);
 }
 
-.scroll-stack-item h2 {
-  font-size: 2.5rem;
-  font-weight: 700;
-  margin-bottom: 1rem;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-.scroll-stack-item p {
-  font-size: 1.2rem;
-  line-height: 1.6;
-  opacity: 0.9;
-  max-width: 400px;
+.category-carousel-indicator:hover {
+  background: rgba(255, 255, 255, 0.7);
 }
 
 @media (max-width: 768px) {
-  .scroll-stack-container {
-    padding: 0;
-    height: 320vh; /* Increased mobile height */
+  .category-carousel-container {
+    height: 50vh;
   }
   
-  .scroll-stack-item {
-    width: 95%;
-    height: 70vh;
-    padding: 2rem;
-    border-radius: 16px;
-  }
-  
-  .scroll-stack-item h2 {
-    font-size: 2rem;
+  .category-carousel-title {
+    font-size: 2.5rem;
     margin-bottom: 1rem;
   }
   
-  .scroll-stack-item p {
-    font-size: 1rem;
-    line-height: 1.5;
+  .category-carousel-description {
+    font-size: 1.1rem;
+    margin-bottom: 1.5rem;
   }
+  
+  .category-carousel-cta {
+    font-size: 1rem;
+  }
+  
+  .category-carousel-text {
+    padding: 2rem;
+  }
+}
+
+/* Square Corner Global Styles */
+/* Square Corner Global Styles */
+* {
+  border-radius: 0 !important;
+}
+
+/* Override specific rounded elements */
+.rounded, .rounded-sm, .rounded-md, .rounded-lg, .rounded-xl, .rounded-2xl, .rounded-3xl,
+.rounded-full, .rounded-t, .rounded-r, .rounded-b, .rounded-l,
+.rounded-tl, .rounded-tr, .rounded-br, .rounded-bl {
+  border-radius: 0 !important;
+}
+
+/* Exception: Keep category images rounded */
+.category-icon-hover,
+.category-icon-hover img,
+.category-icon-hover .rounded-full {
+  border-radius: 50% !important;
+}
+
+/* Exception: Keep active indicators rounded */
+.category-icon-hover .animate-pulse {
+  border-radius: 50% !important;
+}
+
+/* Exception: Keep category dropdown menus rounded */
+.animate-slide-down,
+.animate-slide-up-from-bottom {
+  border-radius: 0 0 1rem 1rem !important;
+}
+
+.animate-slide-up-from-bottom {
+  border-radius: 1rem 1rem 0 0 !important;
+}
+
+/* Exception: Keep dropdown buttons and links rounded */
+.animate-slide-down .rounded-xl,
+.animate-slide-up-from-bottom .rounded-xl,
+.animate-slide-down .rounded-lg,
+.animate-slide-up-from-bottom .rounded-lg {
+  border-radius: 0.75rem !important;
+}
+
+.animate-slide-down .rounded-lg,
+.animate-slide-up-from-bottom .rounded-lg {
+  border-radius: 0.5rem !important;
+}
+
+/* Button styles with square corners */
+button, .btn, [role="button"] {
+  border-radius: 0 !important;
+}
+
+/* Input styles with square corners */
+input, textarea, select {
+  border-radius: 0 !important;
+}
+
+/* Card styles with square corners */
+.card, .apple-card {
+  border-radius: 0 !important;
+}
+
+/* Search box and form elements */
+.search-box, .form-control, .input-group {
+  border-radius: 0 !important;
+}
+
+/* Product cards */
+.product-card {
+  border-radius: 0 !important;
+}
+
+/* Dropdown menus */
+.dropdown-menu, .popover, .tooltip {
+  border-radius: 0 !important;
 }
 
 /* AI Sparkle Animations */
@@ -1028,4 +1151,68 @@
 .image-thumbnail.selected {
   border-color: #c9871d !important;
   box-shadow: 0 0 0 2px rgba(201, 135, 29, 0.3);
+}
+/* Scrollbar utilities */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Category Navigation Animations */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-down {
+  animation: slideDown 0.3s ease-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+/* Category icon hover effects */
+.category-icon-hover {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.category-icon-hover:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 8px 25px rgba(201, 135, 29, 0.15);
+}
+
+/* Mobile bottom sheet animation */
+@keyframes slideUpFromBottom {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up-from-bottom {
+  animation: slideUpFromBottom 0.3s ease-out;
 }

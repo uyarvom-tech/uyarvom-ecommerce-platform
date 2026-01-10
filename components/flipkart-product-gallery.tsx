@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils'
 interface ProductImage {
   id?: string
   imageUrl: string
-  altText: string
+  altText: string | null
   isPrimary?: boolean
   sortOrder?: number
 }
@@ -109,7 +109,7 @@ export default function FlipkartProductGallery({
     
     if (selectedColorVariant) {
       // Use the variant's images if available, otherwise fallback to colorImage
-      let imagesToShow = []
+      let imagesToShow: any[] = []
       
       if (selectedColorVariant.images && selectedColorVariant.images.length > 0) {
         // Use the variant's multiple images
