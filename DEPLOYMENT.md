@@ -25,9 +25,10 @@ This guide will help you deploy the Uyarvom e-commerce platform to production us
 
 ### 1.2 Get Database Connection Details
 1. Go to **Settings** → **Database**
-2. Copy the **Connection string** (URI format)
+2. Copy the **Connection string** (URI format) 
 3. Replace `[YOUR-PASSWORD]` with your actual password
 4. Save this as your `DATABASE_URL`
+postgresql://postgres:Uyarvomdb@##5922@db.nwphbpiftvhwvsnurqun.supabase.co:5432/postgres
 
 ### 1.3 Enable Authentication
 1. Go to **Authentication** → **Settings**
@@ -120,6 +121,16 @@ VALUES ('your-user-id-here', 'super_admin');
    - Zone Resources: `Include - All zones`
 6. Click **Continue to summary** → **Create Token**
 7. **Save the token** - you won't see it again!
+
+for this i didnt found r2:edit and all but i did added this  token = _heqZ4E-eyarcJsB0_Ba34tSJfDAN08SaWvW0aix
+
+Permissions:-
+Workers R2 Storage
+Read
+Workers R2 Storage
+Edit
+
+
 
 ### 2.4 Get Account ID
 1. Go to Cloudflare Dashboard
