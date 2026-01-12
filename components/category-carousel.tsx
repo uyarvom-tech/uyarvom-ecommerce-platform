@@ -8,8 +8,8 @@ interface CategoryCarouselProps {
     id: string
     name: string
     slug: string
-    description?: string | null
-    imageUrl?: string | null
+    description: string | null
+    imageUrl: string | null
     _count?: {
       productCategories: number
     }

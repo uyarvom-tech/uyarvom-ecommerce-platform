@@ -30,8 +30,8 @@ interface Category {
   id: string
   name: string
   slug: string
-  description?: string
-  imageUrl?: string
+  description: string | null
+  imageUrl: string | null
   displayOrder: number
   parentId?: string
   isActive: boolean
