@@ -4,6 +4,15 @@ import { createSupabaseServerClient, supabaseAdmin } from '@/lib/supabase-server
 // Get current user from Supabase session
 export async function getCurrentUser() {
   try {
+    // Check if we're in demo mode
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+    const isDemo = supabaseUrl.includes('placeholder') || !supabaseUrl || supabaseUrl === 'https://placeholder-supabase-url.supabase.co'
+    
+    if (isDemo) {
+      // In demo mode, return null (no server-side user detection)
+      return null
+    }
+
     const supabase = await createSupabaseServerClient()
     const { data: { user }, error } = await supabase.auth.getUser()
     

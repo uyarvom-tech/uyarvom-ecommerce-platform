@@ -3,6 +3,15 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function middleware(request: NextRequest) {
   try {
+    // Check if we're in demo mode (placeholder Supabase URLs)
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+    const isDemo = supabaseUrl.includes('placeholder') || !supabaseUrl || supabaseUrl === 'https://placeholder-supabase-url.supabase.co'
+    
+    if (isDemo) {
+      // In demo mode, handle authentication via cookies
+      return handleDemoAuth(request)
+    }
+
     const { supabase, response } = createSupabaseMiddlewareClient(request)
 
     // Refresh session if expired - required for Server Components
@@ -58,6 +67,47 @@ export async function middleware(request: NextRequest) {
     console.error('Middleware error:', error)
     return NextResponse.next()
   }
+}
+
+// Handle authentication in demo mode
+function handleDemoAuth(request: NextRequest) {
+  const pathname = request.nextUrl.pathname
+  
+  // Get user from cookie
+  let user = null
+  try {
+    const userCookie = request.cookies.get('demo-user')
+    if (userCookie?.value) {
+      user = JSON.parse(userCookie.value)
+    }
+  } catch (e) {
+    // Invalid cookie data
+  }
+
+  // Protected routes that require authentication
+  const protectedRoutes = ["/account", "/checkout", "/orders", "/cart", "/wishlist"]
+  const adminRoutes = ["/admin"]
+
+  // Redirect to login if accessing protected routes without authentication
+  if (!user && protectedRoutes.some((route) => pathname.startsWith(route))) {
+    const url = request.nextUrl.clone()
+    url.pathname = "/auth/login"
+    url.searchParams.set("redirect", pathname)
+    return NextResponse.redirect(url)
+  }
+
+  // Check admin/staff access
+  if (user && adminRoutes.some((route) => pathname.startsWith(route))) {
+    if (user.role !== 'admin' && user.role !== 'staff') {
+      const url = request.nextUrl.clone()
+      url.pathname = "/"
+      return NextResponse.redirect(url)
+    }
+  }
+
+  return NextResponse.next({
+    request,
+  })
 }
 
 export const config = {
