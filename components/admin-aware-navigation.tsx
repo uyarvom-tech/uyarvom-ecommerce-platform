@@ -7,8 +7,8 @@ interface Category {
   id: string
   name: string
   slug: string
-  description?: string
-  imageUrl?: string
+  description: string | null
+  imageUrl: string | null
 }
 
 interface AdminAwareNavigationProps {

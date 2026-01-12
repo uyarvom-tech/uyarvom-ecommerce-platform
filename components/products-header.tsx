@@ -6,14 +6,7 @@ import { AuthButton } from "@/components/auth-button"
 import { ProductsMobileMenu } from "@/components/products-mobile-menu"
 import { CategoriesDropdown } from "@/components/categories-dropdown"
 import { AdminCustomerToggle } from "@/components/admin-customer-toggle"
-
-interface Category {
-  id: string
-  name: string
-  slug: string
-  description: string | null
-  imageUrl: string | null
-}
+import type { Category } from "@/types"
 
 interface ProductsHeaderProps {
   categories: Category[]

@@ -3,14 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-
-interface Category {
-  id: string
-  name: string
-  slug: string
-  description: string | null
-  imageUrl: string | null
-}
+import type { Category } from "@/types"
 
 interface CategoriesDropdownProps {
   categories: Category[]

@@ -2,14 +2,7 @@
 
 import { AdminAwareLink } from "@/components/admin-aware-link"
 import { CategoriesDropdown } from "@/components/categories-dropdown"
-
-interface Category {
-  id: string
-  name: string
-  slug: string
-  description?: string
-  imageUrl?: string
-}
+import type { Category } from "@/types"
 
 interface AdminAwareNavigationProductsProps {
   categories: Category[]
