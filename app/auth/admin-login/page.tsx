@@ -10,6 +10,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { ShieldCheck } from "lucide-react"
+import { supabase } from "@/lib/supabase"
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState("")
@@ -24,28 +25,65 @@ export default function AdminLoginPage() {
     setError(null)
 
     try {
-      // Use the demo authentication API
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      })
+      // Check if we're using placeholder Supabase credentials (demo mode)
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+      const isDemo = supabaseUrl.includes('placeholder')
+      
+      if (isDemo) {
+        // Demo mode - use existing demo authentication
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email, password }),
+        })
 
-      const data = await response.json()
+        const data = await response.json()
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Login failed')
+        if (!response.ok) {
+          throw new Error(data.error || 'Login failed')
+        }
+
+        // Check if user has admin or staff role
+        if (!['admin', 'staff'].includes(data.user.role)) {
+          throw new Error("Access denied. This account does not have admin or staff privileges.")
+        }
+
+        // Store user in localStorage for demo auth
+        localStorage.setItem('demo-user', JSON.stringify(data.user))
+      } else {
+        // Production mode - use Supabase authentication
+        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        })
+
+        if (authError) {
+          throw new Error(authError.message)
+        }
+
+        if (!authData.user) {
+          throw new Error('Login failed')
+        }
+
+        // Check if user is admin
+        const { data: adminUser, error: adminError } = await supabase
+          .from('admin_users')
+          .select('role')
+          .eq('user_id', authData.user.id)
+          .single()
+
+        if (adminError || !adminUser) {
+          await supabase.auth.signOut()
+          throw new Error("Access denied. This account does not have admin privileges.")
+        }
+
+        if (!['admin', 'staff', 'super_admin'].includes(adminUser.role)) {
+          await supabase.auth.signOut()
+          throw new Error("Access denied. Insufficient privileges.")
+        }
       }
-
-      // Check if user has admin or staff role
-      if (!['admin', 'staff'].includes(data.user.role)) {
-        throw new Error("Access denied. This account does not have admin or staff privileges.")
-      }
-
-      // Store user in localStorage for demo auth
-      localStorage.setItem('demo-user', JSON.stringify(data.user))
 
       // Redirect to admin dashboard
       router.push("/admin")
@@ -62,6 +100,10 @@ export default function AdminLoginPage() {
     setPassword(password)
   }
 
+  // Check if we're in demo mode to show demo credentials
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+  const isDemo = supabaseUrl.includes('placeholder')
+
   return (
     <div className="flex min-h-screen w-full items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-6">
       <div className="w-full max-w-md">
@@ -76,63 +118,65 @@ export default function AdminLoginPage() {
             <CardDescription>Staff & Administrator Access Only</CardDescription>
           </CardHeader>
           <CardContent>
-            {/* Demo Admin Credentials Section */}
-            <div className="mb-6 rounded-lg border bg-orange-50 p-4">
-              <h3 className="mb-3 font-semibold text-orange-900">Demo Admin Credentials</h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center justify-between">
-                  <span className="text-orange-800">Admin:</span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => fillDemoCredentials('admin@uyarvom.com', 'admin123')}
-                    className="h-6 px-2 text-xs"
-                  >
-                    Use
-                  </Button>
-                </div>
-                <div className="text-xs text-orange-600">admin@uyarvom.com / admin123</div>
-                
-                <div className="flex items-center justify-between">
-                  <span className="text-orange-800">Super Admin:</span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => fillDemoCredentials('superadmin@uyarvom.com', 'super123')}
-                    className="h-6 px-2 text-xs"
-                  >
-                    Use
-                  </Button>
-                </div>
-                <div className="text-xs text-orange-600">superadmin@uyarvom.com / super123</div>
+            {/* Demo Admin Credentials Section - Only show in demo mode */}
+            {isDemo && (
+              <div className="mb-6 rounded-lg border bg-orange-50 p-4">
+                <h3 className="mb-3 font-semibold text-orange-900">Demo Admin Credentials</h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-orange-800">Admin:</span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fillDemoCredentials('admin@uyarvom.com', 'admin123')}
+                      className="h-6 px-2 text-xs"
+                    >
+                      Use
+                    </Button>
+                  </div>
+                  <div className="text-xs text-orange-600">admin@uyarvom.com / admin123</div>
+                  
+                  <div className="flex items-center justify-between">
+                    <span className="text-orange-800">Super Admin:</span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fillDemoCredentials('superadmin@uyarvom.com', 'super123')}
+                      className="h-6 px-2 text-xs"
+                    >
+                      Use
+                    </Button>
+                  </div>
+                  <div className="text-xs text-orange-600">superadmin@uyarvom.com / super123</div>
 
-                <div className="flex items-center justify-between">
-                  <span className="text-orange-800">Staff:</span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => fillDemoCredentials('staff@uyarvom.com', 'staff123')}
-                    className="h-6 px-2 text-xs"
-                  >
-                    Use
-                  </Button>
-                </div>
-                <div className="text-xs text-orange-600">staff@uyarvom.com / staff123</div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-orange-800">Staff:</span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fillDemoCredentials('staff@uyarvom.com', 'staff123')}
+                      className="h-6 px-2 text-xs"
+                    >
+                      Use
+                    </Button>
+                  </div>
+                  <div className="text-xs text-orange-600">staff@uyarvom.com / staff123</div>
 
-                <div className="flex items-center justify-between">
-                  <span className="text-orange-800">Manager:</span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => fillDemoCredentials('manager@uyarvom.com', 'manager123')}
-                    className="h-6 px-2 text-xs"
-                  >
-                    Use
-                  </Button>
+                  <div className="flex items-center justify-between">
+                    <span className="text-orange-800">Manager:</span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fillDemoCredentials('manager@uyarvom.com', 'manager123')}
+                      className="h-6 px-2 text-xs"
+                    >
+                      Use
+                    </Button>
+                  </div>
+                  <div className="text-xs text-orange-600">manager@uyarvom.com / manager123</div>
                 </div>
-                <div className="text-xs text-orange-600">manager@uyarvom.com / manager123</div>
               </div>
-            </div>
+            )}
 
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
@@ -140,7 +184,7 @@ export default function AdminLoginPage() {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="admin@uyarvom.com"
+                  placeholder={isDemo ? "admin@uyarvom.com" : "your-email@example.com"}
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}

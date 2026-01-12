@@ -167,7 +167,7 @@ git push origin main
 7. Add all environment variables from Step 3.3 below
 8. After adding environment variables, click **Deploy**
 
-> **Note**: The build will fail if environment variables are not set first, especially `DATABASE_URL`.
+> **Note**: Make sure your `pnpm-lock.yaml` is up to date by running `pnpm install` locally and pushing the updated lockfile before deploying.
 
 ### 3.3 Configure Environment Variables
 1. Go to your Vercel project → **Settings** → **Environment Variables**
@@ -271,9 +271,9 @@ sqlite3 dev.db ".dump" > data_backup.sql
 
 **Dependency/Lockfile Errors**
 - Run `pnpm install` locally to update lockfile
-- Remove `pnpm-lock.yaml` and run `pnpm install` again
-- Push updated lockfile to GitHub
+- Commit and push the updated `pnpm-lock.yaml` to GitHub
 - Redeploy on Vercel
+- If issues persist, delete `pnpm-lock.yaml`, run `pnpm install`, then commit and push
 
 **Authentication Issues**
 - Verify Supabase keys are correct

@@ -57,7 +57,7 @@ export async function updateSession(request: NextRequest) {
 
   // Check admin access
   if (user && adminRoutes.some((route) => pathname.startsWith(route))) {
-    const { data: adminUser } = await supabase.from("admin_users").select("*").eq("id", user.id).single()
+    const { data: adminUser } = await supabase.from("admin_users").select("*").eq("user_id", user.id).single()
 
     if (!adminUser) {
       const url = request.nextUrl.clone()

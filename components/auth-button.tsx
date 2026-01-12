@@ -14,8 +14,10 @@ import { User, LogOut, Package, Settings, Shield, Crown } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
+import { supabase } from "@/lib/supabase"
+import type { User as SupabaseUser } from "@supabase/supabase-js"
 
-interface DemoUser {
+interface UserProfile {
   id: string
   email: string
   full_name: string
@@ -24,7 +26,7 @@ interface DemoUser {
 }
 
 export function AuthButton() {
-  const [user, setUser] = useState<DemoUser | null>(null)
+  const [user, setUser] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [mounted, setMounted] = useState(false)
   const router = useRouter()
@@ -32,26 +34,69 @@ export function AuthButton() {
   useEffect(() => {
     setMounted(true)
     
-    const getUser = () => {
-      // Check for demo user in localStorage
-      const savedUser = localStorage.getItem('demo-user')
-      if (savedUser) {
-        try {
-          const demoUser = JSON.parse(savedUser)
-          setUser(demoUser)
-        } catch (e) {
-          localStorage.removeItem('demo-user')
-          setUser(null)
+    const getUser = async () => {
+      try {
+        // Check if we're using placeholder Supabase credentials (demo mode)
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+        const isDemo = supabaseUrl.includes('placeholder')
+        
+        if (isDemo) {
+          // Demo mode - use localStorage
+          const savedUser = localStorage.getItem('demo-user')
+          if (savedUser) {
+            try {
+              const demoUser = JSON.parse(savedUser)
+              setUser(demoUser)
+            } catch (e) {
+              localStorage.removeItem('demo-user')
+              setUser(null)
+            }
+          } else {
+            setUser(null)
+          }
+        } else {
+          // Production mode - use Supabase
+          const { data: { user: supabaseUser } } = await supabase.auth.getUser()
+          
+          if (supabaseUser) {
+            // Check if user is admin
+            const { data: adminUser } = await supabase
+              .from('admin_users')
+              .select('role')
+              .eq('user_id', supabaseUser.id)
+              .single()
+            
+            setUser({
+              id: supabaseUser.id,
+              email: supabaseUser.email || '',
+              full_name: supabaseUser.user_metadata?.full_name || supabaseUser.email?.split('@')[0] || 'User',
+              role: adminUser?.role || 'customer'
+            })
+          } else {
+            setUser(null)
+          }
         }
-      } else {
+      } catch (error) {
+        console.error('Error getting user:', error)
         setUser(null)
+      } finally {
+        setLoading(false)
       }
-      setLoading(false)
     }
 
     getUser()
 
-    // Listen for storage changes (when user logs in/out in another tab)
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_OUT' || !session) {
+        setUser(null)
+        localStorage.removeItem('demo-user')
+      } else if (event === 'SIGNED_IN' && session) {
+        getUser()
+      }
+    })
+
+    // Listen for storage changes (demo mode)
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'demo-user') {
         getUser()
@@ -59,22 +104,32 @@ export function AuthButton() {
     }
 
     window.addEventListener('storage', handleStorageChange)
-    return () => window.removeEventListener('storage', handleStorageChange)
+    
+    return () => {
+      subscription.unsubscribe()
+      window.removeEventListener('storage', handleStorageChange)
+    }
   }, [])
 
   const handleSignOut = async () => {
     setLoading(true)
     
     try {
-      // Call logout API
-      await fetch('/api/auth/logout', {
-        method: 'POST',
-      })
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+      const isDemo = supabaseUrl.includes('placeholder')
       
-      // Clear localStorage
-      localStorage.removeItem('demo-user')
+      if (isDemo) {
+        // Demo mode logout
+        await fetch('/api/auth/logout', {
+          method: 'POST',
+        })
+        localStorage.removeItem('demo-user')
+      } else {
+        // Supabase logout
+        await supabase.auth.signOut()
+      }
+      
       setUser(null)
-      
       router.push("/")
       router.refresh()
     } catch (error) {
