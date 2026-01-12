@@ -5,24 +5,40 @@ import Image from "next/image"
 import { Badge } from "@/components/ui/badge"
 import { Star } from "lucide-react"
 import { useState, useEffect } from "react"
+import type { FlexibleProduct, ProductImage } from "@/types"
 
-export function ProductCard({ product }: { product: any }) {
+interface ProductCardProps {
+  product: FlexibleProduct
+}
+
+export function ProductCard({ product }: ProductCardProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [isHovering, setIsHovering] = useState(false)
   
   // Filter to get only main product images (not color variant images)
-  // Main product images are in product.images, color variant images are in product.variants[].images
-  const mainImages = (product.images || []).filter((img: any) => 
-    img && (img.imageUrl || img.image_url) && (img.imageUrl || img.image_url).trim() !== ''
-  )
+  // Handle both string arrays and ProductImage arrays
+  const productImages = product.images || []
+  const mainImages = productImages.filter((img: any) => {
+    if (typeof img === 'string') {
+      return img && img.trim() !== ''
+    }
+    return img && (img.imageUrl || img.image_url) && (img.imageUrl || img.image_url)!.trim() !== ''
+  })
   
   const hasMultipleImages = mainImages.length > 1
   
   // Create a safe placeholder URL
   const placeholderUrl = `/placeholder.svg?height=400&width=400&query=${encodeURIComponent(product.name || 'product')}`
   
-  // Use main images if available, otherwise use placeholder
-  const displayImages = mainImages.length > 0 ? mainImages : [{ imageUrl: placeholderUrl, altText: product.name }]
+  // Normalize images to ProductImage format
+  const displayImages: ProductImage[] = mainImages.length > 0 
+    ? mainImages.map((img: any) => {
+        if (typeof img === 'string') {
+          return { imageUrl: img, altText: product.name }
+        }
+        return img
+      })
+    : [{ imageUrl: placeholderUrl, altText: product.name }]
   
   // Auto-cycle through images on hover (only if we have actual multiple images)
   useEffect(() => {
@@ -53,8 +69,11 @@ export function ProductCard({ product }: { product: any }) {
     ? Math.round(((comparePrice - currentPrice) / comparePrice) * 100)
     : 0
     
-  const isLowStock = (product.stockQuantity || product.stock_quantity) <= (product.lowStockThreshold || product.low_stock_threshold || 10) && (product.stockQuantity || product.stock_quantity) > 0
-  const isNew = new Date(product.createdAt || product.created_at) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // Last 30 days
+  const stockQuantity = product.stockQuantity || product.stock_quantity || 0
+  const lowStockThreshold = product.lowStockThreshold || product.low_stock_threshold || 10
+  const isLowStock = stockQuantity <= lowStockThreshold && stockQuantity > 0
+  const createdDate = product.createdAt || (product.created_at ? new Date(product.created_at) : new Date())
+  const isNew = createdDate > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // Last 30 days
 
   return (
     <Link href={`/products/${product.slug}`} className="group block">
@@ -67,7 +86,7 @@ export function ProductCard({ product }: { product: any }) {
         <div className="relative aspect-square overflow-hidden bg-secondary/20 rounded-[20px]">
           {/* Single Image Display with Smooth Transitions */}
           <div className="relative w-full h-full">
-            {displayImages.map((image: string, index: number) => (
+            {displayImages.map((image: ProductImage, index: number) => (
               <div
                 key={index}
                 className={`absolute inset-0 transition-all duration-500 ease-in-out ${
@@ -92,7 +111,7 @@ export function ProductCard({ product }: { product: any }) {
           {/* Image Indicators - Show dots if multiple main images */}
           {hasMultipleImages && mainImages.length > 1 && (
             <div className="absolute top-2 left-1/2 transform -translate-x-1/2 flex gap-1">
-              {mainImages.map((_: string, index: number) => (
+              {mainImages.map((_: any, index: number) => (
                 <div
                   key={index}
                   className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
@@ -123,13 +142,13 @@ export function ProductCard({ product }: { product: any }) {
           {isLowStock && (
             <div className="absolute top-2 left-2">
               <Badge className="bg-amber-500/90 text-white border-0 px-1.5 py-0.5 text-[10px] font-semibold rounded-full apple-shadow backdrop-blur-sm">
-                {product.stockQuantity || product.stock_quantity} left
+                {stockQuantity} left
               </Badge>
             </div>
           )}
 
           {/* Out of Stock Overlay */}
-          {(product.stockQuantity || product.stock_quantity) <= 0 && (
+          {stockQuantity <= 0 && (
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center rounded-[20px]">
               <Badge className="bg-white/90 text-black border-0 px-3 py-1 text-xs font-semibold rounded-full">
                 Out of Stock
@@ -152,7 +171,7 @@ export function ProductCard({ product }: { product: any }) {
                 </span>
                 {hasDiscount && (
                   <span className="text-white/70 text-xs line-through">
-                    ₹{(product.compareAtPrice || product.compare_at_price).toLocaleString("en-IN")}
+                    ₹{comparePrice?.toLocaleString("en-IN")}
                   </span>
                 )}
               </div>
