@@ -17,8 +17,7 @@
     "db:push": "npx prisma db push",
     "db:reset": "npx prisma migrate reset",
     "postinstall": "prisma generate",
-    "deploy:setup": "npx prisma db push && npm run build",
-    "deploy:migrate": "npx prisma migrate deploy"
+    "vercel-build": "next build"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.490.0",

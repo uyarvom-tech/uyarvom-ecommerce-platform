@@ -163,7 +163,10 @@ git push origin main
 3. Import your GitHub repository
 4. **Framework Preset**: Next.js
 5. **Root Directory**: `./` (default)
-6. Click **Deploy** (it will fail first time - that's expected)
+6. **IMPORTANT**: Before clicking Deploy, go to **Environment Variables** first (Step 3.3)
+7. After adding environment variables, click **Deploy**
+
+> **Note**: If you get a dependency error during deployment, make sure your `pnpm-lock.yaml` is up to date by running `pnpm install` locally and pushing the changes.
 
 ### 3.3 Configure Environment Variables
 1. Go to your Vercel project → **Settings** → **Environment Variables**
@@ -197,8 +200,8 @@ UPLOAD_MAX_SIZE=10485760
 ALLOWED_FILE_TYPES=image/jpeg,image/png,image/webp
 ```
 
-### 3.4 Deploy Database Schema
-1. In your local project, update `.env.local` with production `DATABASE_URL`
+### 3.5 Deploy Database Schema
+1. In your local project, create a `.env` file with your production `DATABASE_URL`
 2. Run database migration:
 
 ```bash
@@ -207,9 +210,9 @@ npx prisma db push
 
 3. Verify tables were created in Supabase → **Table Editor**
 
-### 3.5 Redeploy
+### 3.6 Redeploy (if needed)
 1. Go to Vercel → **Deployments**
-2. Click **Redeploy** on the latest deployment
+2. If the first deployment failed, click **Redeploy** on the latest deployment
 3. Wait for deployment to complete
 4. Test your live site!
 
@@ -262,6 +265,12 @@ sqlite3 dev.db ".dump" > data_backup.sql
 - Verify `DATABASE_URL` is correct
 - Check Supabase project is active
 - Ensure IP restrictions allow Vercel
+
+**Dependency/Lockfile Errors**
+- Run `pnpm install` locally to update lockfile
+- Remove `pnpm-lock.yaml` and run `pnpm install` again
+- Push updated lockfile to GitHub
+- Redeploy on Vercel
 
 **Authentication Issues**
 - Verify Supabase keys are correct
