@@ -1,0 +1,17 @@
+{
+  "buildCommand": "npm run deploy:setup",
+  "functions": {
+    "app/api/**/*.ts": {
+      "maxDuration": 30
+    }
+  },
+  "env": {
+    "PRISMA_GENERATE_SKIP_AUTOINSTALL": "true"
+  },
+  "crons": [
+    {
+      "path": "/api/cron/cleanup",
+      "schedule": "0 2 * * *"
+    }
+  ]
+}

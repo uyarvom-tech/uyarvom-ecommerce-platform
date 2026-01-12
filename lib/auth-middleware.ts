@@ -1,151 +1,94 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { cookies } from 'next/headers'
-import { getUserById } from '@/lib/demo-users'
+import { createSupabaseServerClient, supabaseAdmin } from '@/lib/supabase'
 
-// Helper function to get current user from demo auth cookie
-async function getCurrentDemoUser(request: NextRequest) {
+// Get current user from Supabase session
+export async function getCurrentUser() {
   try {
-    const cookieStore = await cookies()
-    const userCookie = cookieStore.get('demo-user')
+    const supabase = createSupabaseServerClient()
+    const { data: { user }, error } = await supabase.auth.getUser()
     
-    if (!userCookie?.value) {
+    if (error || !user) {
       return null
     }
 
-    const user = JSON.parse(userCookie.value)
     return user
   } catch (error) {
-    console.error('Error parsing demo user cookie:', error)
+    console.error('Error getting current user:', error)
     return null
   }
 }
 
-export async function requireAdmin(request: NextRequest) {
+// Get current user role from database
+export async function getCurrentUserRole() {
   try {
-    // Get current user from demo auth cookie
-    const user = await getCurrentDemoUser(request)
-    
-    console.log('Auth middleware - current user:', user?.email)
-    
-    if (!user) {
-      console.log('No user found')
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      )
-    }
+    const user = await getCurrentUser()
+    if (!user) return null
 
-    // Check if user has admin or staff role
-    if (!['admin', 'staff'].includes(user.role)) {
-      console.log('User is not an admin or staff')
-      return NextResponse.json(
-        { error: 'Admin access required' },
-        { status: 403 }
-      )
-    }
+    // Check if user has admin role in the database
+    const { data: adminUser } = await supabaseAdmin
+      .from('admin_users')
+      .select('role')
+      .eq('user_id', user.id)
+      .single()
 
-    console.log('Admin user found:', user.email, 'role:', user.role)
-
-    // Return the user for use in the route
-    return { user, adminUser: { role: user.role === 'admin' ? 'super_admin' : 'moderator' } }
+    return adminUser?.role || 'customer'
   } catch (error) {
-    console.error('Auth middleware error:', error)
-    return NextResponse.json(
-      { error: 'Authentication failed' },
-      { status: 500 }
-    )
+    console.error('Error getting user role:', error)
+    return 'customer'
   }
 }
 
-// Check if user has admin role (can delete items)
-export async function requireAdminRole(request: NextRequest) {
-  try {
-    const authResult = await requireAdmin(request)
-    
-    // If requireAdmin returned an error response, return it
-    if (authResult instanceof NextResponse) {
-      return authResult
-    }
-
-    const { user } = authResult
-    
-    // Only users with 'admin' role can perform admin-only actions
-    if (user.role !== 'admin') {
-      return NextResponse.json(
-        { error: 'Admin role required for this action' },
-        { status: 403 }
-      )
-    }
-
-    return authResult
-  } catch (error) {
-    console.error('Admin role check error:', error)
-    return NextResponse.json(
-      { error: 'Authentication failed' },
-      { status: 500 }
-    )
-  }
-}
-
-// Check if user has staff or admin access (can edit items)
+// Check if user has staff access (admin or staff role)
 export async function requireStaffAccess(request: NextRequest) {
   try {
-    const authResult = await requireAdmin(request)
-    
-    // If requireAdmin returned an error response, return it
-    if (authResult instanceof NextResponse) {
-      return authResult
+    const user = await getCurrentUser()
+    if (!user) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
 
-    const { user } = authResult
-    
-    // Both 'admin' and 'staff' roles can access staff-level features
-    if (!['admin', 'staff'].includes(user.role)) {
-      return NextResponse.json(
-        { error: 'Staff access required' },
-        { status: 403 }
-      )
+    const role = await getCurrentUserRole()
+    if (!['admin', 'staff', 'super_admin'].includes(role || '')) {
+      return NextResponse.json({ error: 'Staff access required' }, { status: 403 })
     }
 
-    return authResult
+    return { user, role }
   } catch (error) {
-    console.error('Staff access check error:', error)
-    return NextResponse.json(
-      { error: 'Authentication failed' },
-      { status: 500 }
-    )
+    console.error('Error checking staff access:', error)
+    return NextResponse.json({ error: 'Authentication error' }, { status: 500 })
   }
 }
+
+// Check if user has admin access
+export async function requireAdminAccess(request: NextRequest) {
+  try {
+    const user = await getCurrentUser()
+    if (!user) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+    }
+
+    const role = await getCurrentUserRole()
+    if (!['admin', 'super_admin'].includes(role || '')) {
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
+    }
+
+    return { user, role }
+  } catch (error) {
+    console.error('Error checking admin access:', error)
+    return NextResponse.json({ error: 'Authentication error' }, { status: 500 })
+  }
+}
+
+// Legacy function names for backward compatibility
+export const requireAdmin = requireStaffAccess
+export const requireAdminRole = requireAdminAccess
 
 // Simplified auth check for client-side components
 export async function checkAdminAccess() {
   try {
-    // For demo mode, we'll always return true if there are demo users
-    return true
+    const role = await getCurrentUserRole()
+    return ['admin', 'super_admin'].includes(role || '')
   } catch (error) {
     console.error('Admin access check failed:', error)
     return false
-  }
-}
-
-// Get current user role for client-side components
-export async function getCurrentUserRole() {
-  try {
-    const cookieStore = await cookies()
-    const userCookie = cookieStore.get('demo-user')
-    
-    if (!userCookie?.value) {
-      console.log('No user cookie found')
-      return null
-    }
-
-    const user = JSON.parse(userCookie.value)
-    console.log('getCurrentUserRole - current user:', user.email, 'role:', user.role)
-
-    return user.role === 'admin' ? 'super_admin' : user.role === 'staff' ? 'moderator' : null
-  } catch (error) {
-    console.error('Get user role failed:', error)
-    return null
   }
 }
