@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createSupabaseServerClient, supabaseAdmin } from '@/lib/supabase'
+import { createSupabaseServerClient, supabaseAdmin } from '@/lib/supabase-server'
 
 // Get current user from Supabase session
 export async function getCurrentUser() {
