@@ -1,7 +1,11 @@
-import { prisma } from "@/lib/prisma"
+import { prisma } from "@/lib/prisma-safe"
 import { AdminHeader } from "@/components/admin-header"
 import { ProductForm } from "@/components/admin/product-form"
 import { notFound } from "next/navigation"
+
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 interface EditProductPageProps {
   params: Promise<{ id: string }>
@@ -40,16 +44,16 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
   // Transform product to include categoryIds and color variants for form compatibility
   const productWithCategoryIds = {
     ...product,
-    categoryIds: product.productCategories.map(pc => pc.categoryId),
-    categories: product.productCategories.map(pc => pc.category),
-    primaryCategory: product.productCategories.find(pc => pc.isPrimary)?.category,
+    categoryIds: product.productCategories.map((pc: any) => pc.categoryId),
+    categories: product.productCategories.map((pc: any) => pc.category),
+    primaryCategory: product.productCategories.find((pc: any) => pc.isPrimary)?.category,
     // Transform variants to color variants format with proper images
     hasColorVariants: product.variants.length > 0,
-    colorVariants: product.variants.map((variant, index) => ({
+    colorVariants: product.variants.map((variant: any, index: number) => ({
       id: `existing-color-${variant.id}`,
       colorName: variant.value,
       colorCode: variant.colorCode || '#000000',
-      images: variant.images.map((img, imgIndex) => ({
+      images: variant.images.map((img: any, imgIndex: number) => ({
         id: `existing-img-${img.id}`,
         imageUrl: img.imageUrl,
         altText: img.altText || `${variant.value} - View ${imgIndex + 1}`,

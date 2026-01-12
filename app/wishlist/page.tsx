@@ -7,6 +7,10 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { redirect } from "next/navigation"
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export default async function WishlistPage() {
   const supabase = await createClient()
 

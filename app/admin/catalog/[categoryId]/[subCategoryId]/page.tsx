@@ -1,7 +1,11 @@
-import { prisma } from "@/lib/prisma"
+import { prisma } from "@/lib/prisma-safe"
 import { AdminHeader } from "@/components/admin-header"
 import { SubCategoryProductsView } from "@/components/admin/subcategory-products-view"
 import { notFound } from "next/navigation"
+
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 export default async function SubCategoryProductsPage({
   params,
@@ -54,8 +58,8 @@ export default async function SubCategoryProductsPage({
 
   // Transform products data
   const products = productCategories
-    .filter(pc => pc.product) // Ensure product exists
-    .map(pc => ({
+    .filter((pc: any) => pc.product) // Ensure product exists
+    .map((pc: any) => ({
       id: pc.product.id,
       name: pc.product.name,
       slug: pc.product.slug,

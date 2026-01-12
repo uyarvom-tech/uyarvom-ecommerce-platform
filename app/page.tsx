@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma"
+import { prisma } from "@/lib/prisma-safe"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { ProductCard } from "@/components/product-card"
@@ -6,6 +6,10 @@ import { ProductFilters } from "@/components/product-filters"
 import { AIKitchenMatch } from "@/components/ai-kitchen-match"
 import { CategoryNavigation } from "@/components/category-navigation"
 import { CategoryCarousel } from "@/components/category-carousel"
+
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 export default async function HomePage({
   searchParams,

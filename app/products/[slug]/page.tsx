@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma"
+import { prisma } from "@/lib/prisma-safe"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import FlipkartProductGallery from "@/components/flipkart-product-gallery"
@@ -11,6 +11,10 @@ import { Star, Truck } from "lucide-react"
 import { notFound } from "next/navigation"
 import type { Metadata } from "next"
 import { Card, CardContent } from "@/components/ui/card"
+
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params
@@ -62,12 +66,12 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const reviewStats = {
     totalReviews: product.reviews.length,
     averageRating: product.reviews.length > 0 
-      ? product.reviews.reduce((sum, review) => sum + review.rating, 0) / product.reviews.length 
+      ? product.reviews.reduce((sum: number, review: any) => sum + review.rating, 0) / product.reviews.length 
       : 0
   }
 
   // Get primary category for display
-  const primaryCategory = product.productCategories.find(pc => pc.isPrimary)?.category || product.productCategories[0]?.category
+  const primaryCategory = product.productCategories.find((pc: any) => pc.isPrimary)?.category || product.productCategories[0]?.category
 
   const hasDiscount = product.compareAtPrice && product.compareAtPrice > product.price
   const discountPercent = hasDiscount && product.compareAtPrice

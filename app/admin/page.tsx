@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma"
+import { prisma } from "@/lib/prisma-safe"
 import { AdminHeader } from "@/components/admin-header"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -153,7 +153,7 @@ export default async function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {recentProducts.map((product) => (
+                  {recentProducts.map((product: any) => (
                     <div key={product.id} className="flex items-center space-x-4">
                       <div className="relative h-12 w-12 rounded-lg overflow-hidden bg-muted">
                         {product.images[0] && (

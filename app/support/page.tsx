@@ -20,6 +20,10 @@ import {
   Star
 } from "lucide-react"
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 const faqs = [
   {
     question: "What is your return policy?",

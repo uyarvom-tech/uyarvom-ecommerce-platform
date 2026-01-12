@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma"
+import { prisma } from "@/lib/prisma-safe"
 import { Button } from "@/components/ui/button"
 import { ArrowRight, Star, Sparkles, ChevronRight } from "lucide-react"
 import Link from "next/link"
@@ -9,6 +9,10 @@ import { AppleReveal, AppleParallax } from "@/components/apple-scroll-animations
 import ScrollStack, { ScrollStackItem } from "@/components/scroll-stack"
 import ScrollFloat from "@/components/ScrollFloat"
 import { CustomerReviewsLoop } from "@/components/customer-reviews-loop"
+
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 export default async function HeroPage() {
   // Fetch featured products from database
@@ -50,7 +54,7 @@ export default async function HeroPage() {
   })
 
   // Filter for specific categories (Kids, Kitchen, Home, Safety)
-  const showcaseCategories = allCategories.filter(category => {
+  const showcaseCategories = allCategories.filter((category: any) => {
     const name = category.name.toLowerCase()
     return name.includes('kids') || 
            name.includes('kitchen') || 
@@ -164,7 +168,7 @@ export default async function HeroPage() {
 
       {/* Scroll Stack Collection Showcase */}
       <ScrollStack className="">
-        {showcaseCategories.map((category, index) => {
+        {showcaseCategories.map((category: any, index: number) => {
           const colors = categoryColors[index] || categoryColors[0]
           
           // Create background style with category image or fallback gradient

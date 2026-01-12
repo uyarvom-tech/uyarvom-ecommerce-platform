@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma"
+import { prisma } from "@/lib/prisma-safe"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { ProductCard } from "@/components/product-card"
@@ -7,6 +7,10 @@ import { AppleReveal } from "@/components/apple-scroll-animations"
 import { AIKitchenMatch } from "@/components/ai-kitchen-match"
 import { ProductsSearch } from "@/components/products-search"
 import { Search } from "lucide-react"
+
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 export default async function ProductsPage({
   searchParams,

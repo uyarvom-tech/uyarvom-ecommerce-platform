@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma"
+import { prisma } from "@/lib/prisma-safe"
 import { AdminHeader } from "@/components/admin-header"
 import { ProductForm } from "@/components/admin/product-form"
 

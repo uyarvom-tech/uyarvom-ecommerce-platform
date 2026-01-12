@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma"
+import { prisma } from "@/lib/prisma-safe"
 import { AdminHeader } from "@/components/admin-header"
 import { StaffManagement } from "@/components/admin/staff-management"
 import { createClient } from "@/lib/supabase/server"
@@ -40,7 +40,7 @@ export default async function StaffPage() {
   })
 
   // Transform data for the component
-  const staffWithDetails = staff.map(user => ({
+  const staffWithDetails = staff.map((user: any) => ({
     id: user.id,
     email: user.email,
     fullName: user.fullName || 'No Name',

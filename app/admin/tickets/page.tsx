@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma"
+import { prisma } from "@/lib/prisma-safe"
 import { AdminHeader } from "@/components/admin-header"
 import { TicketManagement } from "@/components/admin/ticket-management"
 import { getCurrentUserRole } from "@/lib/auth-middleware"
@@ -38,7 +38,7 @@ export default async function TicketsPage() {
   })
 
   // Transform tickets to match the interface
-  const transformedTickets = tickets.map(ticket => ({
+  const transformedTickets = tickets.map((ticket: any) => ({
     id: ticket.id,
     type: ticket.type as 'product' | 'category',
     itemId: ticket.itemId,

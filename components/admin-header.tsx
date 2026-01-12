@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
-import { prisma } from "@/lib/prisma"
+import { prisma } from "@/lib/prisma-safe"
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"

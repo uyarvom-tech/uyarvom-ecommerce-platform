@@ -1,9 +1,13 @@
-import { prisma } from "@/lib/prisma"
+import { prisma } from "@/lib/prisma-safe"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { SearchResults } from "@/components/search-results"
 import { SearchBar } from "@/components/search-bar"
 import { Suspense } from "react"
+
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 export default async function SearchPage({
   searchParams,
@@ -64,7 +68,7 @@ export default async function SearchPage({
   ])
 
   // Transform products for compatibility
-  const transformedProducts = products.map(product => ({
+  const transformedProducts = products.map((product: any) => ({
     id: product.id,
     name: product.name,
     slug: product.slug,
@@ -72,8 +76,8 @@ export default async function SearchPage({
     compare_at_price: product.compareAtPrice || undefined,
     short_description: product.shortDescription,
     stock_quantity: product.stockQuantity,
-    category: product.productCategories.find(pc => pc.isPrimary)?.category || product.productCategories[0]?.category,
-    images: product.images.map(img => ({
+    category: product.productCategories.find((pc: any) => pc.isPrimary)?.category || product.productCategories[0]?.category,
+    images: product.images.map((img: any) => ({
       image_url: img.imageUrl,
       alt_text: img.altText || undefined,
       is_primary: img.isPrimary
