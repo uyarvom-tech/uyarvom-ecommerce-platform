@@ -12,7 +12,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const supabase = createSupabaseServerClient()
+    const supabase = await createSupabaseServerClient()
 
     // Sign in with Supabase
     const { data, error } = await supabase.auth.signInWithPassword({
