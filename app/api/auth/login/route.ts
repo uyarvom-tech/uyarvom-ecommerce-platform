@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { authenticateUser } from '@/lib/demo-users'
+import { createSupabaseServerClient } from '@/lib/supabase'
 
 export async function POST(request: Request) {
   try {
@@ -12,38 +12,37 @@ export async function POST(request: Request) {
       )
     }
 
-    // Use demo authentication system
-    const user = authenticateUser(email, password)
+    const supabase = createSupabaseServerClient()
 
-    if (!user) {
+    // Sign in with Supabase
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
+
+    if (error) {
       return NextResponse.json(
-        { error: 'Invalid email or password' },
+        { error: error.message },
         { status: 400 }
       )
     }
 
-    // Create response with user data
-    const response = NextResponse.json({
+    if (!data.user) {
+      return NextResponse.json(
+        { error: 'Authentication failed' },
+        { status: 400 }
+      )
+    }
+
+    // Return success response
+    return NextResponse.json({
       success: true,
       user: {
-        id: user.id,
-        email: user.email,
-        fullName: user.full_name,
-        role: user.role,
-        phone: user.phone,
+        id: data.user.id,
+        email: data.user.email,
+        fullName: data.user.user_metadata?.full_name || data.user.email,
       },
     })
-
-    // Set cookie for server-side authentication
-    response.cookies.set('demo-user', JSON.stringify(user), {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 86400, // 24 hours
-      path: '/'
-    })
-
-    return response
   } catch (error) {
     console.error('Login error:', error)
     return NextResponse.json(

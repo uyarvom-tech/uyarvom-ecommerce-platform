@@ -163,10 +163,11 @@ git push origin main
 3. Import your GitHub repository
 4. **Framework Preset**: Next.js
 5. **Root Directory**: `./` (default)
-6. **IMPORTANT**: Before clicking Deploy, go to **Environment Variables** first (Step 3.3)
-7. After adding environment variables, click **Deploy**
+6. **IMPORTANT**: Click **Environment Variables** to add them BEFORE deploying
+7. Add all environment variables from Step 3.3 below
+8. After adding environment variables, click **Deploy**
 
-> **Note**: If you get a dependency error during deployment, make sure your `pnpm-lock.yaml` is up to date by running `pnpm install` locally and pushing the changes.
+> **Note**: The build will fail if environment variables are not set first, especially `DATABASE_URL`.
 
 ### 3.3 Configure Environment Variables
 1. Go to your Vercel project → **Settings** → **Environment Variables**
@@ -200,7 +201,7 @@ UPLOAD_MAX_SIZE=10485760
 ALLOWED_FILE_TYPES=image/jpeg,image/png,image/webp
 ```
 
-### 3.5 Deploy Database Schema
+### 3.4 Deploy Database Schema (AFTER Vercel deployment succeeds)
 1. In your local project, create a `.env` file with your production `DATABASE_URL`
 2. Run database migration:
 
@@ -210,11 +211,13 @@ npx prisma db push
 
 3. Verify tables were created in Supabase → **Table Editor**
 
-### 3.6 Redeploy (if needed)
-1. Go to Vercel → **Deployments**
-2. If the first deployment failed, click **Redeploy** on the latest deployment
-3. Wait for deployment to complete
-4. Test your live site!
+> **Important**: Only run this AFTER your Vercel deployment succeeds. The build no longer tries to push the database schema automatically.
+
+### 3.5 Test Your Deployment
+1. Wait for Vercel deployment to complete
+2. Visit your live site URL
+3. Test basic functionality (should work without database initially)
+4. After running database schema (Step 3.4), test full functionality
 
 ---
 

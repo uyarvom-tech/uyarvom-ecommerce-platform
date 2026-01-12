@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createSupabaseServerClient } from '@/lib/supabase'
 import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
@@ -12,11 +12,16 @@ export async function POST(request: Request) {
       )
     }
 
-    const supabase = await createClient()
+    const supabase = createSupabaseServerClient()
 
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: {
+          full_name: fullName || null,
+        }
+      }
     })
 
     if (error) {
@@ -24,21 +29,6 @@ export async function POST(request: Request) {
         { error: error.message },
         { status: 400 }
       )
-    }
-
-    // Create user profile if user was created
-    if (data.user) {
-      const { error: profileError } = await supabase
-        .from('user_profiles')
-        .insert({
-          id: data.user.id,
-          full_name: fullName || null,
-        })
-
-      if (profileError) {
-        console.error('Profile creation error:', profileError)
-        // Don't fail the registration if profile creation fails
-      }
     }
 
     return NextResponse.json({
