@@ -67,7 +67,7 @@ export function ProductCard({ product }: { product: any }) {
         <div className="relative aspect-square overflow-hidden bg-secondary/20 rounded-[20px]">
           {/* Single Image Display with Smooth Transitions */}
           <div className="relative w-full h-full">
-            {displayImages.map((image, index) => (
+            {displayImages.map((image: string, index: number) => (
               <div
                 key={index}
                 className={`absolute inset-0 transition-all duration-500 ease-in-out ${
@@ -92,7 +92,7 @@ export function ProductCard({ product }: { product: any }) {
           {/* Image Indicators - Show dots if multiple main images */}
           {hasMultipleImages && mainImages.length > 1 && (
             <div className="absolute top-2 left-1/2 transform -translate-x-1/2 flex gap-1">
-              {mainImages.map((_, index) => (
+              {mainImages.map((_: string, index: number) => (
                 <div
                   key={index}
                   className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${

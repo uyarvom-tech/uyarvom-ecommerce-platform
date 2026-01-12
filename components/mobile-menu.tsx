@@ -19,7 +19,7 @@ export function MobileMenu({ user }: MobileMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null)
   const overlayRef = useRef<HTMLDivElement>(null)
   const linksRef = useRef<HTMLDivElement[]>([])
-  const tl = useRef<gsap.core.Timeline>()
+  const tl = useRef<gsap.core.Timeline | null>(null)
 
   useEffect(() => {
     // Initialize timeline

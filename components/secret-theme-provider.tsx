@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { ThemeProvider as NextThemesProvider } from 'next-themes'
-import { type ThemeProviderProps } from 'next-themes/dist/types'
+import { type ThemeProviderProps } from 'next-themes'
 
 export function SecretThemeProvider({ children, ...props }: ThemeProviderProps) {
   const [secretTheme, setSecretTheme] = useState<'light' | 'dark'>('light')

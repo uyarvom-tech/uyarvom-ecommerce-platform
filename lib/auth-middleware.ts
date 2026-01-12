@@ -4,7 +4,7 @@ import { createSupabaseServerClient, supabaseAdmin } from '@/lib/supabase-server
 // Get current user from Supabase session
 export async function getCurrentUser() {
   try {
-    const supabase = createSupabaseServerClient()
+    const supabase = await createSupabaseServerClient()
     const { data: { user }, error } = await supabase.auth.getUser()
     
     if (error || !user) {
