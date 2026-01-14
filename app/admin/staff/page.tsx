@@ -13,27 +13,13 @@ export default async function StaffPage() {
     redirect('/auth/signin')
   }
 
-  // Get user's admin role
-  const adminUser = await prisma.user.findUnique({
-    where: { email: user.email! },
-    include: { adminUser: true }
-  })
-
-  // Only admins can access staff management
-  if (!adminUser?.adminUser || adminUser.adminUser.role !== 'admin') {
-    redirect('/admin') // Redirect staff to main admin page
+  // Only admins can access staff management (demo auth)
+  if (user.email !== 'admin@uyarvom.com') {
+    redirect('/admin')
   }
 
-  // Fetch all staff members (users with admin roles)
+  // Fetch all users for staff management
   const staff = await prisma.user.findMany({
-    where: {
-      adminUser: {
-        isNot: null
-      }
-    },
-    include: {
-      adminUser: true
-    },
     orderBy: {
       createdAt: 'desc'
     }
@@ -45,11 +31,11 @@ export default async function StaffPage() {
     email: user.email,
     fullName: user.fullName || 'No Name',
     avatarUrl: user.avatarUrl,
-    role: user.adminUser?.role || 'staff',
-    permissions: user.adminUser?.permissions || '[]',
+    role: user.email === 'admin@uyarvom.com' ? 'super_admin' : 'customer',
+    permissions: '[]',
     createdAt: user.createdAt.toISOString(),
     updatedAt: user.updatedAt.toISOString(),
-    isActive: true // We'll add this field later if needed
+    isActive: true
   }))
 
   return (

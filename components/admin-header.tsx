@@ -25,12 +25,9 @@ export async function AdminHeader() {
   // Get user's admin role
   let isAdmin = false
   if (user) {
-    const adminUser = await prisma.user.findUnique({
-      where: { email: user.email! },
-      include: { adminUser: true }
-    })
-    isAdmin = adminUser?.adminUser?.role === 'super_admin'
-    console.log('AdminHeader - user:', user.email, 'isAdmin:', isAdmin, 'role:', adminUser?.adminUser?.role)
+    // Demo auth: check if email is admin
+    isAdmin = user.email === 'admin@uyarvom.com'
+    console.log('AdminHeader - user:', user.email, 'isAdmin:', isAdmin)
   }
 
   return (

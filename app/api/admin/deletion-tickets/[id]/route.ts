@@ -18,14 +18,13 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get user's admin role
-    const adminUser = await prisma.user.findUnique({
-      where: { email: user.email! },
-      include: { adminUser: true }
+    // Get user's admin role - using demo auth
+    const dbUser = await prisma.user.findUnique({
+      where: { email: user.email! }
     })
 
-    // Only admins can approve/reject tickets
-    if (!adminUser?.adminUser || adminUser.adminUser.role !== 'admin') {
+    // Only admins can approve/reject tickets (check email for demo auth)
+    if (!dbUser || user.email !== 'admin@uyarvom.com') {
       return NextResponse.json({ error: 'Only admins can review deletion tickets' }, { status: 403 })
     }
 
@@ -56,7 +55,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       where: { id },
       data: {
         status: action === 'approve' ? 'approved' : 'rejected',
-        reviewedBy: adminUser.id
+        reviewedBy: dbUser.id
       },
       include: {
         requester: {

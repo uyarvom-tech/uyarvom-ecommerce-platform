@@ -13,8 +13,7 @@ export interface AuthUser {
 export async function signIn(email: string, password: string): Promise<{ user: AuthUser; token: string } | null> {
   try {
     const user = await prisma.user.findUnique({
-      where: { email },
-      include: { adminUser: true }
+      where: { email }
     })
 
     if (!user) {
@@ -88,8 +87,7 @@ export async function verifyToken(token: string): Promise<AuthUser | null> {
 export async function getUser(userId: string) {
   try {
     return await prisma.user.findUnique({
-      where: { id: userId },
-      include: { adminUser: true }
+      where: { id: userId }
     })
   } catch (error) {
     return null

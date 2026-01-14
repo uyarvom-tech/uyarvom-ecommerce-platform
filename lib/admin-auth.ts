@@ -26,7 +26,8 @@ export async function getCurrentUser() {
 export async function isCurrentUserAdmin() {
   try {
     const user = await getCurrentUser()
-    return user?.adminUser ? true : false
+    // Demo auth: check if email is admin
+    return user?.email === 'admin@uyarvom.com'
   } catch (error) {
     console.error('Admin check error:', error)
     return false
@@ -36,7 +37,8 @@ export async function isCurrentUserAdmin() {
 export async function getCurrentUserAdminRole() {
   try {
     const user = await getCurrentUser()
-    return user?.adminUser?.role || null
+    // Demo auth: return admin role for admin email
+    return user?.email === 'admin@uyarvom.com' ? 'super_admin' : null
   } catch (error) {
     console.error('Admin role check error:', error)
     return null
