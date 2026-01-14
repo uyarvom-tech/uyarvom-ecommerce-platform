@@ -8,9 +8,7 @@ async function backupData() {
     console.log('🔄 Creating backup of current data...')
     
     // Get all current data
-    const users = await prisma.user.findMany({
-      include: { adminUser: true }
-    })
+    const users = await prisma.user.findMany()
     
     const categories = await prisma.category.findMany()
     

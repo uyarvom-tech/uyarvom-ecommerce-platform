@@ -30,11 +30,10 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     // Check if user exists
     const existingUser = await prisma.user.findUnique({
-      where: { id },
-      include: { adminUser: true }
+      where: { id }
     })
 
-    if (!existingUser || !existingUser.adminUser) {
+    if (!existingUser) {
       return NextResponse.json(
         { error: 'Staff member not found' },
         { status: 404 }
@@ -94,11 +93,10 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     // Check if user exists and is a staff member
     const existingUser = await prisma.user.findUnique({
-      where: { id },
-      include: { adminUser: true }
+      where: { id }
     })
 
-    if (!existingUser || !existingUser.adminUser) {
+    if (!existingUser) {
       return NextResponse.json(
         { error: 'Staff member not found' },
         { status: 404 }

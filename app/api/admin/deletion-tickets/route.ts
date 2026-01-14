@@ -12,21 +12,20 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get user's admin role
-    const adminUser = await prisma.user.findUnique({
-      where: { email: user.email! },
-      include: { adminUser: true }
+    // Get user's admin role - using demo auth
+    const dbUser = await prisma.user.findUnique({
+      where: { email: user.email! }
     })
 
-    if (!adminUser?.adminUser) {
+    if (!dbUser) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
 
-    // Get deletion tickets based on role
-    const isAdmin = adminUser.adminUser.role === 'admin'
+    // Get deletion tickets (demo auth: admin sees all, others see their own)
+    const isAdmin = user.email === 'admin@uyarvom.com'
     
     const tickets = await prisma.deletionTicket.findMany({
-      where: isAdmin ? {} : { requestedBy: adminUser.id }, // Admins see all, staff see only their own
+      where: isAdmin ? {} : { requestedBy: dbUser.id },
       include: {
         requester: {
           select: { id: true, fullName: true, email: true }
@@ -58,13 +57,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get user's admin role
-    const adminUser = await prisma.user.findUnique({
-      where: { email: user.email! },
-      include: { adminUser: true }
+    // Get user's admin role - using demo auth
+    const dbUser = await prisma.user.findUnique({
+      where: { email: user.email! }
     })
 
-    if (!adminUser?.adminUser) {
+    if (!dbUser) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
 
@@ -93,7 +91,7 @@ export async function POST(request: NextRequest) {
         itemId,
         itemName,
         reason,
-        requestedBy: adminUser.id
+        requestedBy: dbUser.id
       },
       include: {
         requester: {
