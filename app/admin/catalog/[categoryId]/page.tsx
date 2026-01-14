@@ -2,10 +2,6 @@ import { prisma } from "@/lib/prisma-safe"
 import { AdminHeader } from "@/components/admin-header"
 import { CategoryDetailView } from "@/components/admin/category-detail-view"
 import { getCurrentUserRole } from "@/lib/auth-middleware"
-
-// Force dynamic rendering
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
 import { notFound } from "next/navigation"
 
 // Force dynamic rendering
