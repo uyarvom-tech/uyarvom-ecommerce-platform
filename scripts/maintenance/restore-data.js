@@ -16,7 +16,7 @@ async function restoreData() {
     for (const user of backup.users) {
       const { adminUser, ...userData } = user
       
-      const createdUser = await prisma.user.create({
+      await prisma.user.create({
         data: {
           id: userData.id,
           email: userData.email,
@@ -28,19 +28,7 @@ async function restoreData() {
         }
       })
       
-      // Create admin user if exists
-      if (adminUser) {
-        await prisma.adminUser.create({
-          data: {
-            id: adminUser.id,
-            userId: createdUser.id,
-            role: adminUser.role,
-            permissions: adminUser.permissions,
-            createdAt: adminUser.createdAt,
-            updatedAt: adminUser.updatedAt
-          }
-        })
-      }
+      // Note: adminUser is no longer used (demo auth based on email)
     }
     
     // Restore categories

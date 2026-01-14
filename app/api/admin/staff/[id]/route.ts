@@ -48,33 +48,19 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       updateData.password = await bcrypt.hash(password, 12)
     }
 
-    // Update user and admin user in a transaction
-    const result = await prisma.$transaction(async (tx) => {
-      // Update user
-      const user = await tx.user.update({
-        where: { id },
-        data: updateData
-      })
-
-      // Update admin user
-      const adminUser = await tx.adminUser.update({
-        where: { userId: id },
-        data: {
-          role,
-          permissions: JSON.stringify(getDefaultPermissions(role))
-        }
-      })
-
-      return { user, adminUser }
+    // Update user (demo auth: role is determined by email, not stored in DB)
+    const user = await prisma.user.update({
+      where: { id },
+      data: updateData
     })
 
     return NextResponse.json({
       message: 'Staff member updated successfully',
       staff: {
-        id: result.user.id,
-        email: result.user.email,
-        fullName: result.user.fullName,
-        role: result.adminUser.role
+        id: user.id,
+        email: user.email,
+        fullName: user.fullName,
+        role: user.email === 'admin@uyarvom.com' ? 'super_admin' : 'customer'
       }
     })
 

@@ -4,16 +4,8 @@ import bcrypt from 'bcryptjs'
 
 export async function GET(request: NextRequest) {
   try {
-    // Get all staff members (users with admin roles)
+    // Get all users (demo auth: role determined by email)
     const staff = await prisma.user.findMany({
-      where: {
-        adminUser: {
-          isNot: null
-        }
-      },
-      include: {
-        adminUser: true
-      },
       orderBy: {
         createdAt: 'desc'
       }
@@ -74,36 +66,22 @@ export async function POST(request: NextRequest) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 12)
 
-    // Create user and admin user in a transaction
-    const result = await prisma.$transaction(async (tx) => {
-      // Create user
-      const user = await tx.user.create({
-        data: {
-          email,
-          fullName,
-          password: hashedPassword
-        }
-      })
-
-      // Create admin user
-      const adminUser = await tx.adminUser.create({
-        data: {
-          userId: user.id,
-          role,
-          permissions: JSON.stringify(getDefaultPermissions(role))
-        }
-      })
-
-      return { user, adminUser }
+    // Create user (demo auth: role is determined by email, not stored in DB)
+    const user = await prisma.user.create({
+      data: {
+        email,
+        fullName,
+        password: hashedPassword
+      }
     })
 
     return NextResponse.json({
       message: 'Staff member created successfully',
       staff: {
-        id: result.user.id,
-        email: result.user.email,
-        fullName: result.user.fullName,
-        role: result.adminUser.role
+        id: user.id,
+        email: user.email,
+        fullName: user.fullName,
+        role: user.email === 'admin@uyarvom.com' ? 'super_admin' : 'customer'
       }
     })
 
