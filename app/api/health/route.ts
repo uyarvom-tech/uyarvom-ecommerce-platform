@@ -8,14 +8,17 @@ export const revalidate = 0
 const prisma = new PrismaClient()
 
 export async function GET() {
+  const dbUrl = process.env.DATABASE_URL || ''
+  const maskedUrl = dbUrl.replace(/:([^:@]+)@/, ':****@')
+
   const diagnostics: any = {
     status: 'ok',
     timestamp: new Date().toISOString(),
+    connection_details: maskedUrl,
     env: {
       hasDbUrl: !!process.env.DATABASE_URL,
       hasSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
       hasSupabaseAnonKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-      hasR2Config: !!process.env.R2_ACCOUNT_ID,
       nodeEnv: process.env.NODE_ENV,
       vercelRegion: process.env.VERCEL_REGION,
     }
