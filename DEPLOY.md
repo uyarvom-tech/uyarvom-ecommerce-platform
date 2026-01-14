@@ -1,45 +1,43 @@
-# 🚀 Uyarvom Deployment - Debugging Runtime Error
+# 🚀 Uyarvom Deployment - Connection Fix
 
-**Status:** Pushed enhanced diagnostic code. Vercel is auto-deploying.
-
----
-
-## 🔍 DIAGNOSTIC STEPS (Check these in order):
-
-### 1. Simple Ping (API Check):
-Visit: `https://uyarvom-ecommerce-platform-gn4jwa1mr.vercel.app/api/ping`
-- **If 404:** Next.js Routing is failing. Check if the project is built correctly on Vercel.
-- **If JSON:** API routes are working! Proceed to Step 2.
-
-### 2. Health Check (DB Check):
-Visit: `https://uyarvom-ecommerce-platform-gn4jwa1mr.vercel.app/api/health`
-- This now has a **5-second timeout** and detailed environment reporting.
-- It will show if `DATABASE_URL` is detected and if the connection fails.
+**IMPORTANT:** After changing environment variables in Vercel, you MUST click **"Redeploy"** on the deployment for changes to take effect.
 
 ---
 
-## 🔧 Critical Fix: DATABASE_URL
+## 🛠️ THE FIX (Step-by-Step)
 
-The error `Can't reach database server at db.nwphbpiftvhwvsnurqun.supabase.co:5432` means the connection is being blocked or the credentials/host are wrong.
+### 1. Update Vercel Env Vars
+Go to **Vercel Settings → Environment Variables** and set TWO variables:
 
-### Check 1: URL Encoding (Most Likely)
-In **Vercel → Settings → Environment Variables**, your password MUST be encoded.
-- `@` ➔ `%40`
-- `#` ➔ `%23`
+#### **Variable 1: `DATABASE_URL` (The Pooler)**
+This uses port **6543** and is for the app logic.
+```text
+postgres://postgres:Uyarvomdb%40%23%235922@db.nwphbpiftvhwvsnurqun.supabase.co:6543/postgres?pgbouncer=true&connection_limit=1
+```
 
-**Correct Pattern:**
-`postgresql://postgres:Uyarvomdb%40%23%235922@db.nwphbpiftvhwvsnurqun.supabase.co:5432/postgres`
+#### **Variable 2: `DIRECT_URL` (Direct Connection)**
+This uses port **5432** and is for Prisma migrations.
+```text
+postgres://postgres:Uyarvomdb%40%23%235922@db.nwphbpiftvhwvsnurqun.supabase.co:5432/postgres
+```
 
-### Check 2: Try IPv4 vs IPv6
-If the above fails, try adding `?connect_timeout=30` to the end of the URL.
-Or, if Supabase is using IPv6 and Vercel is struggling, use the **Transaction** connection string (port 6543) instead of 5432.
-
-### Check 3: Supabase Paused?
-Log in to Supabase and ensure the project isn't "Paused". If it is, click "Restore project".
+### 2. TRIGGER REDEPLOY
+1. Go to your **Deployments** tab in Vercel.
+2. Click the **...** next to the latest "Failed" or "Error" deployment.
+3. Select **Redeploy**.
+4. Wait for it to finish.
 
 ---
 
-## ⏳ What to do now:
-1. Wait for Vercel to finish the new deployment.
-2. Visit `/api/ping` first. If it works, try `/api/health`.
-3. If `/api/health` shows `database: "error: ..."`, the `DATABASE_URL` definitely needs fixing in Vercel settings.
+## 🔍 Why the previous try failed:
+- The error in the screenshot showed port **5432**.
+- If you had updated Vercel with the new string (port 6543) but didn't **Redeploy**, Vercel kept using the old "5432" string.
+- This is why you saw "database server at ... :5432" even after you thought you changed it.
+
+---
+
+## ✅ Post-Redeploy Verification:
+1. Visit `/api/ping` (Should be OK).
+2. Visit `/api/health`. 
+   - If it still shows port `5432` in the error message, the Redeploy didn't work.
+   - If it shows port `6543` and an error, we have a credential issue.
