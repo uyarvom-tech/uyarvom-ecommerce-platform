@@ -13,13 +13,7 @@ async function main() {
     data: {
       email: 'admin@uyarvom.com',
       password: hashedPassword,
-      fullName: 'Admin User',
-      adminUser: {
-        create: {
-          role: 'super_admin',
-          permissions: JSON.stringify(['all'])
-        }
-      }
+      fullName: 'Admin User'
     }
   })
 
