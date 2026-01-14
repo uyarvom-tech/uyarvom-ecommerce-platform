@@ -8,9 +8,11 @@ async function main() {
 
   // Create admin user
   const hashedPassword = await bcrypt.hash('admin123', 10)
-  
-  const adminUser = await prisma.user.create({
-    data: {
+
+  const adminUser = await prisma.user.upsert({
+    where: { email: 'admin@uyarvom.com' },
+    update: {},
+    create: {
       email: 'admin@uyarvom.com',
       password: hashedPassword,
       fullName: 'Admin User'
@@ -18,8 +20,10 @@ async function main() {
   })
 
   // Create regular user
-  const regularUser = await prisma.user.create({
-    data: {
+  const regularUser = await prisma.user.upsert({
+    where: { email: 'user@example.com' },
+    update: {},
+    create: {
       email: 'user@example.com',
       password: await bcrypt.hash('user123', 10),
       fullName: 'John Doe'
@@ -27,8 +31,10 @@ async function main() {
   })
 
   // Create categories
-  const cookware = await prisma.category.create({
-    data: {
+  const cookware = await prisma.category.upsert({
+    where: { slug: 'cookware' },
+    update: {},
+    create: {
       name: 'Cookware',
       slug: 'cookware',
       description: 'Premium ceramic pots, pans, and cooking essentials',
@@ -37,8 +43,10 @@ async function main() {
     }
   })
 
-  const dinnerware = await prisma.category.create({
-    data: {
+  const dinnerware = await prisma.category.upsert({
+    where: { slug: 'dinnerware' },
+    update: {},
+    create: {
       name: 'Dinnerware',
       slug: 'dinnerware',
       description: 'Beautiful plates, bowls, and serving pieces',
@@ -47,8 +55,10 @@ async function main() {
     }
   })
 
-  const bakeware = await prisma.category.create({
-    data: {
+  const bakeware = await prisma.category.upsert({
+    where: { slug: 'bakeware' },
+    update: {},
+    create: {
       name: 'Bakeware',
       slug: 'bakeware',
       description: 'Ceramic baking dishes and accessories',
@@ -57,8 +67,10 @@ async function main() {
     }
   })
 
-  const serveware = await prisma.category.create({
-    data: {
+  const serveware = await prisma.category.upsert({
+    where: { slug: 'serveware' },
+    update: {},
+    create: {
       name: 'Serveware',
       slug: 'serveware',
       description: 'Elegant serving bowls and platters',
@@ -178,12 +190,22 @@ async function main() {
   ]
 
   for (const productData of products) {
-    const { images, ...product } = productData
-    await prisma.product.create({
-      data: {
+    const { images, categoryId, ...product } = productData as any
+    await prisma.product.upsert({
+      where: { slug: product.slug },
+      update: {},
+      create: {
         ...product,
         images: {
           create: images
+        },
+        productCategories: {
+          create: [
+            {
+              categoryId: categoryId,
+              isPrimary: true
+            }
+          ]
         }
       }
     })
