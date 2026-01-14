@@ -16,14 +16,15 @@ export default async function HomePage({
 }: {
   searchParams: Promise<{ category?: string; sort?: string; min?: string; max?: string; tab?: string; search?: string }>
 }) {
-  const params = await searchParams
+  try {
+    const params = await searchParams
 
-  // Check if we're on the AI tab
-  const isAITab = params.tab === 'ai-match'
-  const searchQuery = params.search
+    // Check if we're on the AI tab
+    const isAITab = params.tab === 'ai-match'
+    const searchQuery = params.search
 
-  // Build where clause for products
-  const where: any = { isActive: true }
+    // Build where clause for products
+    const where: any = { isActive: true }
 
   // Add search functionality
   if (searchQuery && !isAITab) {
@@ -234,4 +235,30 @@ export default async function HomePage({
       <Footer />
     </div>
   )
+  } catch (error: any) {
+    console.error('Homepage error:', error)
+    return (
+      <div className="flex min-h-screen flex-col bg-background">
+        <Header />
+        <main className="flex-1 flex items-center justify-center p-8">
+          <div className="max-w-2xl w-full bg-destructive/10 border border-destructive/20 rounded-lg p-8">
+            <h1 className="text-2xl font-bold text-destructive mb-4">Database Connection Error</h1>
+            <p className="text-sm mb-4">Unable to connect to the database. Please check:</p>
+            <ul className="list-disc list-inside space-y-2 text-sm mb-4">
+              <li>DATABASE_URL environment variable is set correctly in Vercel</li>
+              <li>Password special characters are URL-encoded (@ = %40, # = %23)</li>
+              <li>Supabase database is accessible</li>
+            </ul>
+            <details className="mt-4">
+              <summary className="cursor-pointer text-sm font-semibold">Error Details</summary>
+              <pre className="mt-2 p-4 bg-black/10 rounded text-xs overflow-auto">
+                {error.message}
+              </pre>
+            </details>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    )
+  }
 }
