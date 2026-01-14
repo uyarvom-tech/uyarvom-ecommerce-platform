@@ -8,6 +8,10 @@ import { StockAdjuster } from "@/components/stock-adjuster"
 import { notFound, redirect } from "next/navigation"
 import Link from "next/link"
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export default async function AdminProductDetailPage({ params }: { params: { id: string } }) {
   const supabase = await createClient()
 

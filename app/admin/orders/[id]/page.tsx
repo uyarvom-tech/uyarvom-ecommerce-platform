@@ -18,6 +18,10 @@ const statusColors = {
   cancelled: "bg-red-500/10 text-red-700 dark:text-red-400",
 }
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export default async function AdminOrderDetailPage({ params }: { params: { id: string } }) {
   const supabase = await createClient()
 

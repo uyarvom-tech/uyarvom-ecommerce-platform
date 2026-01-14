@@ -7,6 +7,10 @@ import { AlertCircle, Package } from "lucide-react"
 import Link from "next/link"
 import { redirect } from "next/navigation"
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export default async function AdminInventoryPage() {
   const supabase = await createClient()
 

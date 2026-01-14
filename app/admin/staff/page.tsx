@@ -4,6 +4,10 @@ import { StaffManagement } from "@/components/admin/staff-management"
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export default async function StaffPage() {
   // Check if user is admin
   const supabase = await createClient()

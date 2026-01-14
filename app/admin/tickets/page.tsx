@@ -4,6 +4,10 @@ import { TicketManagement } from "@/components/admin/ticket-management"
 import { getCurrentUserRole } from "@/lib/auth-middleware"
 import { redirect } from "next/navigation"
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export default async function TicketsPage() {
   // Get current user role
   const userRole = await getCurrentUserRole()

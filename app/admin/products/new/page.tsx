@@ -2,6 +2,10 @@ import { prisma } from "@/lib/prisma-safe"
 import { AdminHeader } from "@/components/admin-header"
 import { ProductForm } from "@/components/admin/product-form"
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export default async function NewProductPage() {
   // Get categories with hierarchy for the form
   const categories = await prisma.category.findMany({
