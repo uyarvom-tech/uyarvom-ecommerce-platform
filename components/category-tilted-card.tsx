@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation'
 import TiltedCard from './tilted-card'
 import { ArrowRight } from 'lucide-react'
-import Image from 'next/image'
+import { CATEGORY_FALLBACK_IMAGE } from '@/lib/image-fallbacks'
 
 interface CategoryTiltedCardProps {
   category: {
@@ -30,7 +30,7 @@ export function CategoryTiltedCard({ category }: CategoryTiltedCardProps) {
   return (
     <div className="w-full max-w-sm">
       <TiltedCard
-        imageSrc={category.imageUrl || `/placeholder.svg?height=400&width=400&query=${category.name} ceramic`}
+        imageSrc={category.imageUrl || CATEGORY_FALLBACK_IMAGE}
         altText={`${category.name} - Premium ceramic collection`}
         captionText={category.name}
         containerHeight="320px"

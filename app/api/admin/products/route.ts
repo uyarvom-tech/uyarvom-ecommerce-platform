@@ -22,14 +22,14 @@ export async function GET(request: NextRequest) {
 
     // Build where clause
     const where: any = {}
-    
+
     if (search) {
       where.OR = [
         { name: { contains: search } },
         { sku: { contains: search } }
       ]
     }
-    
+
     if (category) {
       where.productCategories = {
         some: {
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
         }
       }
     }
-    
+
     if (status === 'active') {
       where.isActive = true
     } else if (status === 'inactive') {
@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
   try {
     const data = await request.json()
     console.log('🔥 API POST - Received data:', data)
-    
+
     const {
       name,
       slug,
@@ -183,7 +183,7 @@ export async function POST(request: NextRequest) {
 
     // Prepare images for creation
     let imagesToCreate = []
-    
+
     if (hasColorVariants && colorVariants && colorVariants.length > 0) {
       // Use color variant images
       console.log('🎨 Using color variant images')
@@ -268,7 +268,9 @@ export async function POST(request: NextRequest) {
               value: variant.colorName,
               colorCode: variant.colorCode,
               colorImage: variant.images?.[0]?.imageUrl || null,
-              stock: 100, // Default stock
+              stock: parseInt(variant.stock || '0'),
+              sku: variant.sku || null,
+              price: variant.price ? parseFloat(variant.price) : null,
               sortOrder: i,
               isActive: true
             }
@@ -309,7 +311,7 @@ export async function PUT(request: NextRequest) {
 
   try {
     const data = await request.json()
-    
+
     const {
       id,
       name,
@@ -400,7 +402,7 @@ export async function PUT(request: NextRequest) {
           deleteMany: {}, // Delete existing images
           create: (() => {
             let imagesToCreate = []
-            
+
             if (hasColorVariants && colorVariants && colorVariants.length > 0) {
               // Use color variant images
               console.log('🎨 Using color variant images for update')
@@ -426,7 +428,7 @@ export async function PUT(request: NextRequest) {
                 sortOrder: img.sortOrder || index
               })) || []
             }
-            
+
             console.log('📸 Images to create:', imagesToCreate)
             return imagesToCreate
           })()
@@ -447,7 +449,7 @@ export async function PUT(request: NextRequest) {
     // Handle color variants with proper image storage
     if (hasColorVariants && colorVariants && colorVariants.length > 0) {
       console.log('🎨 Creating color variants with images...')
-      
+
       // Delete existing color variants and their images
       await prisma.productVariant.deleteMany({
         where: {
@@ -455,7 +457,7 @@ export async function PUT(request: NextRequest) {
           name: 'Color'
         }
       })
-      
+
       // Create new color variants with their images
       for (let i = 0; i < colorVariants.length; i++) {
         const variant = colorVariants[i]
@@ -468,12 +470,14 @@ export async function PUT(request: NextRequest) {
               value: variant.colorName,
               colorCode: variant.colorCode,
               colorImage: variant.images?.[0]?.imageUrl || null, // Keep for backward compatibility
-              stock: 100,
+              stock: parseInt(variant.stock || '0'),
+              sku: variant.sku || null,
+              price: variant.price ? parseFloat(variant.price) : null,
               sortOrder: i,
               isActive: true
             }
           })
-          
+
           // Create images for this variant
           if (variant.images && variant.images.length > 0) {
             const variantImages = variant.images.map((img: any, imgIndex: number) => ({
@@ -482,11 +486,11 @@ export async function PUT(request: NextRequest) {
               altText: img.altText || `${variant.colorName} - View ${imgIndex + 1}`,
               sortOrder: imgIndex
             }))
-            
+
             await prisma.productVariantImage.createMany({
               data: variantImages
             })
-            
+
             console.log(`✅ Created variant ${variant.colorName} with ${variant.images.length} images`)
           }
         }

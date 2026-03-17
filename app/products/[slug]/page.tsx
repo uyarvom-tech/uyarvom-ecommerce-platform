@@ -2,26 +2,27 @@ import { prisma } from "@/lib/prisma-safe"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import FlipkartProductGallery from "@/components/flipkart-product-gallery"
-import ProductSizeSelector from "@/components/product-size-selector"
-import { AddToCartButton } from "@/components/add-to-cart-button"
+import { ProductActionArea } from "@/components/product-action-area"
 import { ProductReviews } from "@/components/product-reviews"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { Star, Truck } from "lucide-react"
+import { Star } from "lucide-react"
 import { notFound } from "next/navigation"
 import type { Metadata } from "next"
-import { Card, CardContent } from "@/components/ui/card"
+import { createClient } from "@/lib/supabase/server"
+import { TrustBlocks } from "@/components/trust-blocks"
 
-// Force dynamic rendering
-export const dynamic = 'force-dynamic'
+export const dynamic = "force-dynamic"
 export const revalidate = 0
 
-export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}): Promise<Metadata> {
   const { slug } = await params
-  
+
   const product = await prisma.product.findUnique({
     where: { slug },
-    select: { name: true, shortDescription: true }
+    select: { name: true, shortDescription: true },
   })
 
   if (!product) {
@@ -36,219 +37,130 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
+  const supabase = await createClient()
+  const {
+    data: { user: authUser },
+  } = await supabase.auth.getUser()
 
   const product = await prisma.product.findUnique({
-    where: { 
+    where: {
       slug,
-      isActive: true 
+      isActive: true,
     },
     include: {
       productCategories: {
         include: { category: true },
-        orderBy: { isPrimary: 'desc' }
+        orderBy: { isPrimary: "desc" },
       },
       images: {
-        orderBy: { sortOrder: 'asc' }
+        orderBy: { sortOrder: "asc" },
       },
       reviews: {
         select: {
-          rating: true
-        }
-      }
-    }
+          rating: true,
+        },
+      },
+    },
   })
 
   if (!product) {
     notFound()
   }
 
-  // Calculate review statistics
   const reviewStats = {
     totalReviews: product.reviews.length,
-    averageRating: product.reviews.length > 0 
-      ? product.reviews.reduce((sum: number, review: any) => sum + review.rating, 0) / product.reviews.length 
-      : 0
+    averageRating:
+      product.reviews.length > 0
+        ? product.reviews.reduce((sum, review) => sum + review.rating, 0) / product.reviews.length
+        : 0,
   }
 
-  // Get primary category for display
-  const primaryCategory = product.productCategories.find((pc: any) => pc.isPrimary)?.category || product.productCategories[0]?.category
+  const primaryCategory =
+    product.productCategories.find((pc) => pc.isPrimary)?.category || product.productCategories[0]?.category
 
   const hasDiscount = product.compareAtPrice && product.compareAtPrice > product.price
-  const discountPercent = hasDiscount && product.compareAtPrice
-    ? Math.round(((product.compareAtPrice - product.price) / product.compareAtPrice) * 100)
-    : 0
-
   const sortedImages = product.images || []
-
-  const isLowStock = product.stockQuantity <= product.lowStockThreshold && product.stockQuantity > 0
-  const viewersCount = Math.floor(Math.random() * 50) + 20 // Mock concurrent viewers
-  const recentPurchases = Math.floor(Math.random() * 30) + 10 // Mock recent purchases
+  const isLowStock =
+    product.stockQuantity <= product.lowStockThreshold && product.stockQuantity > 0
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col bg-background">
       <Header />
-      <main className="flex-1 px-6 py-8">
-        <div className="container mx-auto max-w-7xl">
+
+      <main className="flex-1">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-12 lg:py-20">
           {isLowStock && (
-            <div className="mb-6 rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-center">
-              <p className="font-semibold text-destructive">
-                ⚡ Hurry! Only {product.stockQuantity} left in stock - Order soon to avoid missing out
+            <div className="mb-10 p-4 border-l-2 border-primary bg-primary/5">
+              <p className="text-xs uppercase tracking-[0.2em] font-bold text-primary">
+                Limited Availability. Only {product.stockQuantity} pieces remain in our current curation.
               </p>
             </div>
           )}
 
-          <div className="grid gap-8 lg:grid-cols-2">
-            {/* Product Images with Integrated Variants */}
-            <FlipkartProductGallery 
-              images={sortedImages} 
-              productName={product.name}
-              productId={product.id}
-              productSlug={product.slug}
-              productPrice={product.price}
-            />
+          <div className="grid gap-16 lg:grid-cols-2 lg:items-start">
+            <div className="sticky top-32">
+              <FlipkartProductGallery
+                images={sortedImages}
+                productName={product.name}
+                productId={product.id}
+                productSlug={product.slug}
+                productPrice={product.price}
+              />
+            </div>
 
-            {/* Product Details */}
-            <div className="flex flex-col">
-              <div className="mb-3 flex items-center gap-2">
-                <Badge variant="secondary" className="font-semibold">
-                  {primaryCategory?.name || 'Uncategorized'}
-                </Badge>
-                {isLowStock && (
-                  <Badge className="bg-destructive/10 text-destructive border-destructive/30 font-semibold">
-                    ⚡ Low Stock
-                  </Badge>
-                )}
-                {product.stockQuantity <= 0 && <Badge variant="outline">Out of Stock</Badge>}
-                {new Date(product.createdAt) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) && (
-                  <Badge className="bg-blue-500 text-white">NEW</Badge>
-                )}
-              </div>
+            <div className="flex flex-col space-y-10">
+              <div className="space-y-6">
+                <div className="flex items-center gap-4">
+                  <span className="text-primary text-[10px] font-bold uppercase tracking-[0.4em]">
+                    {primaryCategory?.name || "Artisanal Collection"}
+                  </span>
+                  <div className="h-[1px] w-8 bg-border"></div>
+                  {new Date(product.createdAt) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) && (
+                    <span className="text-foreground text-[10px] font-bold uppercase tracking-[0.4em]">
+                      New Arrival
+                    </span>
+                  )}
+                </div>
 
-              <h1 className="mb-4 font-serif text-3xl font-bold tracking-tight lg:text-4xl">{product.name}</h1>
+                <h1 className="text-4xl md:text-6xl font-serif text-foreground leading-[1.1]">
+                  {product.name}
+                </h1>
 
-              <div className="mb-4 flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center">
-                    {[...Array(5)].map((_, i) => (
-                      <Star 
-                        key={i} 
-                        className={`h-5 w-5 ${
-                          i < Math.round(reviewStats.averageRating)
-                            ? 'fill-amber-400 text-amber-400'
-                            : 'text-gray-300'
-                        }`} 
+                <div className="flex items-center gap-6">
+                  <div className="flex items-center gap-1.5">
+                    {[...Array(5)].map((_, index) => (
+                      <Star
+                        key={index}
+                        className={`h-3 w-3 ${index < Math.round(reviewStats.averageRating)
+                          ? "fill-primary text-primary"
+                          : "fill-border text-border"
+                          }`}
                       />
                     ))}
                   </div>
-                  <span className="font-bold text-lg">
-                    {reviewStats.averageRating > 0 ? reviewStats.averageRating.toFixed(1) : 'No ratings'}
+                  <span className="text-[11px] font-bold uppercase tracking-widest text-foreground/40">
+                    {reviewStats.totalReviews} Customer Reviews
                   </span>
                 </div>
-                {reviewStats.totalReviews > 0 && (
-                  <>
-                    <span className="text-muted-foreground">|</span>
-                    <span className="text-sm font-medium text-primary underline cursor-pointer">
-                      Read {reviewStats.totalReviews} verified review{reviewStats.totalReviews !== 1 ? 's' : ''}
-                    </span>
-                  </>
-                )}
               </div>
 
-              <div className="mb-6 flex flex-wrap items-center gap-4 text-sm">
-                <div className="flex items-center gap-1.5 text-muted-foreground">
-                  <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
-                  <span className="font-medium">{viewersCount} people viewing this now</span>
-                </div>
-                <span className="text-muted-foreground">•</span>
-                <span className="font-medium text-foreground">{recentPurchases} sold in last 24 hours</span>
-              </div>
+              <ProductActionArea product={product} hasDiscount={hasDiscount ?? false} />
 
-              <div className="mb-6 rounded-lg bg-secondary/30 p-4">
-                <div className="flex items-baseline gap-3">
-                  <span className="font-serif text-4xl font-bold">₹{product.price.toLocaleString("en-IN")}</span>
-                  {hasDiscount && product.compareAtPrice && (
-                    <>
-                      <span className="text-xl text-muted-foreground line-through">
-                        ₹{product.compareAtPrice.toLocaleString("en-IN")}
-                      </span>
-                      <Badge className="bg-destructive text-destructive-foreground text-base px-3 py-1">
-                        SAVE {discountPercent}%
-                      </Badge>
-                    </>
-                  )}
-                </div>
-                {hasDiscount && product.compareAtPrice && (
-                  <p className="mt-2 text-sm font-medium text-green-600">
-                    You save ₹{(product.compareAtPrice - product.price).toLocaleString("en-IN")} on this purchase!
-                  </p>
-                )}
-                <p className="mt-2 text-sm text-muted-foreground">Inclusive of all taxes</p>
-              </div>
-
-              {product.shortDescription && (
-                <p className="mb-6 text-lg leading-relaxed text-muted-foreground">{product.shortDescription}</p>
-              )}
-
-              {/* Size and Other Variants */}
-              <div className="mb-6">
-                <ProductSizeSelector 
-                  productId={product.id} 
-                  productPrice={product.price}
-                />
-              </div>
-
-              <div className="mb-6">
-                <AddToCartButton product={product} />
-                {isLowStock && (
-                  <p className="mt-2 text-center text-sm font-medium text-destructive">
-                    📦 Order within 2 hours for delivery by tomorrow
-                  </p>
-                )}
-              </div>
-
-              <div className="mb-6 grid grid-cols-3 gap-3 rounded-lg border bg-card p-4">
-                <div className="text-center">
-                  <div className="mb-1 flex justify-center">
-                    <svg className="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                  </div>
-                  <p className="text-xs font-semibold">Lifetime</p>
-                  <p className="text-xs text-muted-foreground">Warranty</p>
-                </div>
-                <div className="text-center border-x">
-                  <div className="mb-1 flex justify-center">
-                    <svg className="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <p className="text-xs font-semibold">7-Day Easy</p>
-                  <p className="text-xs text-muted-foreground">Returns</p>
-                </div>
-                <div className="text-center">
-                  <div className="mb-1 flex justify-center">
-                    <Truck className="h-6 w-6 text-primary" />
-                  </div>
-                  <p className="text-xs font-semibold">Free Shipping</p>
-                  <p className="text-xs text-muted-foreground">On ₹999+</p>
-                </div>
-              </div>
-
-              <Separator className="my-6" />
+              <TrustBlocks />
             </div>
           </div>
 
-          {/* Real Reviews Section */}
-          <section className="mt-16">
-            <ProductReviews 
-              productSlug={product.slug} 
-              currentUserId="cmjmwg4hw0002hluaf0cbp2rs" // Demo user ID - TODO: Get from auth context
-            />
+          <section className="mt-32 border-t border-border pt-20">
+            <div className="flex flex-col items-center text-center space-y-10 mb-20">
+              <span className="text-primary text-[10px] font-bold uppercase tracking-[0.5em]">
+                Verified Reflections
+              </span>
+              <h2 className="text-4xl md:text-5xl font-serif">
+                Customer <span className="text-primary italic">Perspectives</span>
+              </h2>
+              <div className="h-16 w-[1px] bg-primary/20"></div>
+            </div>
+            <ProductReviews productSlug={product.slug} currentUserId={authUser?.id} />
           </section>
         </div>
       </main>

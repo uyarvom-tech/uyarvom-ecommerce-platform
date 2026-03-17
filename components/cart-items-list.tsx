@@ -3,74 +3,101 @@
 import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Minus, Plus, Trash2 } from "lucide-react"
-import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
+import { Minus, Plus, Trash2 } from "lucide-react"
 import { toast } from "sonner"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { PRODUCT_FALLBACK_IMAGE } from "@/lib/image-fallbacks"
 
 export function CartItemsList({ items }: { items: any[] }) {
   const [updatingItems, setUpdatingItems] = useState<Set<string>>(new Set())
   const router = useRouter()
-  const supabase = createClient()
 
-  const updateQuantity = async (itemId: string, newQuantity: number, maxStock: number) => {
-    if (newQuantity < 1 || newQuantity > maxStock) return
-    setUpdatingItems((prev) => new Set(prev).add(itemId))
-
-    // @ts-ignore
-    const { error } = await supabase.from("cart_items").update({ quantity: newQuantity }).eq("id", itemId)
-
-    if (error) {
-      toast.error("Failed to update quantity")
-    } else {
-      router.refresh()
-    }
-
+  const setUpdating = (itemId: string, updating: boolean) => {
     setUpdatingItems((prev) => {
       const next = new Set(prev)
-      next.delete(itemId)
+      if (updating) {
+        next.add(itemId)
+      } else {
+        next.delete(itemId)
+      }
       return next
     })
   }
 
-  const removeItem = async (itemId: string) => {
-    setUpdatingItems((prev) => new Set(prev).add(itemId))
+  const updateQuantity = async (itemId: string, newQuantity: number, maxStock: number) => {
+    if (newQuantity < 1 || newQuantity > maxStock) return
 
-    // @ts-ignore
-    const { error } = await supabase.from("cart_items").delete().eq("id", itemId)
+    setUpdating(itemId, true)
 
-    if (error) {
-      toast.error("Failed to remove item")
-      setUpdatingItems((prev) => {
-        const next = new Set(prev)
-        next.delete(itemId)
-        return next
+    try {
+      const response = await fetch(`/api/cart/${itemId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ quantity: newQuantity }),
       })
-    } else {
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null)
+        throw new Error(payload?.error || "Failed to update quantity")
+      }
+
+      router.refresh()
+    } catch (error) {
+      console.error("Cart update error:", error)
+      toast.error(error instanceof Error ? error.message : "Failed to update quantity")
+    } finally {
+      setUpdating(itemId, false)
+    }
+  }
+
+  const removeItem = async (itemId: string) => {
+    setUpdating(itemId, true)
+
+    try {
+      const response = await fetch(`/api/cart/${itemId}`, {
+        method: "DELETE",
+      })
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null)
+        throw new Error(payload?.error || "Failed to remove item")
+      }
+
       toast.success("Item removed from cart")
       router.refresh()
+    } catch (error) {
+      console.error("Cart remove error:", error)
+      toast.error(error instanceof Error ? error.message : "Failed to remove item")
+      setUpdating(itemId, false)
     }
   }
 
   return (
     <div className="space-y-4">
       {items.map((item) => {
-        const primaryImage = item.product.images?.find((img: any) => img.is_primary) || item.product.images?.[0]
+        const product = item.product
+        const primaryImage =
+          product.images?.find((img: any) => img.isPrimary || img.is_primary) || product.images?.[0]
+        const imageUrl = primaryImage?.imageUrl || primaryImage?.image_url
+        const stockQuantity = Number(product.stockQuantity ?? product.stock_quantity ?? 0)
+        const primaryCategory =
+          product.productCategories?.find((entry: any) => entry.isPrimary)?.category ||
+          product.productCategories?.[0]?.category
         const isUpdating = updatingItems.has(item.id)
 
         return (
           <Card key={item.id}>
             <CardContent className="p-4">
               <div className="flex gap-4">
-                <Link href={`/products/${item.product.slug}`} className="flex-shrink-0">
+                <Link href={`/products/${product.slug}`} className="flex-shrink-0">
                   <div className="h-24 w-24 overflow-hidden rounded-md bg-muted">
                     <Image
-                      src={
-                        primaryImage?.image_url || `/placeholder.svg?height=100&width=100&query=${item.product.name}`
-                      }
-                      alt={item.product.name}
+                      src={imageUrl || PRODUCT_FALLBACK_IMAGE}
+                      alt={product.name}
                       width={100}
                       height={100}
                       className="h-full w-full object-cover"
@@ -80,11 +107,11 @@ export function CartItemsList({ items }: { items: any[] }) {
 
                 <div className="flex flex-1 flex-col justify-between">
                   <div>
-                    <Link href={`/products/${item.product.slug}`} className="hover:underline">
-                      <h3 className="font-semibold">{item.product.name}</h3>
+                    <Link href={`/products/${product.slug}`} className="hover:underline">
+                      <h3 className="font-semibold">{product.name}</h3>
                     </Link>
-                    <p className="text-sm text-muted-foreground">{item.product.category?.name}</p>
-                    <p className="mt-1 font-semibold">₹{item.product.price.toLocaleString("en-IN")}</p>
+                    <p className="text-sm text-muted-foreground">{primaryCategory?.name}</p>
+                    <p className="mt-1 font-semibold">₹{Number(product.price || 0).toLocaleString("en-IN")}</p>
                   </div>
 
                   <div className="flex items-center justify-between">
@@ -93,7 +120,7 @@ export function CartItemsList({ items }: { items: any[] }) {
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8"
-                        onClick={() => updateQuantity(item.id, item.quantity - 1, item.product.stock_quantity)}
+                        onClick={() => updateQuantity(item.id, item.quantity - 1, stockQuantity)}
                         disabled={isUpdating || item.quantity <= 1}
                       >
                         <Minus className="h-3 w-3" />
@@ -103,15 +130,15 @@ export function CartItemsList({ items }: { items: any[] }) {
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8"
-                        onClick={() => updateQuantity(item.id, item.quantity + 1, item.product.stock_quantity)}
-                        disabled={isUpdating || item.quantity >= item.product.stock_quantity}
+                        onClick={() => updateQuantity(item.id, item.quantity + 1, stockQuantity)}
+                        disabled={isUpdating || item.quantity >= stockQuantity}
                       >
                         <Plus className="h-3 w-3" />
                       </Button>
                     </div>
 
                     <div className="flex items-center gap-4">
-                      <p className="font-bold">₹{(item.product.price * item.quantity).toLocaleString("en-IN")}</p>
+                      <p className="font-bold">₹{(Number(product.price || 0) * item.quantity).toLocaleString("en-IN")}</p>
                       <Button
                         variant="ghost"
                         size="icon"

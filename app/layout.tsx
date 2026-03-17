@@ -1,10 +1,9 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Lato } from "next/font/google"
+import { Lato, Playfair_Display } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { Toaster } from "sonner"
 import { SecretThemeProvider } from "@/components/secret-theme-provider"
-import { GlobalClickSpark } from "@/components/global-click-spark"
 import { FloatingAIButton } from "@/components/floating-ai-button"
 import "./globals.css"
 
@@ -12,6 +11,12 @@ const lato = Lato({
   subsets: ["latin"],
   weight: ["100", "300", "400", "700", "900"],
   variable: "--font-lato",
+  display: "swap",
+})
+
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  variable: "--font-playfair",
   display: "swap",
 })
 
@@ -32,21 +37,25 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`scroll-smooth ${lato.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`scroll-smooth ${lato.variable} ${playfair.variable}`} suppressHydrationWarning>
       <body className={`${lato.className} antialiased`}>
         <SecretThemeProvider>
-          <GlobalClickSpark>
-            {children}
-          </GlobalClickSpark>
+          {children}
           <FloatingAIButton />
-          <Toaster 
-            position="bottom-right" 
+          <Toaster
+            position="bottom-right"
+            expand={false}
             toastOptions={{
               style: {
-                background: 'rgb(var(--card))',
-                color: 'rgb(var(--card-foreground))',
-                border: '1px solid rgb(var(--border))',
-                borderRadius: '16px',
+                background: 'rgb(var(--background))',
+                color: 'rgb(var(--foreground))',
+                border: '1px solid rgb(var(--primary) / 0.2)',
+                borderRadius: '0px',
+                fontSize: '11px',
+                fontWeight: '700',
+                textTransform: 'uppercase',
+                letterSpacing: '0.2em',
+                padding: '16px 24px',
               },
             }}
           />

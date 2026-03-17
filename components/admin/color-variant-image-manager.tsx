@@ -22,6 +22,9 @@ interface ColorVariant {
   id: string
   colorName: string
   colorCode: string
+  price?: string
+  stock?: string
+  sku?: string
   images: ColorVariantImage[]
 }
 
@@ -30,9 +33,9 @@ interface ColorVariantImageManagerProps {
   initialVariants?: ColorVariant[]
 }
 
-export default function ColorVariantImageManager({ 
-  onVariantsChange, 
-  initialVariants = [] 
+export default function ColorVariantImageManager({
+  onVariantsChange,
+  initialVariants = []
 }: ColorVariantImageManagerProps) {
   const [colorVariants, setColorVariants] = useState<ColorVariant[]>(() => {
     // Ensure each variant has a unique ID and proper structure
@@ -131,7 +134,7 @@ export default function ColorVariantImageManager({
 
     if (uploadedImages.length > 0) {
       const variant = colorVariants.find(v => v.id === variantId)
-      
+
       if (variant) {
         const updatedImages = [...variant.images, ...uploadedImages].map((img, index) => ({
           ...img,
@@ -161,14 +164,14 @@ export default function ColorVariantImageManager({
 
       const maxWidth = 300
       const maxHeight = 200
-      
+
       let { width, height } = img
-      
+
       if (width > maxWidth || height > maxHeight) {
         const widthRatio = maxWidth / width
         const heightRatio = maxHeight / height
         const ratio = Math.min(widthRatio, heightRatio)
-        
+
         width = width * ratio
         height = height * ratio
       }
@@ -177,14 +180,14 @@ export default function ColorVariantImageManager({
       canvas.height = height
       canvas.style.width = `${width}px`
       canvas.style.height = `${height}px`
-      
+
       ctx.imageSmoothingEnabled = true
       ctx.imageSmoothingQuality = 'high'
       ctx.drawImage(img, 0, 0, width, height)
-      
+
       setShowColorPicker(variantId)
     }
-    
+
     img.src = imageUrl
   }
 
@@ -195,7 +198,7 @@ export default function ColorVariantImageManager({
     const rect = canvas.getBoundingClientRect()
     const scaleX = canvas.width / rect.width
     const scaleY = canvas.height / rect.height
-    
+
     const x = (e.clientX - rect.left) * scaleX
     const y = (e.clientY - rect.top) * scaleY
 
@@ -206,9 +209,9 @@ export default function ColorVariantImageManager({
     const [r, g, b] = imageData.data
 
     const hexColor = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`
-    
+
     updateColorVariant(variantId, { colorCode: hexColor })
-    
+
     // Visual feedback
     ctx.save()
     ctx.strokeStyle = '#ffffff'
@@ -222,7 +225,7 @@ export default function ColorVariantImageManager({
     ctx.lineWidth = 1
     ctx.stroke()
     ctx.restore()
-    
+
     toast.success(`Color picked: ${hexColor}`)
   }
 
@@ -309,6 +312,36 @@ export default function ColorVariantImageManager({
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
+            {/* Variant Specifics */}
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label>Inventory (Stock)</Label>
+                <Input
+                  type="number"
+                  value={variant.stock || ''}
+                  onChange={(e) => updateColorVariant(variant.id, { stock: e.target.value })}
+                  placeholder="100"
+                />
+              </div>
+              <div>
+                <Label>Variant SKU</Label>
+                <Input
+                  value={variant.sku || ''}
+                  onChange={(e) => updateColorVariant(variant.id, { sku: e.target.value })}
+                  placeholder="Leave empty for auto-SKU"
+                />
+              </div>
+              <div>
+                <Label>Price Override (₹)</Label>
+                <Input
+                  type="number"
+                  value={variant.price || ''}
+                  onChange={(e) => updateColorVariant(variant.id, { price: e.target.value })}
+                  placeholder="Uses base price if empty"
+                />
+              </div>
+            </div>
+
             {/* Color Info */}
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -405,9 +438,8 @@ export default function ColorVariantImageManager({
                               <div
                                 ref={provided.innerRef}
                                 {...provided.draggableProps}
-                                className={`relative group flex-shrink-0 ${
-                                  snapshot.isDragging ? 'opacity-75' : ''
-                                }`}
+                                className={`relative group flex-shrink-0 ${snapshot.isDragging ? 'opacity-75' : ''
+                                  }`}
                               >
                                 <div className="relative">
                                   <Image

@@ -32,7 +32,6 @@ export function AccountForm({ user }: { user: User }) {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          userId: user.id,
           fullName: fullName
         })
       })
@@ -53,23 +52,24 @@ export function AccountForm({ user }: { user: User }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
-        <Input id="email" type="email" value={user.email} disabled />
-        <p className="text-xs text-muted-foreground">Email cannot be changed</p>
+        <Label htmlFor="email" className="text-[10px] font-bold uppercase tracking-widest text-black">Email</Label>
+        <Input id="email" type="email" value={user.email} disabled className="rounded-none border-muted h-12 bg-muted/20 cursor-not-allowed text-xs font-bold" />
+        <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest leading-relaxed">Email cannot be changed</p>
       </div>
       <div className="space-y-2">
-        <Label htmlFor="fullName">Full Name</Label>
-        <Input 
-          id="fullName" 
-          value={fullName} 
-          onChange={(e) => setFullName(e.target.value)} 
+        <Label htmlFor="fullName" className="text-[10px] font-bold uppercase tracking-widest text-black">Full Name</Label>
+        <Input
+          id="fullName"
+          value={fullName}
+          onChange={(e) => setFullName(e.target.value)}
           placeholder="Enter your full name"
-          required 
+          required
+          className="rounded-none border-muted h-12 text-xs font-bold focus-visible:ring-black shadow-sm"
         />
       </div>
-      <Button type="submit" disabled={isUpdating}>
+      <Button type="submit" disabled={isUpdating} className="w-full md:w-auto bg-black text-white hover:bg-black/90 rounded-none h-12 px-8 text-[10px] font-bold uppercase tracking-widest transition-all mt-4">
         {isUpdating ? "Updating..." : "Save Changes"}
       </Button>
     </form>

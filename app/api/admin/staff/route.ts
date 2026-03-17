@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import bcrypt from 'bcryptjs'
 
 export async function GET(request: NextRequest) {
   try {
@@ -51,44 +50,58 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email }
+    const { supabaseAdmin } = await import('@/lib/supabase-server')
+
+    // 1. Create user in Supabase Auth using Service Role key
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: { full_name: fullName }
     })
 
-    if (existingUser) {
+    if (authError) {
       return NextResponse.json(
-        { error: 'A user with this email already exists' },
+        { error: authError.message },
         { status: 400 }
       )
     }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 12)
+    const userId = authData.user.id
 
-    // Create user (demo auth: role is determined by email, not stored in DB)
-    const user = await prisma.user.create({
-      data: {
-        email,
-        fullName,
-        password: hashedPassword
-      }
-    })
+    // 2. Create shadow user in Prisma and assign role
+    const { prisma } = await import('@/lib/prisma')
+
+    await prisma.$transaction([
+      prisma.user.create({
+        data: {
+          id: userId,
+          email,
+          fullName,
+        }
+      }),
+      prisma.adminUser.create({
+        data: {
+          userId: userId,
+          role: role
+        }
+      })
+    ])
 
     return NextResponse.json({
       message: 'Staff member created successfully',
       staff: {
-        id: user.id,
-        email: user.email,
-        fullName: user.fullName,
-        role: user.email === 'admin@uyarvom.com' ? 'super_admin' : 'customer'
+        id: userId,
+        email,
+        fullName,
+        role
       }
     })
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Staff creation error:', error)
     return NextResponse.json(
-      { error: 'Failed to create staff member' },
+      { error: error.message || 'Failed to create staff member' },
       { status: 500 }
     )
   }
@@ -105,7 +118,7 @@ function getDefaultPermissions(role: string) {
         staff: { view: true, invite: true, edit: true, remove: true },
         system: { analytics: true, settings: true, backup: true }
       }
-    
+
     case 'staff':
       return {
         products: { view: true, create: true, edit: true, delete: false, activate: true },
@@ -114,7 +127,7 @@ function getDefaultPermissions(role: string) {
         staff: { view: false, invite: false, edit: false, remove: false },
         system: { analytics: false, settings: false, backup: false }
       }
-    
+
     default:
       return {
         products: { view: false, create: false, edit: false, delete: false },

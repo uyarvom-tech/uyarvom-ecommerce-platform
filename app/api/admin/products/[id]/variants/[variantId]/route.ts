@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
-import { requireAdmin } from '@/lib/auth-middleware'
+import { requireStaffAccess } from '@/lib/auth-middleware'
 
 const prisma = new PrismaClient()
 
@@ -10,7 +10,10 @@ export async function GET(
   { params }: { params: Promise<{ id: string; variantId: string }> }
 ) {
   try {
-    await requireAdmin(request)
+    const authResult = await requireStaffAccess(request)
+    if (authResult instanceof NextResponse) {
+      return authResult
+    }
     const { id, variantId } = await params
 
     const variant = await prisma.productVariant.findUnique({
@@ -43,7 +46,10 @@ export async function PUT(
   { params }: { params: Promise<{ id: string; variantId: string }> }
 ) {
   try {
-    await requireAdmin(request)
+    const authResult = await requireStaffAccess(request)
+    if (authResult instanceof NextResponse) {
+      return authResult
+    }
     const { id, variantId } = await params
 
     const body = await request.json()
@@ -118,7 +124,10 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string; variantId: string }> }
 ) {
   try {
-    await requireAdmin(request)
+    const authResult = await requireStaffAccess(request)
+    if (authResult instanceof NextResponse) {
+      return authResult
+    }
     const { id, variantId } = await params
 
     // Check if variant exists

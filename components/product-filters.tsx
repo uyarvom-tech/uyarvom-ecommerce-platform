@@ -1,144 +1,241 @@
 "use client"
 
+import { useMemo, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { useState } from "react"
+import { Input } from "@/components/ui/input"
+import { SlidersHorizontal, X } from "lucide-react"
 
-export function ProductFilters({ categories }: { categories: any[] }) {
+interface FilterCategory {
+  id: string
+  name: string
+  slug: string
+  children?: Array<{
+    id: string
+    name: string
+    slug: string
+  }>
+}
+
+export function ProductFilters({
+  categories,
+  basePath = "/",
+}: {
+  categories: FilterCategory[]
+  basePath?: string
+}) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [minPrice, setMinPrice] = useState(searchParams.get("min") || "")
   const [maxPrice, setMaxPrice] = useState(searchParams.get("max") || "")
 
-  const updateFilter = (key: string, value: string) => {
+  const activeCategory = searchParams.get("category") || ""
+  const activeSubCategory = searchParams.get("sub") || ""
+  const activeSort = searchParams.get("sort") || "newest"
+
+  const selectedCategory = useMemo(
+    () => categories.find((category) => category.slug === activeCategory),
+    [categories, activeCategory]
+  )
+
+  const pushParams = (updater: (params: URLSearchParams) => void) => {
     const params = new URLSearchParams(searchParams.toString())
-    if (value) {
-      params.set(key, value)
-    } else {
-      params.delete(key)
-    }
-    router.push(`/products?${params.toString()}`)
+    updater(params)
+    const query = params.toString()
+    router.push(query ? `${basePath}?${query}` : basePath)
   }
 
-  const applyPriceFilter = () => {
-    const params = new URLSearchParams(searchParams.toString())
-    if (minPrice) params.set("min", minPrice)
-    else params.delete("min")
-    if (maxPrice) params.set("max", maxPrice)
-    else params.delete("max")
-    router.push(`/products?${params.toString()}`)
-  }
-
-  const clearFilters = () => {
+  const clearAll = () => {
     setMinPrice("")
     setMaxPrice("")
-    router.push("/products")
+    router.push(basePath)
   }
 
   return (
-    <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Categories</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <RadioGroup
-            value={searchParams.get("category") || ""}
-            onValueChange={(value) => updateFilter("category", value)}
-          >
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="" id="all" />
-              <Label htmlFor="all" className="cursor-pointer font-normal">
-                All Categories
-              </Label>
+    <div className="rounded-[24px] border border-border/50 bg-white/96 p-4 shadow-sm md:p-4.5">
+      <div className="space-y-5 overflow-y-auto overscroll-contain pr-1 md:max-h-[calc(100vh-14rem)]">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full bg-primary/6 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.24em] text-primary">
+              <SlidersHorizontal className="h-3.5 w-3.5" />
+              Filters
             </div>
-            {categories.map((category) => (
-              <div key={category.id} className="flex items-center space-x-2">
-                <RadioGroupItem value={category.slug} id={category.slug} />
-                <Label htmlFor={category.slug} className="cursor-pointer font-normal">
-                  {category.name}
-                </Label>
-              </div>
-            ))}
-          </RadioGroup>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Sort By</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <RadioGroup
-            value={searchParams.get("sort") || "newest"}
-            onValueChange={(value) => updateFilter("sort", value)}
-          >
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="newest" id="newest" />
-              <Label htmlFor="newest" className="cursor-pointer font-normal">
-                Newest
-              </Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="price-asc" id="price-asc" />
-              <Label htmlFor="price-asc" className="cursor-pointer font-normal">
-                Price: Low to High
-              </Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="price-desc" id="price-desc" />
-              <Label htmlFor="price-desc" className="cursor-pointer font-normal">
-                Price: High to Low
-              </Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="name" id="name" />
-              <Label htmlFor="name" className="cursor-pointer font-normal">
-                Name
-              </Label>
-            </div>
-          </RadioGroup>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Price Range</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="space-y-2">
-            <Label htmlFor="min">Min Price</Label>
-            <Input
-              id="min"
-              type="number"
-              placeholder="₹0"
-              value={minPrice}
-              onChange={(e) => setMinPrice(e.target.value)}
-            />
+            <h3 className="mt-3 text-lg font-serif text-foreground">Shop smarter</h3>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="max">Max Price</Label>
-            <Input
-              id="max"
-              type="number"
-              placeholder="₹10000"
-              value={maxPrice}
-              onChange={(e) => setMaxPrice(e.target.value)}
-            />
-          </div>
-          <Button onClick={applyPriceFilter} className="w-full" size="sm">
-            Apply
+          <Button variant="ghost" onClick={clearAll} className="h-auto p-0 text-[11px] text-muted-foreground hover:text-primary">
+            Clear all
           </Button>
-        </CardContent>
-      </Card>
+        </div>
 
-      <Button variant="outline" onClick={clearFilters} className="w-full bg-transparent">
-        Clear All Filters
-      </Button>
+        {(activeCategory || activeSubCategory || minPrice || maxPrice || activeSort !== "newest") && (
+          <div className="flex flex-wrap gap-2">
+            {activeCategory && (
+              <button
+                type="button"
+                onClick={() =>
+                  pushParams((params) => {
+                    params.delete("category")
+                    params.delete("sub")
+                  })
+                }
+                className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-primary"
+              >
+                {selectedCategory?.name || activeCategory}
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+            {activeSubCategory && (
+              <button
+                type="button"
+                onClick={() => pushParams((params) => params.delete("sub"))}
+                className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-primary"
+              >
+                {selectedCategory?.children?.find((child) => child.slug === activeSubCategory)?.name || activeSubCategory}
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+            {(minPrice || maxPrice) && (
+              <button
+                type="button"
+                onClick={() =>
+                  pushParams((params) => {
+                    params.delete("min")
+                    params.delete("max")
+                    setMinPrice("")
+                    setMaxPrice("")
+                  })
+                }
+                className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-primary"
+              >
+                Price range
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+        )}
+
+        <section className="space-y-3">
+          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-foreground/75">Category</p>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() =>
+                pushParams((params) => {
+                  params.delete("category")
+                  params.delete("sub")
+                })
+              }
+              className={`rounded-full px-4 py-2 text-sm transition-all ${
+                !activeCategory ? "bg-primary text-white" : "bg-secondary/70 text-foreground hover:bg-secondary"
+              }`}
+            >
+              All Products
+            </button>
+            {categories.map((category) => (
+              <button
+                key={category.id}
+                type="button"
+                onClick={() =>
+                  pushParams((params) => {
+                    params.set("category", category.slug)
+                    params.delete("sub")
+                  })
+                }
+                className={`rounded-full px-4 py-2 text-sm transition-all ${
+                  activeCategory === category.slug
+                    ? "bg-primary text-white"
+                    : "bg-secondary/70 text-foreground hover:bg-secondary"
+                }`}
+              >
+                {category.name}
+              </button>
+            ))}
+          </div>
+        </section>
+
+        {selectedCategory && selectedCategory.children && selectedCategory.children.length > 0 && (
+          <section className="space-y-3">
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-foreground/75">Subcategory</p>
+            <div className="grid grid-cols-1 gap-2">
+              {selectedCategory.children.map((child) => (
+                <button
+                  key={child.id}
+                  type="button"
+                  onClick={() => pushParams((params) => params.set("sub", child.slug))}
+                  className={`rounded-2xl border px-4 py-2.5 text-left text-sm transition-all ${
+                    activeSubCategory === child.slug
+                      ? "border-primary bg-primary/5 text-primary"
+                      : "border-border bg-background text-foreground hover:border-primary/30"
+                  }`}
+                >
+                  {child.name}
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
+
+        <section className="space-y-3">
+          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-foreground/75">Sort by</p>
+          <div className="grid grid-cols-1 gap-2">
+            {[
+              { value: "newest", label: "Newest" },
+              { value: "price-asc", label: "Price: Low to High" },
+              { value: "price-desc", label: "Price: High to Low" },
+              { value: "name", label: "Name: A to Z" },
+            ].map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => pushParams((params) => params.set("sort", option.value))}
+                className={`rounded-2xl border px-4 py-2.5 text-left text-sm transition-all ${
+                  activeSort === option.value
+                    ? "border-primary bg-primary/5 text-primary"
+                    : "border-border bg-background text-foreground hover:border-primary/30"
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section className="space-y-3">
+          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-foreground/75">Price range</p>
+          <div className="grid grid-cols-2 gap-3">
+            <Input
+              type="number"
+              inputMode="numeric"
+              value={minPrice}
+              onChange={(event) => setMinPrice(event.target.value)}
+              placeholder="Min"
+              className="h-10 rounded-2xl"
+            />
+            <Input
+              type="number"
+              inputMode="numeric"
+              value={maxPrice}
+              onChange={(event) => setMaxPrice(event.target.value)}
+              placeholder="Max"
+              className="h-10 rounded-2xl"
+            />
+          </div>
+          <Button
+            onClick={() =>
+              pushParams((params) => {
+                if (minPrice) params.set("min", minPrice)
+                else params.delete("min")
+
+                if (maxPrice) params.set("max", maxPrice)
+                else params.delete("max")
+              })
+            }
+            className="h-10 w-full rounded-2xl bg-primary text-[11px] font-bold uppercase tracking-[0.18em] text-white hover:bg-foreground"
+          >
+            Apply price filter
+          </Button>
+        </section>
+      </div>
     </div>
   )
 }

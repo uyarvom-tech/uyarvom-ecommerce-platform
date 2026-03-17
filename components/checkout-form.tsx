@@ -14,6 +14,7 @@ import { Plus, MapPin } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
+import { createOrder } from "@/lib/actions/checkout"
 import {
   Dialog,
   DialogContent,
@@ -77,60 +78,84 @@ export function CheckoutForm({
       return
     }
 
+    if (paymentMethod === "cod" && orderTotal.total > 10000) {
+      toast.error("Cash on Delivery is only available for orders below ₹10,000")
+      return
+    }
+
     setIsPlacingOrder(true)
 
     try {
-      // Generate order number
-      const { data: orderNumberData } = await supabase.rpc("generate_order_number")
+      const result = await createOrder({
+        addressId: selectedAddress,
+        paymentMethod,
+        notes,
+      })
 
-      const orderNumber = orderNumberData || `ORD-${Date.now()}`
+      if (result.error) {
+        toast.error(result.error)
+        setIsPlacingOrder(false)
+        return
+      }
 
-      // Create order
-      const { data: order, error: orderError } = await supabase
-        .from("orders")
-        .insert({
-          order_number: orderNumber,
-          user_id: userId,
-          status: "pending",
-          payment_status: "pending",
-          payment_method: paymentMethod,
-          subtotal: orderTotal.subtotal,
-          shipping_cost: orderTotal.shippingCost,
-          tax: orderTotal.tax,
-          total: orderTotal.total,
-          shipping_address_id: selectedAddress,
-          billing_address_id: selectedAddress,
-          notes,
+      if (paymentMethod === "online" && result.razorpayOrderId) {
+        const options = {
+          key: result.key,
+          amount: result.amount,
+          currency: "INR",
+          name: "Uyarvom",
+          description: "Purchase from Uyarvom",
+          order_id: result.razorpayOrderId,
+          handler: async function (response: any) {
+            try {
+              const verifyRes = await fetch("/api/checkout/verify", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature,
+                  orderId: result.orderId,
+                }),
+              })
+
+              const verifyData = await verifyRes.json()
+
+              if (verifyData.success) {
+                toast.success("Payment successful! Order placed.")
+                router.push(`/orders/${result.orderId}`)
+              } else {
+                toast.error("Payment verification failed. Please contact support.")
+                router.push(`/orders/${result.orderId}`)
+              }
+            } catch (error) {
+              console.error("Verification error:", error)
+              toast.error("An error occurred during payment verification.")
+              router.push(`/orders/${result.orderId}`)
+            }
+          },
+          prefill: {
+            name: result.customerName,
+            email: result.customerEmail,
+            contact: result.customerPhone,
+          },
+          theme: {
+            color: "#000000",
+          },
+        }
+
+        const rzp = new (window as any).Razorpay(options)
+        rzp.on("payment.failed", function (response: any) {
+          toast.error("Payment failed: " + response.error.description)
+          router.push(`/orders/${result.orderId}`)
         })
-        .select()
-        .single()
-
-      if (orderError) throw orderError
-
-      // Create order items
-      const orderItems = cartItems.map((item) => ({
-        order_id: order.id,
-        product_id: item.product_id,
-        variant_id: item.variant_id,
-        product_name: item.product.name,
-        quantity: item.quantity,
-        price: item.product.price,
-        total: item.product.price * item.quantity,
-      }))
-
-      const { error: itemsError } = await supabase.from("order_items").insert(orderItems)
-
-      if (itemsError) throw itemsError
-
-      // Clear cart
-      const { error: cartError } = await supabase.from("cart_items").delete().eq("user_id", userId)
-
-      if (cartError) throw cartError
-
-      toast.success("Order placed successfully!")
-      router.push(`/orders/${order.id}`)
+        rzp.open()
+      } else {
+        toast.success("Order placed successfully!")
+        router.push(`/orders/${result.orderId}`)
+      }
     } catch (error) {
-      console.error("[v0] Order placement error:", error)
+      console.error("Order placement error:", error)
       toast.error("Failed to place order. Please try again.")
       setIsPlacingOrder(false)
     }
@@ -285,13 +310,18 @@ export function CheckoutForm({
               <Label htmlFor="cod" className="flex-1 cursor-pointer">
                 <div className="font-semibold">Cash on Delivery (COD)</div>
                 <div className="text-sm text-muted-foreground">Pay when you receive your order</div>
+                {orderTotal.total > 10000 && (
+                  <div className="text-xs text-amber-600 font-medium mt-1">
+                    COD only available for orders below ₹10,000
+                  </div>
+                )}
               </Label>
             </div>
-            <div className="flex items-center space-x-3 rounded-lg border p-4 opacity-50">
-              <RadioGroupItem value="online" id="online" disabled />
-              <Label htmlFor="online" className="flex-1 cursor-not-allowed">
+            <div className={`flex items-center space-x-3 rounded-lg border p-4 ${orderTotal.total > 10000 ? 'bg-muted/50' : ''}`}>
+              <RadioGroupItem value="online" id="online" />
+              <Label htmlFor="online" className="flex-1 cursor-pointer">
                 <div className="font-semibold">Online Payment</div>
-                <div className="text-sm text-muted-foreground">UPI, Cards, Net Banking (Coming Soon)</div>
+                <div className="text-sm text-muted-foreground">UPI, Cards, Net Banking</div>
               </Label>
             </div>
           </RadioGroup>

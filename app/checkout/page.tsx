@@ -8,6 +8,9 @@ import Image from "next/image"
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { PRODUCT_FALLBACK_IMAGE } from "@/lib/image-fallbacks"
+import Script from "next/script"
+import { getSystemSetting } from "@/lib/settings"
 
 export default async function CheckoutPage() {
   const supabase = await createClient()
@@ -29,7 +32,7 @@ export default async function CheckoutPage() {
         *,
         images:product_images(image_url, alt_text, is_primary)
       )
-    `,
+    `
     )
     .eq("user_id", user.id)
 
@@ -38,16 +41,23 @@ export default async function CheckoutPage() {
   }
 
   const { data: addresses } = await supabase.from("addresses").select("*").eq("user_id", user.id)
-
   const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single()
 
+  const shippingThreshold = Number(await getSystemSetting("shipping_threshold", "999"))
+  const shippingFee = Number(await getSystemSetting("shipping_fee", "50"))
+  const taxRate = Number(await getSystemSetting("tax_rate", "18")) / 100
+
   const subtotal = cartItems.reduce((sum: number, item: any) => sum + item.product.price * item.quantity, 0)
-  const shippingCost = subtotal >= 999 ? 0 : 50
-  const tax = Math.round(subtotal * 0.18) // 18% GST
+  const shippingCost = subtotal >= shippingThreshold ? 0 : shippingFee
+  const tax = Math.round(subtotal * taxRate)
   const total = subtotal + shippingCost + tax
 
   return (
     <div className="flex min-h-screen flex-col">
+      <Script
+        id="razorpay-checkout-js"
+        src="https://checkout.razorpay.com/v1/checkout.js"
+      />
       <Header />
       <main className="flex-1 px-6 py-8">
         <div className="container mx-auto max-w-7xl">
@@ -83,10 +93,7 @@ export default async function CheckoutPage() {
                         <div key={item.id} className="flex gap-3">
                           <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-md bg-muted">
                             <Image
-                              src={
-                                primaryImage?.image_url ||
-                                `/placeholder.svg?height=80&width=80&query=${item.product.name || "/placeholder.svg"}`
-                              }
+                              src={primaryImage?.image_url || PRODUCT_FALLBACK_IMAGE}
                               alt={item.product.name}
                               width={80}
                               height={80}
@@ -119,7 +126,7 @@ export default async function CheckoutPage() {
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Tax (GST 18%)</span>
+                      <span className="text-muted-foreground">Tax (GST {taxRate * 100}%)</span>
                       <span className="font-medium">₹{tax.toLocaleString("en-IN")}</span>
                     </div>
                   </div>

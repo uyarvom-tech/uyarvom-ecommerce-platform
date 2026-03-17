@@ -1,25 +1,45 @@
-import { createClient } from '@supabase/supabase-js'
-import { createServerClient } from '@supabase/ssr'
-import { NextRequest, NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
+import { createServerClient } from "@supabase/ssr"
+import { createClient } from "@supabase/supabase-js"
+import { cookies } from "next/headers"
+import { NextRequest, NextResponse } from "next/server"
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder-supabase-url.supabase.co'
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key'
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'placeholder-service-key'
+function getEnv(name: string) {
+  const value = process.env[name]
 
-// Server-side Supabase client with service role (for admin operations)
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${name}`)
+  }
+
+  return value
+}
+
+const supabaseUrl = getEnv("NEXT_PUBLIC_SUPABASE_URL")
+const supabaseAnonKey = getEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
+const supabaseServiceKey = getEnv("SUPABASE_SERVICE_ROLE_KEY")
+
 export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
   auth: {
     autoRefreshToken: false,
-    persistSession: false
-  }
+    persistSession: false,
+  },
 })
 
-// Server-side Supabase client for API routes
+export const isSupabaseAuthDisconnected = () => false
+export const isDatabaseDisconnected = () => false
+export const isSupabaseDisconnected = () => false
+export const markAuthDisconnected = () => undefined
+export const markDatabaseDisconnected = () => undefined
+export const resetSupabaseConnection = () => undefined
+
 export const createSupabaseServerClient = async () => {
   const cookieStore = await cookies()
-  
+
   return createServerClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+    },
     cookies: {
       get(name: string) {
         return cookieStore.get(name)?.value
@@ -28,14 +48,13 @@ export const createSupabaseServerClient = async () => {
         cookieStore.set({ name, value, ...options })
       },
       remove(name: string, options: any) {
-        cookieStore.set({ name, value: '', ...options })
+        cookieStore.set({ name, value: "", ...options })
       },
     },
   })
 }
 
-// Middleware Supabase client
-export const createSupabaseMiddlewareClient = (request: NextRequest) => {
+export const createSupabaseProxyClient = (request: NextRequest, signal?: AbortSignal) => {
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -43,6 +62,16 @@ export const createSupabaseMiddlewareClient = (request: NextRequest) => {
   })
 
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+    global: signal
+      ? {
+          fetch: (url, options) => fetch(url, { ...options, signal }),
+        }
+      : undefined,
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+    },
     cookies: {
       get(name: string) {
         return request.cookies.get(name)?.value
@@ -67,7 +96,7 @@ export const createSupabaseMiddlewareClient = (request: NextRequest) => {
       remove(name: string, options: any) {
         request.cookies.set({
           name,
-          value: '',
+          value: "",
           ...options,
         })
         response = NextResponse.next({
@@ -77,7 +106,7 @@ export const createSupabaseMiddlewareClient = (request: NextRequest) => {
         })
         response.cookies.set({
           name,
-          value: '',
+          value: "",
           ...options,
         })
       },

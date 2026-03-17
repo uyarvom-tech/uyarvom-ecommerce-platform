@@ -13,11 +13,11 @@ datasource db {
 
 // User Management
 model User {
-  id        String   @id @default(cuid())
+  id        String   @id // Use the UUID from Supabase Auth
   email     String   @unique
-  password  String
   fullName  String?
   avatarUrl String?
+  phone     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -25,10 +25,32 @@ model User {
   orders    Order[]
   cartItems CartItem[]
   reviews   Review[]
+  addresses Address[]
+  supportTickets SupportTicket[] @relation("SupportTicketCustomer")
+  assignedTickets SupportTicket[] @relation("SupportTicketAssignee")
+  supportMessages SupportMessage[]
+  orderEvents OrderEvent[]
+  auditLogs AuditLog[]
   deletionTicketsRequested DeletionTicket[] @relation("DeletionRequester")
   deletionTicketsReviewed  DeletionTicket[] @relation("DeletionReviewer")
+  adminProfile            AdminUser?
 
   @@map("users")
+}
+
+model AdminUser {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  role      String   @default("admin") // admin, super_admin
+  isActive  Boolean  @default(true)
+  lastActiveAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("admin_users")
 }
 
 // Product Management
@@ -67,6 +89,14 @@ model Product {
   dimensions         String? // JSON string for width, height, depth
   isActive           Boolean  @default(true)
   isFeatured         Boolean  @default(false)
+  
+  // Production / Supply Chain Fields
+  bis                String?  // Compliance field
+  supplier           String?  // Supplier name
+  location           String?  // Supplier location
+  moq                Int?     // Minimum Order Quantity
+  buyingPrice        Float?   // Cost Price
+  
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
@@ -77,6 +107,7 @@ model Product {
   orderItems        OrderItem[]
   cartItems         CartItem[]
   reviews           Review[]
+  supportTickets    SupportTicket[]
 
   @@map("products")
 }
@@ -160,11 +191,31 @@ model Order {
   orderNumber  String   @unique
   userId       String
   status       String   @default("pending") // pending, confirmed, shipped, delivered, cancelled
+  paymentStatus String  @default("pending") // pending, authorized, paid, failed, refunded
+  paymentMethod String  @default("cod") // cod, razorpay_upi, razorpay_card, razorpay_netbanking
+  fulfillmentStatus String @default("unfulfilled") // unfulfilled, processing, packed, shipped, delivered, returned, cancelled
   subtotal     Float
   tax          Float    @default(0)
   shipping     Float    @default(0)
+  discount     Float    @default(0)
   total        Float
   currency     String   @default("INR")
+  trackingNumber String?
+  courierName    String?
+  paymentReference String?
+  razorpayOrderId String?
+  razorpayPaymentId String?
+  razorpaySignature String?
+  shippedAt     DateTime?
+  deliveredAt   DateTime?
+  cancelledAt   DateTime?
+  cancellationRequestedAt DateTime?
+  cancellationReason String?
+  returnStatus  String   @default("none") // none, requested, approved, rejected, received, refunded
+  returnRequestedAt DateTime?
+  returnReason  String?
+  shippingAddressId String?
+  billingAddressId String?
   
   // Shipping Address
   shippingName     String
@@ -195,6 +246,10 @@ model Order {
   // Relations
   user       User        @relation(fields: [userId], references: [id])
   orderItems OrderItem[]
+  shippingAddress Address? @relation("OrderShippingAddress", fields: [shippingAddressId], references: [id], onDelete: SetNull)
+  billingAddress  Address? @relation("OrderBillingAddress", fields: [billingAddressId], references: [id], onDelete: SetNull)
+  supportTickets SupportTicket[]
+  events      OrderEvent[]
 
   @@map("orders")
 }
@@ -207,6 +262,9 @@ model OrderItem {
   quantity        Int
   price           Float    // Price at time of order
   total           Float    // quantity * price
+  productName     String?
+  variantName     String?
+  skuSnapshot     String?
   createdAt       DateTime @default(now())
 
   // Relations
@@ -245,6 +303,9 @@ model Review {
   title     String?
   comment   String?
   isVerified Boolean @default(false) // Verified purchase
+  isVisible Boolean  @default(true)
+  moderatedAt DateTime?
+  moderatedBy String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -254,6 +315,101 @@ model Review {
 
   @@unique([userId, productId]) // One review per user per product
   @@map("reviews")
+}
+
+model Address {
+  id          String   @id @default(cuid())
+  userId      String
+  fullName    String
+  phone       String
+  addressLine1 String
+  addressLine2 String?
+  city        String
+  state       String
+  postalCode  String
+  country     String   @default("India")
+  landmark    String?
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  shippingOrders Order[] @relation("OrderShippingAddress")
+  billingOrders Order[] @relation("OrderBillingAddress")
+
+  @@map("addresses")
+}
+
+model SupportTicket {
+  id          String   @id @default(cuid())
+  ticketNumber String  @unique
+  userId      String
+  orderId     String?
+  productId   String?
+  subject     String
+  category    String
+  priority    String   @default("medium")
+  status      String   @default("open")
+  source      String   @default("web")
+  assignedToId String?
+  latestReplyAt DateTime?
+  resolvedAt  DateTime?
+  closedAt    DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  customer User @relation("SupportTicketCustomer", fields: [userId], references: [id], onDelete: Cascade)
+  assignedTo User? @relation("SupportTicketAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  order     Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  messages  SupportMessage[]
+
+  @@map("support_tickets")
+}
+
+model SupportMessage {
+  id         String   @id @default(cuid())
+  ticketId   String
+  senderId   String
+  body       String
+  isInternal Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  ticket SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  sender User @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@map("support_messages")
+}
+
+model OrderEvent {
+  id        String   @id @default(cuid())
+  orderId    String
+  actorId    String?
+  type      String
+  title     String
+  description String?
+  createdAt DateTime @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@map("order_events")
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  actorId      String?
+  entityType   String
+  entityId     String
+  action       String
+  description  String?
+  metadataJson String?
+  createdAt    DateTime @default(now())
+
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@map("audit_logs")
 }
 
 // Deletion Request System
@@ -274,4 +430,29 @@ model DeletionTicket {
   reviewer  User? @relation("DeletionReviewer", fields: [reviewedBy], references: [id])
 
   @@map("deletion_tickets")
+}
+
+model SystemSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique // e.g., "tax_rate", "shipping_threshold"
+  value     String
+  group     String?  // "financial", "storefront", "support"
+  updatedAt DateTime @updatedAt
+
+  @@map("system_settings")
+}
+
+model HeroBanner {
+  id           String   @id @default(cuid())
+  title        String
+  subtitle     String?
+  imageUrl     String
+  linkUrl      String?
+  buttonText   String?
+  displayOrder Int      @default(0)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("hero_banners")
 }

@@ -3,9 +3,14 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: false, // Enable strict TypeScript checking for production
   },
+  transpilePackages: ["@supabase/auth-js", "@supabase/supabase-js", "@supabase/ssr"],
   images: {
-    unoptimized: false, // Enable Next.js image optimization
+    // unoptimized: true removed to enable Vercel image optimization
     remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'pub-*.r2.dev',
+      },
       {
         protocol: 'https',
         hostname: '**.r2.cloudflarestorage.com',
@@ -16,7 +21,19 @@ const nextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'your-custom-domain.com', // Replace with your R2 custom domain
+        hostname: 'images.unsplash.com',
+      },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '3001',
+        pathname: '/**',
+      },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '3002',
+        pathname: '/**',
       },
       {
         protocol: 'http',
@@ -27,7 +44,6 @@ const nextConfig = {
     ],
     loader: 'default',
   },
-  // Remove Prisma experimental config since we're using Supabase
   // Vercel deployment optimizations
   output: 'standalone',
 }

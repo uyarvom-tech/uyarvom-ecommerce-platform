@@ -1,17 +1,29 @@
 "use client"
 
 import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Plus, Minus, ShoppingCart } from "lucide-react"
-import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
+import { Minus, Plus, ShoppingCart } from "lucide-react"
 import { toast } from "sonner"
+import { Button } from "@/components/ui/button"
+import { createClient } from "@/lib/supabase/client"
 
-export function AddToCartButton({ product }: { product: any }) {
+export function AddToCartButton({
+  product,
+  variantId,
+  stockOverride
+}: {
+  product: any,
+  variantId?: string,
+  stockOverride?: number
+}) {
   const [quantity, setQuantity] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
   const supabase = createClient()
+
+  const stockQuantity = stockOverride !== undefined
+    ? stockOverride
+    : Number(product.stockQuantity ?? product.stock_quantity ?? 0)
 
   const handleAddToCart = async () => {
     setIsLoading(true)
@@ -21,49 +33,38 @@ export function AddToCartButton({ product }: { product: any }) {
     } = await supabase.auth.getUser()
 
     if (!user) {
+      setIsLoading(false)
       router.push(`/auth/login?redirect=/products/${product.slug}`)
       return
     }
 
-    // Check if item already in cart
-    const { data: existingItem } = await supabase
-      .from("cart_items")
-      .select("*")
-      .eq("user_id", user.id)
-      .eq("product_id", product.id)
-      .is("variant_id", null)
-      .single()
+    try {
+      const response = await fetch("/api/cart", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          productId: product.id,
+          variantId: variantId || null,
+          quantity,
+        }),
+      })
 
-    if (existingItem) {
-      // Update quantity
-      const { error } = await supabase
-        .from("cart_items")
-        .update({ quantity: existingItem.quantity + quantity })
-        .eq("id", existingItem.id)
-
-      if (error) {
-        toast.error("Failed to update cart")
-        setIsLoading(false)
-        return
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null)
+        throw new Error(payload?.error || "Failed to add to cart")
       }
-    } else {
-      // Insert new item
-      const { error } = await (supabase.from("cart_items").insert({
-        user_id: user.id,
-        product_id: product.id,
-        quantity,
-      }) as any)
 
-      if (error) {
-        toast.error("Failed to add to cart")
-        setIsLoading(false)
-        return
-      }
+      toast.success("Added to cart!")
+      setQuantity(1)
+      router.refresh()
+    } catch (error) {
+      console.error("Add to cart error:", error)
+      toast.error(error instanceof Error ? error.message : "Failed to add to cart")
+    } finally {
+      setIsLoading(false)
     }
-
-    toast.success("Added to cart!")
-    setIsLoading(false)
-    setQuantity(1)
   }
 
   return (
@@ -81,8 +82,8 @@ export function AddToCartButton({ product }: { product: any }) {
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => setQuantity(Math.min(product.stock_quantity, quantity + 1))}
-          disabled={quantity >= product.stock_quantity}
+          onClick={() => setQuantity(Math.min(stockQuantity, quantity + 1))}
+          disabled={quantity >= stockQuantity}
         >
           <Plus className="h-4 w-4" />
         </Button>
@@ -90,12 +91,12 @@ export function AddToCartButton({ product }: { product: any }) {
 
       <Button
         onClick={handleAddToCart}
-        disabled={isLoading || product.stock_quantity <= 0}
-        className="flex-1"
+        disabled={isLoading || stockQuantity <= 0}
+        className="flex-1 rounded-none uppercase text-[10px] font-bold tracking-widest h-12"
         size="lg"
       >
-        <ShoppingCart className="mr-2 h-5 w-5" />
-        {product.stock_quantity <= 0 ? "Out of Stock" : isLoading ? "Adding..." : "Add to Cart"}
+        <ShoppingCart className="mr-2 h-4 w-4" />
+        {stockQuantity <= 0 ? "Out of Stock" : isLoading ? "Adding..." : "Add to Cart"}
       </Button>
     </div>
   )

@@ -50,11 +50,14 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
     // Transform variants to color variants format with proper images
     hasColorVariants: product.variants.length > 0,
     colorVariants: product.variants.map((variant: any, index: number) => ({
-      id: `existing-color-${variant.id}`,
+      id: variant.id,
       colorName: variant.value,
       colorCode: variant.colorCode || '#000000',
+      stock: variant.stock.toString(),
+      sku: variant.sku || '',
+      price: variant.price?.toString() || '',
       images: variant.images.map((img: any, imgIndex: number) => ({
-        id: `existing-img-${img.id}`,
+        id: img.id,
         imageUrl: img.imageUrl,
         altText: img.altText || `${variant.value} - View ${imgIndex + 1}`,
         sortOrder: img.sortOrder
@@ -74,7 +77,7 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <AdminHeader />
-      
+
       <main className="flex-1 container mx-auto px-6 py-8 max-w-7xl">
         <div className="mb-8">
           <h1 className="text-3xl font-bold tracking-tight">Edit Product</h1>

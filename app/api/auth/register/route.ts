@@ -1,5 +1,6 @@
 import { createSupabaseServerClient } from '@/lib/supabase-server'
 import { NextResponse } from 'next/server'
+import { syncAuthUserToPrisma } from '@/lib/user-sync'
 
 export async function POST(request: Request) {
   try {
@@ -29,6 +30,10 @@ export async function POST(request: Request) {
         { error: error.message },
         { status: 400 }
       )
+    }
+
+    if (data.user) {
+      await syncAuthUserToPrisma(data.user)
     }
 
     return NextResponse.json({

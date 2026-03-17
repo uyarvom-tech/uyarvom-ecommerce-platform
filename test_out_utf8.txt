@@ -1,0 +1,52 @@
+﻿
+Running 1 test using 1 worker
+
+Navigating to homepage...
+Verifying Uyarvom text in header...
+Searching for products catalog link...
+Clicking All Products button...
+Waiting for product cards...
+Found 162 products.
+Testing with product: Tempered Glass Bathroom Tray
+Verifying product detail page...
+  Γ£ÿ  1 [chromium] ΓÇ║ e2e\customer-checkout.spec.ts:4:9 ΓÇ║ Customer Checkout Flow ΓÇ║ navigates to product, adds to cart, and reaches checkout (10.6s)
+
+
+  1) [chromium] ΓÇ║ e2e\customer-checkout.spec.ts:4:9 ΓÇ║ Customer Checkout Flow ΓÇ║ navigates to product, adds to cart, and reaches checkout 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoContainText[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Locator: getByRole('heading')
+    Expected substring: [32m"Tempered Glass Bathroom Tray"[39m
+    Error: strict mode violation: getByRole('heading') resolved to 174 elements:
+        1) <h1 class="font-playfair text-5xl md:text-7xl lg:text-9xl font-black leading-[0.9] text-white tracking-tighter drop-shadow-2xl">SET A TABLE PEOPLE REMEMBER.</h1> aka getByRole('heading', { name: 'SET A TABLE PEOPLE REMEMBER.' })
+        2) <h1 class="font-playfair text-5xl md:text-7xl lg:text-9xl font-black leading-[0.9] text-white tracking-tighter drop-shadow-2xl">Handcrafted character utility.</h1> aka getByRole('heading', { name: 'Handcrafted character utility.' })
+        3) <h2 class="mb-0 text-3xl leading-tight md:text-5xl">Upgrade your kitchen and dining setup with offer-ΓÇª</h2> aka getByRole('heading', { name: 'Upgrade your kitchen and' })
+        4) <h2 class="font-playfair text-3xl md:text-5xl font-black tracking-tighter uppercase">New Arrivals</h2> aka getByRole('heading', { name: 'New Arrivals' })
+        5) <h3 class="mt-1 line-clamp-2 text-lg font-semibold leading-snug text-foreground transition-colors duration-300 hover:text-primary md:text-xl">Tempered Glass Bathroom Tray</h3> aka getByRole('link', { name: 'Tempered Glass Bathroom Tray' }).nth(1)
+        6) <h3 class="mt-1 line-clamp-2 text-lg font-semibold leading-snug text-foreground transition-colors duration-300 hover:text-primary md:text-xl">Wooden Bathroom Tray</h3> aka getByRole('link', { name: 'Wooden Bathroom Tray' }).nth(1)
+        7) <h3 class="mt-1 line-clamp-2 text-lg font-semibold leading-snug text-foreground transition-colors duration-300 hover:text-primary md:text-xl">Brass Soap Dish (Heritage Style)</h3> aka getByRole('link', { name: 'Brass Soap Dish (Heritage' }).nth(1)
+        8) <h3 class="mt-1 line-clamp-2 text-lg font-semibold leading-snug text-foreground transition-colors duration-300 hover:text-primary md:text-xl">ResinΓÇôStone Composite Bath Set ΓÇô 3 pcs</h3> aka getByRole('link', { name: 'ResinΓÇôStone Composite Bath' }).nth(1)
+        9) <h3 class="mt-1 line-clamp-2 text-lg font-semibold leading-snug text-foreground transition-colors duration-300 hover:text-primary md:text-xl">Stainless Steel Toothbrush Holder</h3> aka getByRole('link', { name: 'Stainless Steel Toothbrush' }).nth(1)
+        10) <h3 class="mt-1 line-clamp-2 text-lg font-semibold leading-snug text-foreground transition-colors duration-300 hover:text-primary md:text-xl">Stoneware Soap Dispenser</h3> aka getByRole('link', { name: 'Stoneware Soap Dispenser' }).nth(1)
+        ...
+
+    Call log:
+    [2m  - Expect "toContainText" with timeout 10000ms[22m
+    [2m  - waiting for getByRole('heading')[22m
+
+
+      46 |         if (productName) {
+      47 |             const trimmedName = productName.trim();
+    > 48 |             await expect(page.getByRole('heading')).toContainText(trimmedName, { timeout: 10000 });
+         |                                                     ^
+      49 |         }
+      50 |
+      51 |         const addToCartBtn = page.getByRole('button', { name: /Add to Cart/i });
+        at D:\HP_FILES\Uyarvom\uyarvom-ecommerce-platform\e2e\customer-checkout.spec.ts:48:53
+
+    Error Context: test-results\customer-checkout-Customer-405f0-o-cart-and-reaches-checkout-chromium\error-context.md
+
+  1 failed
+    [chromium] ΓÇ║ e2e\customer-checkout.spec.ts:4:9 ΓÇ║ Customer Checkout Flow ΓÇ║ navigates to product, adds to cart, and reaches checkout 
+

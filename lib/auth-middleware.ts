@@ -1,103 +1,116 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createSupabaseServerClient, supabaseAdmin } from '@/lib/supabase-server'
+import type { User as SupabaseUser } from "@supabase/supabase-js"
+import { NextRequest, NextResponse } from "next/server"
+import { prisma } from "@/lib/prisma"
+import { createClient } from "@/lib/supabase/server"
+import { syncAuthUserToPrisma } from "@/lib/user-sync"
 
-// Get current user from Supabase session
+export type AppRole = "customer" | "staff" | "admin" | "super_admin"
+
+export interface AuthContext {
+  authUser: SupabaseUser
+  dbUser: Awaited<ReturnType<typeof syncAuthUserToPrisma>>
+  role: AppRole
+}
+
 export async function getCurrentUser() {
   try {
-    // Check if we're in demo mode
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
-    const isDemo = supabaseUrl.includes('placeholder') || !supabaseUrl || supabaseUrl === 'https://placeholder-supabase-url.supabase.co'
-    
-    if (isDemo) {
-      // In demo mode, return null (no server-side user detection)
-      return null
-    }
+    const supabase = await createClient()
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser()
 
-    const supabase = await createSupabaseServerClient()
-    const { data: { user }, error } = await supabase.auth.getUser()
-    
     if (error || !user) {
       return null
     }
 
     return user
   } catch (error) {
-    console.error('Error getting current user:', error)
+    console.error("Error getting current user:", error)
     return null
   }
 }
 
-// Get current user role from database
+export async function getCurrentUserContext(): Promise<AuthContext | null> {
+  const authUser = await getCurrentUser()
+
+  if (!authUser) {
+    return null
+  }
+
+  const dbUser = await syncAuthUserToPrisma(authUser)
+  const adminUser = await prisma.adminUser.findUnique({
+    where: { userId: authUser.id },
+    select: { role: true },
+  })
+
+  return {
+    authUser,
+    dbUser,
+    role: (adminUser?.role || "customer") as AppRole,
+  }
+}
+
 export async function getCurrentUserRole() {
   try {
-    const user = await getCurrentUser()
-    if (!user) return null
-
-    // Check if user has admin role in the database
-    const { data: adminUser } = await supabaseAdmin
-      .from('admin_users')
-      .select('role')
-      .eq('user_id', user.id)
-      .single()
-
-    return adminUser?.role || 'customer'
+    const context = await getCurrentUserContext()
+    return context?.role || null
   } catch (error) {
-    console.error('Error getting user role:', error)
-    return 'customer'
+    console.error("Error getting user role:", error)
+    return null
   }
 }
 
-// Check if user has staff access (admin or staff role)
-export async function requireStaffAccess(request: NextRequest) {
+export async function requireAuthenticatedUser(_request?: NextRequest) {
   try {
-    const user = await getCurrentUser()
-    if (!user) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+    const context = await getCurrentUserContext()
+
+    if (!context) {
+      return NextResponse.json({ error: "Authentication required" }, { status: 401 })
     }
 
-    const role = await getCurrentUserRole()
-    if (!['admin', 'staff', 'super_admin'].includes(role || '')) {
-      return NextResponse.json({ error: 'Staff access required' }, { status: 403 })
-    }
-
-    return { user, role }
+    return context
   } catch (error) {
-    console.error('Error checking staff access:', error)
-    return NextResponse.json({ error: 'Authentication error' }, { status: 500 })
+    console.error("Error checking user session:", error)
+    return NextResponse.json({ error: "Authentication error" }, { status: 500 })
   }
 }
 
-// Check if user has admin access
-export async function requireAdminAccess(request: NextRequest) {
-  try {
-    const user = await getCurrentUser()
-    if (!user) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
-    }
-
-    const role = await getCurrentUserRole()
-    if (!['admin', 'super_admin'].includes(role || '')) {
-      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
-    }
-
-    return { user, role }
-  } catch (error) {
-    console.error('Error checking admin access:', error)
-    return NextResponse.json({ error: 'Authentication error' }, { status: 500 })
+export async function requireStaffAccess(request?: NextRequest) {
+  const authResult = await requireAuthenticatedUser(request)
+  if (authResult instanceof NextResponse) {
+    return authResult
   }
+
+  if (!["admin", "staff", "super_admin"].includes(authResult.role)) {
+    return NextResponse.json({ error: "Staff access required" }, { status: 403 })
+  }
+
+  return authResult
 }
 
-// Legacy function names for backward compatibility
-export const requireAdmin = requireStaffAccess
+export async function requireAdminAccess(request?: NextRequest) {
+  const authResult = await requireAuthenticatedUser(request)
+  if (authResult instanceof NextResponse) {
+    return authResult
+  }
+
+  if (!["admin", "super_admin"].includes(authResult.role)) {
+    return NextResponse.json({ error: "Admin access required" }, { status: 403 })
+  }
+
+  return authResult
+}
+
+export const requireAdmin = requireAdminAccess
 export const requireAdminRole = requireAdminAccess
 
-// Simplified auth check for client-side components
 export async function checkAdminAccess() {
   try {
     const role = await getCurrentUserRole()
-    return ['admin', 'super_admin'].includes(role || '')
+    return ["admin", "super_admin"].includes(role || "")
   } catch (error) {
-    console.error('Admin access check failed:', error)
+    console.error("Admin access check failed:", error)
     return false
   }
 }

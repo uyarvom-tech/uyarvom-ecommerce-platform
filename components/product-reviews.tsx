@@ -106,7 +106,6 @@ export function ProductReviews({ productSlug, currentUserId }: ProductReviewsPro
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
-          userId: currentUserId,
           productSlug: productSlug
         })
       })
@@ -130,7 +129,7 @@ export function ProductReviews({ productSlug, currentUserId }: ProductReviewsPro
     if (!confirm('Are you sure you want to delete this review?')) return
 
     try {
-      const response = await fetch(`/api/reviews/${reviewId}?userId=${currentUserId}`, {
+      const response = await fetch(`/api/reviews/${reviewId}`, {
         method: 'DELETE'
       })
 

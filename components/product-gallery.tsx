@@ -3,6 +3,7 @@
 import { useState } from "react"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
+import { PRODUCT_FALLBACK_IMAGE } from "@/lib/image-fallbacks"
 
 export function ProductGallery({ images, productName }: { images: any[]; productName: string }) {
   const [selectedImage, setSelectedImage] = useState(0)
@@ -10,13 +11,13 @@ export function ProductGallery({ images, productName }: { images: any[]; product
   const displayImages =
     images.length > 0
       ? images
-      : [{ imageUrl: `/placeholder.svg?height=600&width=600&query=${productName}`, altText: productName }]
+      : [{ imageUrl: PRODUCT_FALLBACK_IMAGE, altText: productName }]
 
   return (
     <div className="space-y-4">
       <div className="aspect-square overflow-hidden rounded-lg border bg-muted">
         <Image
-          src={displayImages[selectedImage].imageUrl || "/placeholder.svg"}
+          src={displayImages[selectedImage].imageUrl || PRODUCT_FALLBACK_IMAGE}
           alt={displayImages[selectedImage].altText || productName}
           width={600}
           height={600}
@@ -37,7 +38,7 @@ export function ProductGallery({ images, productName }: { images: any[]; product
               )}
             >
               <Image
-                src={image.imageUrl || "/placeholder.svg"}
+                src={image.imageUrl || PRODUCT_FALLBACK_IMAGE}
                 alt={image.altText || `${productName} ${index + 1}`}
                 width={150}
                 height={150}

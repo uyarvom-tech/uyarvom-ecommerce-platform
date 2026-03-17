@@ -1,81 +1,56 @@
-import { prisma } from "@/lib/prisma-safe"
+import { prisma } from "@/lib/prisma"
 import { AdminHeader } from "@/components/admin-header"
 import { TicketManagement } from "@/components/admin/ticket-management"
-import { getCurrentUserRole } from "@/lib/auth-middleware"
+import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 
-// Force dynamic rendering
 export const dynamic = 'force-dynamic'
-export const revalidate = 0
 
 export default async function TicketsPage() {
-  // Get current user role
-  const userRole = await getCurrentUserRole()
-  
-  // Only admins can access ticket management
-  if (userRole !== 'super_admin') {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) redirect("/auth/login?redirect=/admin/tickets")
+
+  const admin = await prisma.adminUser.findUnique({ where: { userId: user.id } })
+
+  // High-level governance: Only super_admin can review deletion tickets
+  if (!admin || admin.role !== 'super_admin') {
     redirect('/admin/catalog')
   }
 
-  // Fetch all deletion tickets
   const tickets = await prisma.deletionTicket.findMany({
     include: {
-      requester: {
-        select: {
-          id: true,
-          email: true,
-          fullName: true
-        }
-      },
-      reviewer: {
-        select: {
-          id: true,
-          email: true,
-          fullName: true
-        }
-      }
+      requester: true,
+      reviewer: true
     },
-    orderBy: [
-      { status: 'asc' }, // pending first
-      { createdAt: 'desc' }
-    ]
+    orderBy: { createdAt: 'desc' }
   })
 
-  // Transform tickets to match the interface
-  const transformedTickets = tickets.map((ticket: any) => ({
-    id: ticket.id,
-    type: ticket.type as 'product' | 'category',
-    itemId: ticket.itemId,
-    itemName: ticket.itemName,
-    reason: ticket.reason,
-    status: ticket.status as 'pending' | 'approved' | 'rejected',
-    createdAt: ticket.createdAt.toISOString(),
-    updatedAt: ticket.updatedAt.toISOString(),
-    requester: {
-      id: ticket.requester.id,
-      email: ticket.requester.email,
-      fullName: ticket.requester.fullName || undefined
-    },
-    reviewer: ticket.reviewer ? {
-      id: ticket.reviewer.id,
-      email: ticket.reviewer.email,
-      fullName: ticket.reviewer.fullName || undefined
-    } : undefined
+  const transformedTickets = tickets.map((t: any) => ({
+    ...t,
+    createdAt: t.createdAt.toISOString(),
+    updatedAt: t.updatedAt.toISOString(),
   }))
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="flex min-h-screen flex-col bg-muted/10">
       <AdminHeader />
-      
-      <main className="flex-1 container mx-auto px-6 py-8 max-w-7xl">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight">Deletion Requests</h1>
-          <p className="text-muted-foreground">
-            Review and manage deletion requests from staff members
-          </p>
-        </div>
+      <main className="flex-1 px-8 py-10">
+        <div className="container mx-auto max-w-7xl">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+            <div>
+              <h1 className="text-5xl font-black tracking-tighter uppercase mb-2 text-red-600 italic">Governance Log</h1>
+              <p className="text-muted-foreground text-sm font-bold uppercase tracking-[.3em]">Reviewing destructive operational requests</p>
+            </div>
+            <div className="bg-black text-white px-6 py-2 text-[10px] font-black uppercase tracking-widest flex items-center gap-3">
+              <div className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+              Critical Oversight Mode
+            </div>
+          </div>
 
-        <TicketManagement tickets={transformedTickets} />
+          <TicketManagement tickets={transformedTickets} />
+        </div>
       </main>
     </div>
   )

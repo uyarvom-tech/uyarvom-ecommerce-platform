@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import { existsSync } from 'fs'
-import { requireAdmin } from '@/lib/auth-middleware'
+import { requireStaffAccess } from '@/lib/auth-middleware'
 
 export async function POST(request: NextRequest) {
   // Check admin access
-  const authResult = await requireAdmin(request)
+  const authResult = await requireStaffAccess(request)
   if (authResult instanceof NextResponse) {
     return authResult // Return error response
   }
@@ -14,73 +14,95 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
     const file = formData.get('file') as File
+    const uploadType = formData.get('type') as string || 'products'
 
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 })
     }
 
-    // Validate file type
     if (!file.type.startsWith('image/')) {
       return NextResponse.json({ error: 'File must be an image' }, { status: 400 })
     }
 
-    // Validate file size (max 25MB for high-definition images)
-    if (file.size > 25 * 1024 * 1024) {
-      return NextResponse.json({ error: 'File size must be less than 25MB' }, { status: 400 })
-    }
-
-    // For Vercel deployment, check if we're in production
-    if (process.env.VERCEL) {
-      // In Vercel, we should use Vercel Blob Storage or external storage
-      // For now, return an error suggesting external storage setup
-      return NextResponse.json({ 
-        error: 'File upload requires external storage configuration in production. Please set up Vercel Blob Storage or AWS S3.',
-        suggestion: 'For production deployment, configure Vercel Blob Storage in your project settings.'
-      }, { status: 501 })
+    // Validate size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      return NextResponse.json({ error: 'File size must be less than 10MB' }, { status: 400 })
     }
 
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
-    // Get upload type from form data (default to 'products')
-    const uploadType = formData.get('type') as string || 'products'
-    const validTypes = ['products', 'category', 'categories']
-    const folderName = validTypes.includes(uploadType) ? (uploadType === 'category' ? 'categories' : uploadType) : 'products'
+    // Check if Cloudflare R2 is configured
+    const isR2Configured = process.env.R2_ACCOUNT_ID &&
+      process.env.R2_ACCESS_KEY_ID &&
+      process.env.R2_SECRET_ACCESS_KEY &&
+      process.env.R2_BUCKET_NAME;
 
-    // Create uploads directory if it doesn't exist (local development only)
-    const uploadsDir = join(process.cwd(), 'public', 'uploads', folderName)
-    if (!existsSync(uploadsDir)) {
-      await mkdir(uploadsDir, { recursive: true })
+    if (isR2Configured) {
+      const { S3Client, PutObjectCommand } = await import('@aws-sdk/client-s3')
+
+      const r2 = new S3Client({
+        region: 'auto',
+        endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+        credentials: {
+          accessKeyId: process.env.R2_ACCESS_KEY_ID!,
+          secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
+        },
+      })
+
+      const extension = file.name.split('.').pop()
+      const key = `${uploadType}/${Date.now()}-${Math.random().toString(36).substring(2, 10)}.${extension}`
+
+      await r2.send(new PutObjectCommand({
+        Bucket: process.env.R2_BUCKET_NAME!,
+        Key: key,
+        Body: buffer,
+        ContentType: file.type,
+      }))
+
+      const url = `${process.env.R2_PUBLIC_URL}/${key}`
+      console.log('✅ File uploaded to R2:', url)
+
+      return NextResponse.json({
+        url,
+        filename: key,
+        size: file.size,
+        type: file.type,
+        message: 'File uploaded successfully to R2'
+      })
     }
 
-    // Generate unique filename
-    const timestamp = Date.now()
-    const randomString = Math.random().toString(36).substring(2, 8)
-    const extension = file.name.split('.').pop()
-    const filename = `${timestamp}-${randomString}.${extension}`
-    
-    const filepath = join(uploadsDir, filename)
-    
-    // Write file (local development only)
-    await writeFile(filepath, buffer)
-    
-    // Return the public URL
-    const url = `/uploads/${folderName}/${filename}`
-    
-    console.log('✅ File uploaded (local):', url)
-    
-    return NextResponse.json({ 
-      url,
-      filename,
-      size: file.size,
-      type: file.type,
-      message: 'File uploaded successfully (local development)'
-    })
+    // Fallback to local storage ONLY in development
+    if (process.env.NODE_ENV === 'development') {
+      const validTypes = ['products', 'category', 'categories']
+      const folderName = validTypes.includes(uploadType) ? (uploadType === 'category' ? 'categories' : uploadType) : 'products'
 
-  } catch (error) {
+      const uploadsDir = join(process.cwd(), 'public', 'uploads', folderName)
+      if (!existsSync(uploadsDir)) {
+        await mkdir(uploadsDir, { recursive: true })
+      }
+
+      const filename = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${file.name.split('.').pop()}`
+      const filepath = join(uploadsDir, filename)
+
+      await writeFile(filepath, buffer)
+      const url = `/uploads/${folderName}/${filename}`
+
+      return NextResponse.json({
+        url,
+        filename,
+        message: 'File uploaded successfully (local)'
+      })
+    }
+
+    return NextResponse.json({
+      error: 'R2 storage is not configured. Please set R2 environment variables.'
+    }, { status: 500 })
+
+  } catch (error: any) {
     console.error('Upload error:', error)
     return NextResponse.json(
-      { error: 'Failed to upload file' },
+      { error: error.message || 'Failed to upload file' },
       { status: 500 }
     )
   }

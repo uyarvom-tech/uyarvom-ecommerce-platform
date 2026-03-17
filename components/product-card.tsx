@@ -2,203 +2,247 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { Badge } from "@/components/ui/badge"
-import { Star } from "lucide-react"
-import { useState, useEffect } from "react"
+import { Heart, ShoppingCart, Star } from "lucide-react"
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 import type { FlexibleProduct, ProductImage } from "@/types"
+import { PRODUCT_FALLBACK_IMAGE } from "@/lib/image-fallbacks"
+import { createClient } from "@/lib/supabase/client"
+import { Button } from "@/components/ui/button"
 
 interface ProductCardProps {
   product: FlexibleProduct
 }
 
 export function ProductCard({ product }: ProductCardProps) {
+  const router = useRouter()
+  const supabase = createClient()
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [isHovering, setIsHovering] = useState(false)
-  
-  // Filter to get only main product images (not color variant images)
-  // Handle both string arrays and ProductImage arrays
+  const [isAdding, setIsAdding] = useState(false)
+
   const productImages = product.images || []
   const mainImages = productImages.filter((img: any) => {
-    if (typeof img === 'string') {
-      return img && img.trim() !== ''
+    if (typeof img === "string") {
+      return img && img.trim() !== ""
     }
-    return img && (img.imageUrl || img.image_url) && (img.imageUrl || img.image_url)!.trim() !== ''
+
+    return img && (img.imageUrl || img.image_url) && (img.imageUrl || img.image_url)!.trim() !== ""
   })
-  
-  const hasMultipleImages = mainImages.length > 1
-  
-  // Create a safe placeholder URL
-  const placeholderUrl = `/placeholder.svg?height=400&width=400&query=${encodeURIComponent(product.name || 'product')}`
-  
-  // Normalize images to ProductImage format
-  const displayImages: ProductImage[] = mainImages.length > 0 
-    ? mainImages.map((img: any) => {
-        if (typeof img === 'string') {
-          return { imageUrl: img, altText: product.name }
-        }
-        return img
-      })
-    : [{ imageUrl: placeholderUrl, altText: product.name }]
-  
-  // Auto-cycle through images on hover (only if we have actual multiple images)
+
+  const displayImages: ProductImage[] =
+    mainImages.length > 0
+      ? mainImages.map((img: any) => {
+          if (typeof img === "string") {
+            return { imageUrl: img, altText: product.name }
+          }
+
+          return img
+        })
+      : [{ imageUrl: PRODUCT_FALLBACK_IMAGE, altText: product.name }]
+
   useEffect(() => {
-    if (!isHovering || !hasMultipleImages || mainImages.length <= 1) return
-    
+    if (!isHovering || mainImages.length <= 1) return
+
     const interval = setInterval(() => {
       setCurrentImageIndex((prev) => (prev + 1) % mainImages.length)
-    }, 2000) // Change image every 2 seconds for better viewing
-    
+    }, 2200)
+
     return () => clearInterval(interval)
-  }, [isHovering, hasMultipleImages, mainImages.length])
-  
-  // Reset to first image when not hovering
+  }, [isHovering, mainImages.length])
+
   useEffect(() => {
-    if (!isHovering) {
-      setCurrentImageIndex(0)
-    }
+    if (!isHovering) setCurrentImageIndex(0)
   }, [isHovering])
-  
-  const currentImage = displayImages[currentImageIndex] || displayImages[0]
-  
-  // Fix discount calculation logic
-  const comparePrice = product.compareAtPrice || product.compare_at_price
-  const currentPrice = product.price
-  
-  const hasDiscount = comparePrice && comparePrice > currentPrice
-  const discountPercent = hasDiscount
-    ? Math.round(((comparePrice - currentPrice) / comparePrice) * 100)
-    : 0
-    
-  const stockQuantity = product.stockQuantity || product.stock_quantity || 0
-  const lowStockThreshold = product.lowStockThreshold || product.low_stock_threshold || 10
+
+  const currentPrice = Number(product.price || 0)
+  const comparePriceRaw = product.compareAtPrice ?? product.compare_at_price
+  const comparePrice = comparePriceRaw == null ? null : Number(comparePriceRaw)
+  const hasDiscount = Boolean(comparePrice && comparePrice > currentPrice)
+  const savings = hasDiscount ? Math.max(0, Math.round(comparePrice! - currentPrice)) : 0
+  const discountPercent = hasDiscount ? Math.round(((comparePrice! - currentPrice) / comparePrice!) * 100) : 0
+  const stockQuantity = Number(product.stockQuantity ?? product.stock_quantity ?? 0)
+  const lowStockThreshold = Number(product.lowStockThreshold ?? product.low_stock_threshold ?? 10)
   const isLowStock = stockQuantity <= lowStockThreshold && stockQuantity > 0
   const createdDate = product.createdAt || (product.created_at ? new Date(product.created_at) : new Date())
-  const isNew = createdDate > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // Last 30 days
+  const isNew = createdDate > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+  const primaryCategory = product.productCategories?.[0]?.category?.name || "Curated Pick"
+
+  const handleAddToCart = async () => {
+    if (!product.id || stockQuantity <= 0 || isAdding) return
+
+    setIsAdding(true)
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      setIsAdding(false)
+      router.push(`/auth/login?redirect=/products/${product.slug}`)
+      return
+    }
+
+    try {
+      const response = await fetch("/api/cart", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productId: product.id,
+          quantity: 1,
+        }),
+      })
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null)
+        throw new Error(payload?.error || "Failed to add to cart")
+      }
+
+      toast.success("Added to cart")
+      window.dispatchEvent(new CustomEvent("cart:changed"))
+      router.refresh()
+    } catch (error) {
+      console.error("Add to cart error:", error)
+      toast.error(error instanceof Error ? error.message : "Failed to add to cart")
+    } finally {
+      setIsAdding(false)
+    }
+  }
 
   return (
-    <Link href={`/products/${product.slug}`} className="group block">
-      <div 
-        className="apple-card p-0 apple-hover-lift"
-        onMouseEnter={() => setIsHovering(true)}
-        onMouseLeave={() => setIsHovering(false)}
-      >
-        {/* Compact Product Card - Image with overlaid info */}
-        <div className="relative aspect-square overflow-hidden bg-secondary/20 rounded-[20px]">
-          {/* Single Image Display with Smooth Transitions */}
-          <div className="relative w-full h-full">
-            {displayImages.map((image: ProductImage, index: number) => (
-              <div
-                key={index}
-                className={`absolute inset-0 transition-all duration-500 ease-in-out ${
-                  index === currentImageIndex 
-                    ? 'opacity-100 translate-x-0' 
-                    : index < currentImageIndex 
-                      ? 'opacity-0 -translate-x-full' 
-                      : 'opacity-0 translate-x-full'
-                }`}
-              >
-                <Image
-                  src={image?.imageUrl || image?.image_url || placeholderUrl}
-                  alt={image?.altText || image?.alt_text || product.name}
-                  width={400}
-                  height={400}
-                  className="h-full w-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
-                />
-              </div>
-            ))}
-          </div>
-
-          {/* Image Indicators - Show dots if multiple main images */}
-          {hasMultipleImages && mainImages.length > 1 && (
-            <div className="absolute top-2 left-1/2 transform -translate-x-1/2 flex gap-1">
-              {mainImages.map((_: any, index: number) => (
-                <div
-                  key={index}
-                  className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
-                    index === currentImageIndex 
-                      ? 'bg-white shadow-lg' 
-                      : 'bg-white/40'
-                  }`}
-                />
-              ))}
-            </div>
-          )}
-
-          {/* Top Badges */}
-          <div className="absolute right-2 top-2 flex flex-col gap-1">
+    <article
+      className="rounded-[24px] border border-border/60 bg-white p-2 shadow-sm transition-all duration-500 hover:-translate-y-1 hover:shadow-xl"
+      onMouseEnter={() => setIsHovering(true)}
+      onMouseLeave={() => setIsHovering(false)}
+    >
+      <Link href={`/products/${product.slug}`} className="group block">
+        <div className="relative mb-4 aspect-[4/5] overflow-hidden rounded-[20px] bg-secondary">
+          <div className="absolute left-3 top-3 z-10 flex max-w-[60%] flex-wrap gap-2">
             {hasDiscount && (
-              <Badge className="bg-destructive text-destructive-foreground border-0 px-1.5 py-0.5 text-[10px] font-semibold rounded-full apple-shadow">
-                {discountPercent}%
-              </Badge>
+              <span className="rounded-full bg-[#b91c1c] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white">
+                {discountPercent}% Off
+              </span>
             )}
             {isNew && (
-              <Badge className="bg-primary text-primary-foreground border-0 px-1.5 py-0.5 text-[10px] font-semibold rounded-full apple-shadow">
-                NEW
-              </Badge>
+              <span className="rounded-full bg-white/95 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-foreground">
+                New
+              </span>
+            )}
+            {isLowStock && (
+              <span className="rounded-full bg-foreground px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white">
+                Only {stockQuantity} left
+              </span>
             )}
           </div>
 
-          {/* Stock Badge */}
-          {isLowStock && (
-            <div className="absolute top-2 left-2">
-              <Badge className="bg-amber-500/90 text-white border-0 px-1.5 py-0.5 text-[10px] font-semibold rounded-full apple-shadow backdrop-blur-sm">
-                {stockQuantity} left
-              </Badge>
-            </div>
-          )}
+          <button
+            type="button"
+            onClick={(event) => {
+              event.preventDefault()
+              event.stopPropagation()
+            }}
+            className="absolute right-3 top-3 z-10 flex h-10 w-10 items-center justify-center rounded-xl border border-white/40 bg-white/80 text-foreground backdrop-blur transition-all duration-300 hover:bg-primary hover:text-white"
+          >
+            <Heart className="h-4 w-4" />
+          </button>
 
-          {/* Out of Stock Overlay */}
-          {stockQuantity <= 0 && (
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center rounded-[20px]">
-              <Badge className="bg-white/90 text-black border-0 px-3 py-1 text-xs font-semibold rounded-full">
-                Out of Stock
-              </Badge>
+          {displayImages.map((image, index) => (
+            <div
+              key={index}
+              className={`absolute inset-0 transition-opacity duration-700 ${index === currentImageIndex ? "opacity-100" : "opacity-0"}`}
+            >
+              <Image
+                src={image?.imageUrl || image?.image_url || PRODUCT_FALLBACK_IMAGE}
+                alt={image?.altText || image?.alt_text || product.name}
+                width={480}
+                height={600}
+                className="h-full w-full object-cover object-center transition-transform duration-1000 group-hover:scale-105"
+              />
             </div>
-          )}
+          ))}
 
-          {/* Bottom Info Overlay */}
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-3 rounded-b-[20px]">
-            {/* Product Name */}
-            <h3 className="text-white text-sm font-semibold leading-tight line-clamp-1 mb-1">
-              {product.name}
-            </h3>
-            
-            {/* Price and Rating Row */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-baseline gap-1">
-                <span className="text-white text-base font-bold tracking-tight">
-                  ₹{product.price.toLocaleString("en-IN")}
-                </span>
-                {hasDiscount && (
-                  <span className="text-white/70 text-xs line-through">
-                    ₹{comparePrice?.toLocaleString("en-IN")}
-                  </span>
-                )}
+          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent p-4">
+            <div className="flex items-end justify-between gap-3">
+              <div className="rounded-full bg-white/90 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-foreground">
+                {primaryCategory}
               </div>
-
-              <div className="flex items-center gap-1">
-                <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                <span className="text-white font-semibold text-xs">4.8</span>
-              </div>
-            </div>
-
-            {/* Category and Image Count */}
-            <div className="flex items-center justify-between mt-1">
-              <p className="text-white/80 text-[10px] font-medium uppercase tracking-wider">
-                {product.productCategories?.[0]?.category?.name || 'Uncategorized'}
-              </p>
-              {hasMultipleImages && mainImages.length > 1 && (
-                <p className="text-white/60 text-[10px] font-medium">
-                  {mainImages.length} photos
-                </p>
+              {mainImages.length > 1 && (
+                <div className="flex gap-1.5">
+                  {mainImages.map((_, index) => (
+                    <span
+                      key={index}
+                      className={`h-1.5 rounded-full transition-all ${index === currentImageIndex ? "w-5 bg-white" : "w-1.5 bg-white/45"}`}
+                    />
+                  ))}
+                </div>
               )}
             </div>
           </div>
 
-          {/* Hover Overlay */}
-          <div className="absolute inset-0 bg-primary/10 opacity-0 transition-all duration-300 group-hover:opacity-100 rounded-[20px]" />
+          {stockQuantity <= 0 && (
+            <div className="absolute inset-0 flex items-center justify-center bg-white/70 backdrop-blur-[2px]">
+              <span className="rounded-full bg-foreground px-5 py-2 text-[10px] font-bold uppercase tracking-[0.3em] text-white">
+                Out Of Stock
+              </span>
+            </div>
+          )}
+        </div>
+      </Link>
+
+      <div className="flex min-h-[248px] flex-col space-y-3 px-1 pb-1">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-primary">{primaryCategory}</p>
+            <Link href={`/products/${product.slug}`} className="block">
+              <h3 className="mt-1 line-clamp-2 text-lg font-semibold leading-snug text-foreground transition-colors duration-300 hover:text-primary md:text-xl">
+                {product.name}
+              </h3>
+            </Link>
+          </div>
+          <div className="flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-700">
+            <Star className="h-3.5 w-3.5 fill-current" />
+            <span>4.8</span>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 text-[11px] font-medium text-muted-foreground">
+          {hasDiscount ? (
+            <span className="rounded-full bg-emerald-50 px-3 py-1 text-emerald-700">
+              Save {"\u20B9"}{savings.toLocaleString("en-IN")}
+            </span>
+          ) : (
+            <span className="rounded-full bg-secondary px-3 py-1 text-foreground/70">Everyday value</span>
+          )}
+          <span className="rounded-full bg-secondary px-3 py-1 text-foreground/70">Fast shipping</span>
+        </div>
+
+        <div className="mt-auto border-t border-border/50 pt-3">
+          <div className="flex items-end justify-between gap-4">
+            <div className="min-w-0">
+              <div className="flex items-baseline gap-2">
+                <span className="text-xl font-bold tracking-tight text-foreground">{"\u20B9"}{currentPrice.toLocaleString("en-IN")}</span>
+                {hasDiscount && (
+                  <span className="text-sm text-muted-foreground line-through">{"\u20B9"}{comparePrice?.toLocaleString("en-IN")}</span>
+                )}
+              </div>
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                {stockQuantity > 0 ? "Ready to order" : "Notify me when back"}
+              </p>
+            </div>
+          </div>
+
+          <Button
+            type="button"
+            onClick={handleAddToCart}
+            disabled={stockQuantity <= 0 || isAdding}
+            className="mt-4 h-11 w-full rounded-2xl bg-primary text-[11px] font-bold uppercase tracking-[0.18em] text-white transition-all hover:bg-foreground"
+          >
+            <ShoppingCart className="mr-2 h-4 w-4" />
+            {stockQuantity <= 0 ? "Sold Out" : isAdding ? "Adding..." : "Add To Cart"}
+          </Button>
         </div>
       </div>
-    </Link>
+    </article>
   )
 }

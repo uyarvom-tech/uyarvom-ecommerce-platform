@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import { existsSync } from 'fs'
-import { requireAdmin } from '@/lib/auth-middleware'
+import { requireStaffAccess } from '@/lib/auth-middleware'
 
 export async function POST(request: NextRequest) {
   // Check admin access
-  const authResult = await requireAdmin(request)
+  const authResult = await requireStaffAccess(request)
   if (authResult instanceof NextResponse) {
     return authResult // Return error response
   }

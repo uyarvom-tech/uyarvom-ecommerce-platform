@@ -1,3 +1,4 @@
+import Link from "next/link"
 import { prisma } from "@/lib/prisma-safe"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
@@ -5,28 +6,58 @@ import { ProductCard } from "@/components/product-card"
 import { ProductFilters } from "@/components/product-filters"
 import { AIKitchenMatch } from "@/components/ai-kitchen-match"
 import { CategoryNavigation } from "@/components/category-navigation"
-import { CategoryCarousel } from "@/components/category-carousel"
+import { SaleBanner } from "@/components/sale-banner"
+import { HomeMainHero } from "@/components/home-main-hero"
+import { Button } from "@/components/ui/button"
+import { Search } from "lucide-react"
+import { STORE_ROOT_CATEGORY_NAMES } from "@/lib/store-catalog"
+import { ProductHorizontalScroll } from "@/components/product-horizontal-scroll"
 
-// Force dynamic rendering
-export const dynamic = 'force-dynamic'
+export const dynamic = "force-dynamic"
 export const revalidate = 0
 
 export default async function HomePage({
   searchParams,
 }: {
-  searchParams: Promise<{ category?: string; sort?: string; min?: string; max?: string; tab?: string; search?: string }>
+  searchParams: Promise<{
+    category?: string
+    sub?: string
+    sort?: string
+    min?: string
+    max?: string
+    tab?: string
+    search?: string
+  }>
 }) {
-  try {
-    const params = await searchParams
+  const params = await searchParams
+  const isAITab = params.tab === "ai-match"
+  const searchQuery = params.search?.trim()
 
-    // Check if we're on the AI tab
-    const isAITab = params.tab === 'ai-match'
-    const searchQuery = params.search
+  const categories = await prisma.category.findMany({
+    where: {
+      isActive: true,
+      parentId: null,
+      name: { in: [...STORE_ROOT_CATEGORY_NAMES] },
+    },
+    include: {
+      children: {
+        where: { isActive: true },
+        orderBy: { name: "asc" },
+      },
+      _count: {
+        select: { productCategories: true },
+      },
+    },
+    orderBy: [{ displayOrder: "asc" }, { name: "asc" }],
+  })
 
-    // Build where clause for products
-    const where: any = { isActive: true }
+  const categoryBySlug = new Map(categories.map((category) => [category.slug, category]))
+  const childCategoryBySlug = new Map(
+    categories.flatMap((category) => category.children.map((child) => [child.slug, { child, parent: category }] as const))
+  )
 
-  // Add search functionality
+  const where: any = { isActive: true }
+
   if (searchQuery && !isAITab) {
     where.OR = [
       { name: { contains: searchQuery } },
@@ -37,228 +68,232 @@ export default async function HomePage({
         productCategories: {
           some: {
             category: {
-              name: { contains: searchQuery }
-            }
-          }
-        }
-      }
+              name: { contains: searchQuery },
+            },
+          },
+        },
+      },
     ]
   }
 
-  // Filter by category (only if not on AI tab)
-  if (params.category && !isAITab) {
-    const category = await prisma.category.findUnique({
-      where: { slug: params.category }
-    })
-    if (category) {
+  if (!isAITab) {
+    if (params.sub && childCategoryBySlug.has(params.sub)) {
       where.productCategories = {
-        some: {
-          categoryId: category.id
-        }
+        some: { categoryId: childCategoryBySlug.get(params.sub)!.child.id },
+      }
+    } else if (params.category && categoryBySlug.has(params.category)) {
+      const category = categoryBySlug.get(params.category)!
+      const categoryIds = [category.id, ...category.children.map((child) => child.id)]
+      where.productCategories = {
+        some: { categoryId: { in: categoryIds } },
       }
     }
+
+    if (params.min) where.price = { ...where.price, gte: Number.parseFloat(params.min) }
+    if (params.max) where.price = { ...where.price, lte: Number.parseFloat(params.max) }
   }
 
-  // Filter by price range (only if not on AI tab)
-  if (params.min && !isAITab) {
-    where.price = { ...where.price, gte: Number.parseFloat(params.min) }
-  }
-  if (params.max && !isAITab) {
-    where.price = { ...where.price, lte: Number.parseFloat(params.max) }
-  }
-
-  // Build orderBy clause
-  let orderBy: any = { createdAt: 'desc' } // default
+  let orderBy: any = { createdAt: "desc" }
   if (!isAITab) {
-    const sortBy = params.sort || "newest"
-    switch (sortBy) {
+    switch (params.sort || "newest") {
       case "price-asc":
-        orderBy = { price: 'asc' }
+        orderBy = { price: "asc" }
         break
       case "price-desc":
-        orderBy = { price: 'desc' }
+        orderBy = { price: "desc" }
         break
       case "name":
-        orderBy = { name: 'asc' }
+        orderBy = { name: "asc" }
         break
       default:
-        orderBy = { createdAt: 'desc' }
+        orderBy = { createdAt: "desc" }
     }
   }
 
-  // Get products and categories
-  const [products, categories] = await Promise.all([
-    !isAITab ? prisma.product.findMany({
-      where,
-      include: {
-        productCategories: {
-          include: { category: true },
-          orderBy: { isPrimary: 'desc' }
+  const [products, aiProducts, banners, featuredProducts, newArrivals, saleProducts] = await Promise.all([
+    !isAITab
+      ? prisma.product.findMany({
+        where,
+        include: {
+          productCategories: {
+            include: { category: true },
+            orderBy: { isPrimary: "desc" },
+          },
+          images: {
+            orderBy: { sortOrder: "asc" },
+          },
         },
-        images: {
-          orderBy: { sortOrder: 'asc' }
-        }
-      },
-      orderBy
-    }) : [],
-    prisma.category.findMany({
-      where: { 
-        isActive: true,
-        parentId: null 
-      },
+        orderBy,
+      })
+      : [],
+    isAITab
+      ? prisma.product.findMany({
+        where: { isActive: true },
+        include: {
+          productCategories: {
+            include: { category: true },
+            orderBy: { isPrimary: "desc" },
+          },
+          images: {
+            orderBy: { sortOrder: "asc" },
+          },
+        },
+      })
+      : [],
+    (prisma as any).heroBanner.findMany({
+      where: { isActive: true },
+      orderBy: { displayOrder: 'asc' }
+    }),
+    prisma.product.findMany({
+      where: { isActive: true, isFeatured: true },
+      take: 8,
       include: {
-        _count: {
-          select: {
-            productCategories: true
-          }
-        }
-      },
-      orderBy: [
-        { displayOrder: 'asc' },
-        { name: 'asc' }
-      ]
+        productCategories: { include: { category: true } },
+        images: { orderBy: { sortOrder: 'asc' } }
+      }
+    }),
+    prisma.product.findMany({
+      where: { isActive: true },
+      orderBy: { createdAt: 'desc' },
+      take: 8,
+      include: {
+        productCategories: { include: { category: true } },
+        images: { orderBy: { sortOrder: 'asc' } }
+      }
+    }),
+    prisma.product.findMany({
+      where: { isActive: true, compareAtPrice: { not: null } },
+      take: 8,
+      include: {
+        productCategories: { include: { category: true } },
+        images: { orderBy: { sortOrder: 'asc' } }
+      }
     })
   ])
 
-  // Filter categories for showcase (first 4 categories for scroll stack)
-  const showcaseCategories = categories?.slice(0, 4) || []
-
-  // Add fallback categories if we don't have enough
-  const fallbackCategories = [
-    { id: 'kitchen-fallback', name: 'Kitchen', slug: 'kitchen', description: 'Premium cookware and kitchen essentials', imageUrl: null, _count: { productCategories: 50 } },
-    { id: 'dining-fallback', name: 'Dining', slug: 'dining', description: 'Elegant dinnerware and serving pieces', imageUrl: null, _count: { productCategories: 30 } },
-    { id: 'decor-fallback', name: 'Home Decor', slug: 'decor', description: 'Beautiful decorative pieces for your home', imageUrl: null, _count: { productCategories: 25 } },
-    { id: 'gifts-fallback', name: 'Gifts', slug: 'gifts', description: 'Perfect gifts for every occasion', imageUrl: null, _count: { productCategories: 20 } }
-  ]
-
-  // Ensure we have at least 4 categories for the carousel
-  const finalShowcaseCategories = showcaseCategories.length >= 4 
-    ? showcaseCategories 
-    : [...showcaseCategories, ...fallbackCategories.slice(0, 4 - showcaseCategories.length)]
-
-  // For AI tab, get all products
-  const aiProducts = isAITab ? await prisma.product.findMany({
-    where: { isActive: true },
-    include: {
-      productCategories: {
-        include: { category: true },
-        orderBy: { isPrimary: 'desc' }
-      },
-      images: {
-        orderBy: { sortOrder: 'asc' }
-      }
-    }
-  }) : []
-
   const displayProducts = isAITab ? aiProducts : products
-  return (
-    <div className="flex min-h-screen flex-col bg-background apple-scroll-snap">
-      <Header />
-      
-      {/* Category Navigation */}
-      <CategoryNavigation />
-      
-      {/* Category Carousel - Only show if not on AI tab */}
-      {!isAITab && (
-        <CategoryCarousel categories={finalShowcaseCategories} />
-      )}
-      
-      <main className="flex-1">
-        {/* Apple Product Grid */}
-        <section className="py-8">
-          <div className="w-full">
-            {isAITab ? (
-              /* AI Kitchen Match Interface */
-              <div className="max-w-[1400px] mx-auto px-4">
-                <AIKitchenMatch products={displayProducts || []} />
-              </div>
-            ) : (
-              /* Regular Product Grid */
-              <div className="flex gap-6">
-                {/* Sidebar Filters - Desktop Only - Goes to left edge */}
-                <aside className="hidden lg:block w-80 flex-shrink-0 pl-4">
-                  <div className="apple-card p-6 sticky top-20">
-                    <ProductFilters categories={categories || []} />
-                  </div>
-                </aside>
+  const selectedCategoryName =
+    (params.sub && childCategoryBySlug.get(params.sub)?.child.name) ||
+    (params.category && categoryBySlug.get(params.category)?.name) ||
+    ""
 
-                {/* Product Grid - Full width */}
-                <div className="flex-1 min-w-0 pr-4">
-                  {/* Search Results Indicator */}
-                  {searchQuery && (
-                    <div className="mb-6 p-4 bg-primary/5 border border-primary/20 rounded-lg max-w-[1400px] mx-auto">
-                      <p className="text-sm text-primary">
-                        Showing {displayProducts?.length || 0} results for "<strong>{searchQuery}</strong>"
-                      </p>
+  return (
+    <div className="flex min-h-screen flex-col bg-background">
+      <Header />
+      <CategoryNavigation
+        categories={categories.map((category) => ({
+          id: category.id,
+          name: category.name,
+          slug: category.slug,
+          imageUrl: category.imageUrl,
+          children: category.children.map((child) => ({
+            id: child.id,
+            name: child.name,
+            slug: child.slug,
+          })),
+        }))}
+      />
+
+      <main className="flex-1">
+        {!searchQuery && !params.category && !params.sub && !isAITab && (
+          <>
+            <HomeMainHero banners={banners} />
+            <SaleBanner />
+            <ProductHorizontalScroll
+              title="Curated Collections"
+              subtitle="Handpicked Architecture for your home"
+              products={featuredProducts}
+            />
+            <ProductHorizontalScroll
+              title="New Arrivals"
+              subtitle="The latest additions to our repository"
+              products={newArrivals}
+            />
+            <ProductHorizontalScroll
+              title="Limited Offers"
+              subtitle="Premium assets at curated valuations"
+              products={saleProducts}
+            />
+          </>
+        )}
+
+        <section id="store-grid" className="py-6 md:py-8">
+          <div className="mx-auto w-full max-w-[1800px] px-4 sm:px-6 xl:px-8">
+            {isAITab ? (
+              <AIKitchenMatch products={displayProducts || []} />
+            ) : (
+              <>
+                <div className="mb-6 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+                  <span className="font-medium text-foreground">{displayProducts.length} products</span>
+                  {selectedCategoryName && <span>in {selectedCategoryName}</span>}
+                  {searchQuery && <span>for "{searchQuery}"</span>}
+                </div>
+
+                <div className="grid gap-5 lg:hidden mb-6">
+                  <ProductFilters
+                    categories={categories.map((category) => ({
+                      id: category.id,
+                      name: category.name,
+                      slug: category.slug,
+                      children: category.children.map((child) => ({
+                        id: child.id,
+                        name: child.name,
+                        slug: child.slug,
+                      })),
+                    }))}
+                    basePath="/"
+                  />
+                </div>
+
+                <div className="grid gap-6 xl:grid-cols-[250px_minmax(0,1fr)] 2xl:grid-cols-[260px_minmax(0,1fr)]">
+                  <aside className="hidden lg:block">
+                    <div className="sticky top-[210px]">
+                      <ProductFilters
+                        categories={categories.map((category) => ({
+                          id: category.id,
+                          name: category.name,
+                          slug: category.slug,
+                          children: category.children.map((child) => ({
+                            id: child.id,
+                            name: child.name,
+                            slug: child.slug,
+                          })),
+                        }))}
+                        basePath="/"
+                      />
                     </div>
-                  )}
-                  
-                  {displayProducts && displayProducts.length > 0 ? (
-                    <div className="max-w-[1400px] mx-auto">
-                      <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                        {displayProducts.map((product: any, index: number) => (
+                  </aside>
+
+                  <div>
+                    {displayProducts.length > 0 ? (
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-10 sm:gap-x-5 md:grid-cols-3 md:gap-x-6 md:gap-y-12 xl:grid-cols-4 2xl:gap-x-7">
+                        {displayProducts.map((product: any) => (
                           <ProductCard key={product.id} product={product} />
                         ))}
                       </div>
-                    </div>
-                  ) : (
-                    <div className="max-w-[1400px] mx-auto">
-                      <div className="apple-card p-12 text-center">
-                        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
-                          <svg className="w-8 h-8 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                          </svg>
+                    ) : (
+                      <div className="rounded-[28px] border border-border/50 bg-white p-12 text-center shadow-sm">
+                        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-secondary">
+                          <Search className="h-6 w-6 text-muted-foreground" />
                         </div>
-                        <h3 className="text-xl font-semibold mb-2">
-                          {searchQuery ? `No products found for "${searchQuery}"` : "No products found"}
-                        </h3>
-                        <p className="apple-body">
-                          {searchQuery 
-                            ? "Try adjusting your search terms or browse our categories above."
-                            : "Try adjusting your filters or search terms"
-                          }
-                          {params.category 
-                            ? `No products found in ${params.category} category. Try browsing all products.`
-                            : ""
-                          }
+                        <h3 className="text-2xl font-serif text-foreground">No products found</h3>
+                        <p className="mt-3 text-muted-foreground">
+                          Try a different search term, remove a filter, or go back to all products.
                         </p>
+                        <Button asChild variant="outline" className="mt-6 rounded-full">
+                          <Link href="/">View all products</Link>
+                        </Button>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
-              </div>
+              </>
             )}
           </div>
         </section>
       </main>
-      
+
       <Footer />
     </div>
   )
-  } catch (error: any) {
-    console.error('Homepage error:', error)
-    return (
-      <div className="flex min-h-screen flex-col bg-background">
-        <Header />
-        <main className="flex-1 flex items-center justify-center p-8">
-          <div className="max-w-2xl w-full bg-destructive/10 border border-destructive/20 rounded-lg p-8">
-            <h1 className="text-2xl font-bold text-destructive mb-4">Database Connection Error</h1>
-            <p className="text-sm mb-4">Unable to connect to the database. Please check:</p>
-            <ul className="list-disc list-inside space-y-2 text-sm mb-4">
-              <li>DATABASE_URL environment variable is set correctly in Vercel</li>
-              <li>Password special characters are URL-encoded (@ = %40, # = %23)</li>
-              <li>Supabase database is accessible</li>
-            </ul>
-            <details className="mt-4">
-              <summary className="cursor-pointer text-sm font-semibold">Error Details</summary>
-              <pre className="mt-2 p-4 bg-black/10 rounded text-xs overflow-auto">
-                {error.message}
-              </pre>
-            </details>
-          </div>
-        </main>
-        <Footer />
-      </div>
-    )
-  }
 }

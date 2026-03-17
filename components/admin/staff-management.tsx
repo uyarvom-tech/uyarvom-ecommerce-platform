@@ -9,17 +9,20 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
-import { 
-  Plus, 
-  Users, 
-  Shield, 
+import {
+  Plus,
+  Users,
+  Shield,
   UserCheck,
   Edit,
   Trash2,
   Eye,
   EyeOff,
   Copy,
-  CheckCircle
+  CheckCircle,
+  Clock,
+  ChevronRight,
+  UserPlus
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -29,593 +32,237 @@ interface StaffMember {
   fullName: string
   avatarUrl: string | null
   role: string
-  permissions: string
   createdAt: string
-  updatedAt: string
+  lastLogin: string
   isActive: boolean
 }
 
 interface StaffManagementProps {
   staff: StaffMember[]
+  currentUserRole: string
 }
 
-interface NewStaffForm {
-  email: string
-  fullName: string
-  role: string
-  password: string
-}
-
-export function StaffManagement({ staff: initialStaff }: StaffManagementProps) {
+export function StaffManagement({ staff: initialStaff, currentUserRole }: StaffManagementProps) {
   const router = useRouter()
-  const [staff, setStaff] = useState<StaffMember[]>(initialStaff)
   const [showCreateForm, setShowCreateForm] = useState(false)
-  const [showEditForm, setShowEditForm] = useState(false)
-  const [editingStaff, setEditingStaff] = useState<StaffMember | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [staffToDelete, setStaffToDelete] = useState<StaffMember | null>(null)
-  const [createdCredentials, setCreatedCredentials] = useState<{email: string, password: string} | null>(null)
+  const [createdCredentials, setCreatedCredentials] = useState<{ email: string, password: string } | null>(null)
   const [showPassword, setShowPassword] = useState(false)
   const [copiedField, setCopiedField] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
 
-  const [newStaffForm, setNewStaffForm] = useState<NewStaffForm>({
+  const [newStaffForm, setNewStaffForm] = useState({
     email: '',
     fullName: '',
     role: 'staff',
     password: ''
   })
 
-  // Calculate statistics
-  const totalStaff = staff.length
-  const activeStaff = staff.filter(s => s.isActive).length
-  const adminStaff = staff.filter(s => s.role === 'admin').length
-  const regularStaff = staff.filter(s => s.role === 'staff').length
-
-  // Generate random password
   const generatePassword = () => {
-    const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789'
-    let password = ''
-    for (let i = 0; i < 12; i++) {
-      password += chars.charAt(Math.floor(Math.random() * chars.length))
+    const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%^&*'
+    let pwd = ''
+    for (let i = 0; i < 16; i++) {
+      pwd += chars.charAt(Math.floor(Math.random() * chars.length))
     }
-    setNewStaffForm(prev => ({ ...prev, password }))
+    setNewStaffForm(prev => ({ ...prev, password: pwd }))
   }
 
-  // Handle create staff
   const handleCreateStaff = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-
     try {
       const response = await fetch('/api/admin/staff', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newStaffForm)
       })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to create staff member')
-      }
-
-      const result = await response.json()
-      
-      // Store credentials to show to admin
-      setCreatedCredentials({
-        email: newStaffForm.email,
-        password: newStaffForm.password
-      })
-
-      toast.success('Staff member created successfully!')
-      
-      // Reset form
-      setNewStaffForm({
-        email: '',
-        fullName: '',
-        role: 'staff',
-        password: ''
-      })
+      if (!response.ok) throw new Error('Failed to create operator')
+      setCreatedCredentials({ email: newStaffForm.email, password: newStaffForm.password })
       setShowCreateForm(false)
-      
-      // Refresh data
       router.refresh()
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to create staff member')
+    } catch (err: any) {
+      toast.error(err.message)
     } finally {
       setIsLoading(false)
     }
   }
 
-  // Handle edit staff
-  const handleEditStaff = (staffMember: StaffMember) => {
-    setEditingStaff(staffMember)
-    setNewStaffForm({
-      email: staffMember.email,
-      fullName: staffMember.fullName,
-      role: staffMember.role,
-      password: ''
-    })
-    setShowEditForm(true)
-  }
-
-  // Handle update staff
-  const handleUpdateStaff = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!editingStaff) return
-
-    setIsLoading(true)
-    try {
-      const response = await fetch(`/api/admin/staff/${editingStaff.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          fullName: newStaffForm.fullName,
-          role: newStaffForm.role,
-          ...(newStaffForm.password && { password: newStaffForm.password })
-        })
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to update staff member')
-      }
-
-      toast.success('Staff member updated successfully!')
-      setShowEditForm(false)
-      setEditingStaff(null)
-      router.refresh()
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to update staff member')
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  // Handle delete staff
-  const handleDeleteStaff = (staffMember: StaffMember) => {
-    setStaffToDelete(staffMember)
-    setDeleteDialogOpen(true)
-  }
-
-  const handleDeleteConfirm = async () => {
-    if (!staffToDelete) return
-
-    setIsLoading(true)
-    try {
-      const response = await fetch(`/api/admin/staff/${staffToDelete.id}`, {
-        method: 'DELETE'
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to delete staff member')
-      }
-
-      toast.success('Staff member deleted successfully!')
-      setDeleteDialogOpen(false)
-      setStaffToDelete(null)
-      router.refresh()
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to delete staff member')
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  // Copy to clipboard
   const copyToClipboard = async (text: string, field: string) => {
-    try {
-      await navigator.clipboard.writeText(text)
-      setCopiedField(field)
-      toast.success(`${field} copied to clipboard!`)
-      setTimeout(() => setCopiedField(null), 2000)
-    } catch (error) {
-      toast.error('Failed to copy to clipboard')
-    }
-  }
-
-  const getRoleBadgeColor = (role: string) => {
-    switch (role) {
-      case 'admin': return 'bg-blue-100 text-blue-800 border-blue-200'
-      case 'staff': return 'bg-green-100 text-green-800 border-green-200'
-      default: return 'bg-gray-100 text-gray-800 border-gray-200'
-    }
-  }
-
-  const getRoleDisplayName = (role: string) => {
-    switch (role) {
-      case 'admin': return 'Admin'
-      case 'staff': return 'Staff'
-      default: return role
-    }
+    await navigator.clipboard.writeText(text)
+    setCopiedField(field)
+    toast.success(`${field} copied to system clipboard`)
+    setTimeout(() => setCopiedField(null), 2000)
   }
 
   return (
-    <div className="space-y-6">
-      {/* Statistics Overview */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <Users className="h-4 w-4 text-blue-600" />
-              <div className="ml-2">
-                <p className="text-sm font-medium leading-none">Total Staff</p>
-                <p className="text-2xl font-bold">{totalStaff}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <UserCheck className="h-4 w-4 text-green-600" />
-              <div className="ml-2">
-                <p className="text-sm font-medium leading-none">Active</p>
-                <p className="text-2xl font-bold">{activeStaff}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <Shield className="h-4 w-4 text-purple-600" />
-              <div className="ml-2">
-                <p className="text-sm font-medium leading-none">Admins</p>
-                <p className="text-2xl font-bold">{adminStaff}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <Users className="h-4 w-4 text-orange-600" />
-              <div className="ml-2">
-                <p className="text-sm font-medium leading-none">Staff Members</p>
-                <p className="text-2xl font-bold">{regularStaff}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Actions */}
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">Staff Members</h2>
-        <Button onClick={() => setShowCreateForm(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Staff Member
+    <div className="space-y-12">
+      {/* Operative Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div>
+          <h1 className="text-5xl font-black tracking-tighter uppercase mb-2">Personnel Registry</h1>
+          <p className="text-muted-foreground text-sm font-bold uppercase tracking-[.3em]">Authorized operators and system administrators</p>
+        </div>
+        <Button
+          onClick={() => setShowCreateForm(true)}
+          className="bg-black text-white hover:bg-black/90 rounded-none h-12 px-8 text-[10px] font-black uppercase tracking-widest flex items-center gap-2"
+        >
+          <UserPlus className="h-4 w-4" /> Provision New Operator
         </Button>
       </div>
 
-      {/* Create Staff Form */}
-      {showCreateForm && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Create New Staff Member</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleCreateStaff} className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <Label htmlFor="email">Email Address *</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={newStaffForm.email}
-                    onChange={(e) => setNewStaffForm(prev => ({ ...prev, email: e.target.value }))}
-                    placeholder="staff@example.com"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="fullName">Full Name *</Label>
-                  <Input
-                    id="fullName"
-                    value={newStaffForm.fullName}
-                    onChange={(e) => setNewStaffForm(prev => ({ ...prev, fullName: e.target.value }))}
-                    placeholder="John Doe"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="role">Role *</Label>
-                  <Select value={newStaffForm.role} onValueChange={(value) => setNewStaffForm(prev => ({ ...prev, role: value }))}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="staff">Staff</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div>
-                  <Label htmlFor="password">Password *</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="password"
-                      type="text"
-                      value={newStaffForm.password}
-                      onChange={(e) => setNewStaffForm(prev => ({ ...prev, password: e.target.value }))}
-                      placeholder="Enter password"
-                      required
-                    />
-                    <Button type="button" variant="outline" onClick={generatePassword}>
-                      Generate
-                    </Button>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="flex gap-2 pt-4 border-t">
-                <Button type="submit" disabled={isLoading}>
-                  {isLoading ? 'Creating...' : 'Create Staff Member'}
-                </Button>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => {
-                    setShowCreateForm(false)
-                    setNewStaffForm({
-                      email: '',
-                      fullName: '',
-                      role: 'staff',
-                      password: ''
-                    })
-                  }}
-                >
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Edit Staff Form */}
-      {showEditForm && editingStaff && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Edit Staff Member</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleUpdateStaff} className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <Label htmlFor="editEmail">Email Address</Label>
-                  <Input
-                    id="editEmail"
-                    type="email"
-                    value={newStaffForm.email}
-                    disabled
-                    className="bg-muted"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">Email cannot be changed</p>
-                </div>
-                
-                <div>
-                  <Label htmlFor="editFullName">Full Name *</Label>
-                  <Input
-                    id="editFullName"
-                    value={newStaffForm.fullName}
-                    onChange={(e) => setNewStaffForm(prev => ({ ...prev, fullName: e.target.value }))}
-                    placeholder="John Doe"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="editRole">Role *</Label>
-                  <Select value={newStaffForm.role} onValueChange={(value) => setNewStaffForm(prev => ({ ...prev, role: value }))}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="staff">Staff</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div>
-                  <Label htmlFor="editPassword">New Password (optional)</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="editPassword"
-                      type="text"
-                      value={newStaffForm.password}
-                      onChange={(e) => setNewStaffForm(prev => ({ ...prev, password: e.target.value }))}
-                      placeholder="Leave empty to keep current password"
-                    />
-                    <Button type="button" variant="outline" onClick={generatePassword}>
-                      Generate
-                    </Button>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="flex gap-2 pt-4 border-t">
-                <Button type="submit" disabled={isLoading}>
-                  {isLoading ? 'Updating...' : 'Update Staff Member'}
-                </Button>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => {
-                    setShowEditForm(false)
-                    setEditingStaff(null)
-                    setNewStaffForm({
-                      email: '',
-                      fullName: '',
-                      role: 'staff',
-                      password: ''
-                    })
-                  }}
-                >
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Staff List */}
+      {/* Grid Overview */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {staff.map((staffMember) => (
-          <Card key={staffMember.id} className="group hover:shadow-lg transition-all duration-200">
-            <CardContent className="p-6">
-              <div className="space-y-4">
-                {/* Staff Info */}
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-lg">{staffMember.fullName}</h3>
-                    <p className="text-sm text-muted-foreground">{staffMember.email}</p>
-                    <Badge className={`mt-2 ${getRoleBadgeColor(staffMember.role)}`}>
-                      {getRoleDisplayName(staffMember.role)}
-                    </Badge>
-                  </div>
+        {initialStaff.map((member) => (
+          <Card key={member.id} className="rounded-none border-none shadow-sm group hover:shadow-xl transition-all">
+            <CardContent className="p-8">
+              <div className="flex justify-between items-start mb-8">
+                <div className="h-14 w-14 bg-black text-white flex items-center justify-center text-xl font-black italic">
+                  {member.fullName.charAt(0)}
                 </div>
+                <Badge variant="outline" className={`rounded-none px-3 py-1 text-[9px] font-black uppercase tracking-widest ${member.role === 'super_admin' ? 'bg-primary text-black border-black/10' : 'bg-black text-white'}`}>
+                  {member.role.replace('_', ' ')}
+                </Badge>
+              </div>
 
-                {/* Created Date */}
-                <div className="text-xs text-muted-foreground">
-                  Created: {new Date(staffMember.createdAt).toLocaleDateString()}
+              <h3 className="text-xl font-black uppercase tracking-tight mb-1">{member.fullName}</h3>
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-8">{member.email}</p>
+
+              <div className="space-y-4 pt-6 border-t border-black/5">
+                <div className="flex justify-between items-center text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
+                  <span className="flex items-center gap-1.5"><Clock className="h-3 w-3" /> Enlisted</span>
+                  <span className="text-black">{new Date(member.createdAt).toLocaleDateString()}</span>
                 </div>
+                <div className="flex justify-between items-center text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
+                  <span className="flex items-center gap-1.5"><UserCheck className="h-3 w-3" /> Activity</span>
+                  <span className="text-black">{new Date(member.lastLogin).toLocaleDateString()}</span>
+                </div>
+              </div>
 
-                {/* Actions */}
-                <div className="flex gap-2 pt-2 border-t">
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    onClick={() => handleEditStaff(staffMember)}
-                    className="flex-1"
-                  >
-                    <Edit className="h-4 w-4 mr-1" />
-                    Edit
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="ghost"
-                    onClick={() => handleDeleteStaff(staffMember)}
-                    className="text-destructive hover:text-destructive"
-                  >
+              <div className="mt-8 flex gap-2">
+                <button className="flex-1 h-10 border border-black text-[9px] font-black uppercase tracking-widest hover:bg-black hover:text-white transition-all">
+                  Profile
+                </button>
+                <button className="h-10 w-10 border border-black flex items-center justify-center hover:bg-black hover:text-white transition-all">
+                  <Edit className="h-4 w-4" />
+                </button>
+                {member.role !== 'super_admin' && (
+                  <button className="h-10 w-10 border border-red-200 text-red-600 flex items-center justify-center hover:bg-red-600 hover:text-white transition-all">
                     <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
+                  </button>
+                )}
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      {/* Empty State */}
-      {staff.length === 0 && (
-        <Card>
-          <CardContent className="p-12 text-center">
-            <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-            <h3 className="text-lg font-semibold mb-2">No staff members yet</h3>
-            <p className="text-muted-foreground mb-4">
-              Create your first staff member to get started
-            </p>
-            <Button onClick={() => setShowCreateForm(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Staff Member
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Credentials Display Modal */}
-      {createdCredentials && (
-        <AlertDialog open={!!createdCredentials} onOpenChange={() => setCreatedCredentials(null)}>
-          <AlertDialogContent className="max-w-md">
-            <AlertDialogHeader>
-              <AlertDialogTitle className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-green-600" />
-                Staff Member Created!
-              </AlertDialogTitle>
-              <AlertDialogDescription>
-                Share these login credentials with the staff member:
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            
-            <div className="space-y-4 py-4">
-              <div>
-                <Label className="text-sm font-medium">Email:</Label>
-                <div className="flex items-center gap-2 mt-1">
-                  <Input value={createdCredentials.email} readOnly className="bg-muted" />
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    onClick={() => copyToClipboard(createdCredentials.email, 'Email')}
-                  >
-                    {copiedField === 'Email' ? <CheckCircle className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                  </Button>
-                </div>
+      {/* Access Provisioning Form */}
+      <AlertDialog open={showCreateForm} onOpenChange={setShowCreateForm}>
+        <AlertDialogContent className="rounded-none border-4 border-black max-w-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-black uppercase tracking-tighter text-4xl italic">Provision Access</AlertDialogTitle>
+            <AlertDialogDescription className="text-[10px] font-black uppercase tracking-[.2em] mb-8 pb-4 border-b border-black/5">
+              Establishing new operator credentials in system core
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <form onSubmit={handleCreateStaff} className="space-y-6">
+            <div className="grid grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label className="text-[9px] font-black uppercase tracking-widest">Full Legal Name</Label>
+                <Input
+                  required
+                  className="rounded-none border-black/20 h-12 text-xs"
+                  value={newStaffForm.fullName}
+                  onChange={e => setNewStaffForm(p => ({ ...p, fullName: e.target.value }))}
+                />
               </div>
-              
-              <div>
-                <Label className="text-sm font-medium">Password:</Label>
-                <div className="flex items-center gap-2 mt-1">
-                  <Input 
-                    value={createdCredentials.password} 
-                    type={showPassword ? 'text' : 'password'}
-                    readOnly 
-                    className="bg-muted" 
+              <div className="space-y-2">
+                <Label className="text-[9px] font-black uppercase tracking-widest">Electronic Mail</Label>
+                <Input
+                  required
+                  type="email"
+                  className="rounded-none border-black/20 h-12 text-xs"
+                  value={newStaffForm.email}
+                  onChange={e => setNewStaffForm(p => ({ ...p, email: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[9px] font-black uppercase tracking-widest">Security Clearance</Label>
+                <Select value={newStaffForm.role} onValueChange={v => setNewStaffForm(p => ({ ...p, role: v }))}>
+                  <SelectTrigger className="rounded-none border-black/20 h-12 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-none border-black text-xs font-bold uppercase">
+                    <SelectItem value="staff">Standard Operator</SelectItem>
+                    <SelectItem value="admin">Branch Administrator</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[9px] font-black uppercase tracking-widest">Master Key</Label>
+                <div className="flex gap-2">
+                  <Input
+                    required
+                    className="rounded-none border-black/20 h-12 text-xs font-mono"
+                    value={newStaffForm.password}
+                    onChange={e => setNewStaffForm(p => ({ ...p, password: e.target.value }))}
                   />
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    onClick={() => copyToClipboard(createdCredentials.password, 'Password')}
-                  >
-                    {copiedField === 'Password' ? <CheckCircle className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  <Button type="button" variant="outline" className="rounded-none border-black h-12 px-4 shadow-sm" onClick={generatePassword}>
+                    <Shield className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
             </div>
-            
-            <AlertDialogFooter>
-              <AlertDialogAction onClick={() => setCreatedCredentials(null)}>
-                Got it!
+            <AlertDialogFooter className="pt-8 border-t border-black/5">
+              <AlertDialogCancel className="rounded-none h-12 px-8 text-[10px] font-black uppercase tracking-widest">Abort</AlertDialogCancel>
+              <Button type="submit" disabled={isLoading} className="bg-black text-white hover:bg-black/90 rounded-none h-12 px-10 text-[10px] font-black uppercase tracking-widest">
+                {isLoading ? 'Processing...' : 'Authorize Operator'}
+              </Button>
+            </AlertDialogFooter>
+          </form>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Credentials Output */}
+      {createdCredentials && (
+        <AlertDialog open={!!createdCredentials} onOpenChange={() => setCreatedCredentials(null)}>
+          <AlertDialogContent className="rounded-none border-8 border-primary max-w-lg">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="font-black uppercase tracking-tighter text-4xl italic flex items-center gap-4">
+                <CheckCircle className="h-10 w-10 text-black" /> Authorization Successful
+              </AlertDialogTitle>
+              <AlertDialogDescription className="py-6 border-y border-black/5 my-6 text-[11px] font-bold uppercase tracking-widest leading-relaxed">
+                Credentials established. These values are only visible once. Transfer to operator immediately.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+
+            <div className="space-y-6">
+              <div className="p-6 bg-muted">
+                <p className="text-[8px] font-black uppercase tracking-[.3em] text-muted-foreground mb-3">Login Identity</p>
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-sm font-bold">{createdCredentials.email}</span>
+                  <button onClick={() => copyToClipboard(createdCredentials.email, 'Email')} className="hover:text-primary transition-colors"><Copy className="h-5 w-5" /></button>
+                </div>
+              </div>
+              <div className="p-6 bg-black text-white">
+                <p className="text-[8px] font-black uppercase tracking-[.3em] text-gray-500 mb-3">Security Key</p>
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-lg font-black italic">{showPassword ? createdCredentials.password : '••••••••••••••••'}</span>
+                  <div className="flex gap-4">
+                    <button onClick={() => setShowPassword(!showPassword)}>{showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}</button>
+                    <button onClick={() => copyToClipboard(createdCredentials.password, 'Password')}><Copy className="h-5 w-5" /></button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <AlertDialogFooter className="mt-10">
+              <AlertDialogAction onClick={() => setCreatedCredentials(null)} className="w-full bg-black text-white hover:bg-black/90 rounded-none h-14 text-[10px] font-black uppercase tracking-[.3em]">
+                Seal Credentials
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
       )}
-
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Staff Member</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete "{staffToDelete?.fullName}"? This action cannot be undone and will remove all their access to the admin panel.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleDeleteConfirm}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Delete Staff Member
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   )
 }

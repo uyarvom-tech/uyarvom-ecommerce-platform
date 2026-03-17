@@ -1,0 +1,7 @@
+export const STORE_ROOT_CATEGORY_NAMES = [
+  "COOKWARE",
+  "SERVEWARE",
+  "DININGWARE",
+  "STORAGE",
+  "GIFTING SETS",
+] as const

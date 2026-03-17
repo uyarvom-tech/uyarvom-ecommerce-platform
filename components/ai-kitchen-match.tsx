@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import Image from "next/image"
 import Link from "next/link"
+import { PRODUCT_FALLBACK_IMAGE } from "@/lib/image-fallbacks"
 
 interface AIKitchenMatchProps {
   products: any[]
@@ -69,12 +70,12 @@ export function AIKitchenMatch({ products }: AIKitchenMatchProps) {
 
   const analyzeKitchen = () => {
     setIsAnalyzing(true)
-    
+
     // Simulate AI analysis and get random products
     setTimeout(() => {
       // Ensure products is an array and has items
       const availableProducts = Array.isArray(products) ? products : []
-      
+
       if (availableProducts.length === 0) {
         // If no products available, set empty array and show message
         setSuggestedProducts([])
@@ -86,7 +87,7 @@ export function AIKitchenMatch({ products }: AIKitchenMatchProps) {
       // Get 6 random products from the available products
       const shuffled = [...availableProducts].sort(() => 0.5 - Math.random())
       const randomProducts = shuffled.slice(0, 6)
-      
+
       setSuggestedProducts(randomProducts)
       setIsAnalyzing(false)
       setAnalysisComplete(true)
@@ -105,27 +106,26 @@ export function AIKitchenMatch({ products }: AIKitchenMatchProps) {
   return (
     <div className="max-w-6xl mx-auto">
       {/* AI Kitchen Match Header */}
-      <div className="text-center mb-12">
-        <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 rounded-full bg-gradient-to-r from-amber-500/10 to-amber-600/10 border border-amber-500/20">
-          <Sparkles className="h-5 w-5 text-amber-600" />
-          <span className="text-sm font-semibold text-amber-700 dark:text-amber-400">AI-POWERED MATCHING</span>
+      <div className="text-center mb-20">
+        <div className="inline-flex items-center gap-2 mb-6 px-4 py-1 rounded-full bg-primary/5 border border-primary/20">
+          <Sparkles className="h-4 w-4 text-primary" />
+          <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-primary">AI-POWERED MASTERY</span>
         </div>
-        <h2 className="text-4xl md:text-5xl font-semibold tracking-tight mb-4 bg-gradient-to-r from-amber-600 to-amber-800 bg-clip-text text-transparent">
-          Find Perfect Ceramics for Your Kitchen
-        </h2>
-        <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-          Upload a photo of your kitchen and our AI will suggest the perfect ceramic pieces that match your style and space
+        <h1 className="text-5xl md:text-7xl font-serif text-foreground mb-6 leading-tight">
+          Find Your <span className="italic text-primary">Aesthetic</span> Match
+        </h1>
+        <p className="text-lg text-foreground/70 max-w-2xl mx-auto leading-relaxed font-light">
+          Upload a vision of your space and our AI will curate the perfect ceramic pieces to complement your architectural style.
         </p>
       </div>
 
       {!uploadedImage ? (
         /* Upload Interface */
-        <Card className="border-2 border-dashed border-amber-200 dark:border-amber-800 bg-gradient-to-br from-amber-50/50 to-amber-100/30 dark:from-amber-950/20 dark:to-amber-900/10">
-          <CardContent className="p-12">
+        <Card className="border border-border/10 bg-secondary shadow-sm rounded-xl overflow-hidden">
+          <CardContent className="p-20">
             <div
-              className={`relative transition-all duration-300 ${
-                dragActive ? 'scale-105 border-amber-400' : ''
-              }`}
+              className={`relative transition-all duration-700 ${dragActive ? 'scale-105 opacity-80' : ''
+                }`}
               onDragEnter={handleDrag}
               onDragLeave={handleDrag}
               onDragOver={handleDrag}
@@ -133,34 +133,34 @@ export function AIKitchenMatch({ products }: AIKitchenMatchProps) {
             >
               <div className="text-center">
                 {/* Upload Icon */}
-                <div className="mx-auto w-24 h-24 mb-6 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-lg">
-                  <Upload className="h-12 w-12 text-white" />
+                <div className="mx-auto w-24 h-24 mb-10 rounded-full bg-primary flex items-center justify-center shadow-2xl shadow-primary/20">
+                  <Upload className="h-10 w-10 text-white" />
                 </div>
 
                 {/* Upload Text */}
-                <h3 className="text-2xl font-semibold mb-4 text-foreground">
-                  Upload Your Kitchen Photo
+                <h3 className="text-3xl font-serif mb-6 text-foreground">
+                  The Vision for Your Space
                 </h3>
-                <p className="text-muted-foreground mb-8 max-w-md mx-auto">
-                  Drag and drop your kitchen image here, or click to browse. We'll analyze your space and suggest matching ceramics.
+                <p className="text-foreground/60 mb-12 max-w-md mx-auto leading-relaxed">
+                  Provide a photograph of your kitchen or dining area. Our system will analyze textures, colors, and lighting to select harmonizing pieces.
                 </p>
 
                 {/* Upload Buttons */}
-                <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
                   <Button
                     onClick={() => fileInputRef.current?.click()}
-                    className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white px-8 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300"
+                    className="apple-button h-16 px-12"
                   >
-                    <ImageIcon className="mr-2 h-5 w-5" />
-                    Choose Photo
+                    <ImageIcon className="mr-3 h-5 w-5" />
+                    Select Image
                   </Button>
-                  
+
                   <Button
-                    variant="outline"
-                    className="border-amber-300 text-amber-700 hover:bg-amber-50 dark:border-amber-700 dark:text-amber-400 dark:hover:bg-amber-950/20 px-8 py-3 rounded-full"
+                    variant="link"
+                    className="text-foreground font-bold uppercase tracking-widest text-[10px] hover:text-primary transition-colors"
                   >
-                    <Camera className="mr-2 h-5 w-5" />
-                    Take Photo
+                    <Camera className="mr-2 h-4 w-4" />
+                    Open Camera
                   </Button>
                 </div>
 
@@ -209,23 +209,25 @@ export function AIKitchenMatch({ products }: AIKitchenMatchProps) {
 
           {!analysisComplete ? (
             /* Analysis Section */
-            <Card className="bg-gradient-to-br from-amber-50 to-amber-100/50 dark:from-amber-950/20 dark:to-amber-900/10 border-amber-200 dark:border-amber-800">
-              <CardContent className="p-8 text-center">
+            <Card className="border border-border/10 bg-white shadow-xl rounded-xl">
+              <CardContent className="p-16 text-center">
                 {!isAnalyzing ? (
-                  <div>
-                    <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
-                      <Wand2 className="h-8 w-8 text-white" />
+                  <div className="space-y-8">
+                    <div className="w-20 h-20 mx-auto rounded-full bg-primary/5 flex items-center justify-center">
+                      <Wand2 className="h-8 w-8 text-primary" />
                     </div>
-                    <h3 className="text-2xl font-semibold mb-4">Ready to Analyze</h3>
-                    <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                      Our AI will analyze your kitchen's style, colors, and layout to suggest the perfect ceramic pieces.
-                    </p>
+                    <div className="space-y-2">
+                      <h3 className="text-3xl font-serif">Awaiting Instruction</h3>
+                      <p className="text-foreground/60 max-w-sm mx-auto leading-relaxed">
+                        Our artisans and AI are ready to analyze the intricate details of your space.
+                      </p>
+                    </div>
                     <Button
                       onClick={analyzeKitchen}
-                      className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white px-8 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300"
+                      className="apple-button h-16 px-16"
                     >
-                      <Sparkles className="mr-2 h-5 w-5" />
-                      Analyze Kitchen
+                      <Sparkles className="mr-3 h-5 w-5" />
+                      Begin Analysis
                     </Button>
                   </div>
                 ) : (
@@ -252,33 +254,29 @@ export function AIKitchenMatch({ products }: AIKitchenMatchProps) {
             /* AI Suggestions Results */
             <div className="space-y-8">
               {/* Results Header */}
-              <Card className="bg-gradient-to-br from-green-50 to-emerald-100/50 dark:from-green-950/20 dark:to-emerald-900/10 border-green-200 dark:border-green-800">
-                <CardContent className="p-6 text-center">
-                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center">
-                    <Sparkles className="h-8 w-8 text-white" />
-                  </div>
-                  <h3 className="text-2xl font-semibold mb-2 text-green-800 dark:text-green-200">Analysis Complete!</h3>
-                  <p className="text-green-700 dark:text-green-300 mb-4">
-                    Based on your kitchen's style and colors, here are our AI-recommended ceramic pieces:
-                  </p>
-                  <div className="flex justify-center gap-4">
-                    <Button
-                      onClick={tryAgain}
-                      variant="outline"
-                      className="border-green-300 text-green-700 hover:bg-green-50 dark:border-green-700 dark:text-green-400"
-                    >
-                      Try Another Photo
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="bg-secondary border border-border p-12 text-center rounded-xl">
+                <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-primary flex items-center justify-center shadow-xl shadow-primary/20">
+                  <Sparkles className="h-8 w-8 text-white" />
+                </div>
+                <h3 className="text-4xl font-serif mb-4 text-foreground">Curation Complete</h3>
+                <p className="text-foreground/70 mb-10 max-w-lg mx-auto leading-relaxed">
+                  Based on the architectural elements and color palette of your space, we have curated a selection of ceramic masterpieces that harmonize with your environment.
+                </p>
+                <div className="flex justify-center">
+                  <Button
+                    onClick={tryAgain}
+                    variant="link"
+                    className="text-foreground font-bold uppercase tracking-widest text-[10px] hover:text-primary transition-colors"
+                  >
+                    Analyze Another Space
+                  </Button>
+                </div>
+              </div>
 
               {/* Suggested Products Grid */}
               <div>
-                <h3 className="text-2xl font-semibold mb-6 text-center">
-                  <span className="bg-gradient-to-r from-amber-600 to-amber-800 bg-clip-text text-transparent">
-                    Perfect Matches for Your Kitchen
-                  </span>
+                <h3 className="text-2xl font-serif mb-10 text-center uppercase tracking-widest">
+                  The <span className="text-primary italic">Artisan</span> Selection
                 </h3>
                 {suggestedProducts.length > 0 ? (
                   <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -293,22 +291,22 @@ export function AIKitchenMatch({ products }: AIKitchenMatchProps) {
                         <Link key={product.id} href={`/products/${product.slug}`} className="group block">
                           <div className="apple-card p-0 h-full max-w-sm mx-auto relative">
                             {/* AI Recommended Badge */}
-                            <div className="absolute top-3 left-3 z-10">
-                              <Badge className="bg-gradient-to-r from-amber-500 to-amber-600 text-white border-0 px-3 py-1 text-xs font-semibold rounded-full shadow-lg">
-                                <Sparkles className="h-3 w-3 mr-1" />
-                                AI Pick
+                            <div className="absolute top-4 left-4 z-10">
+                              <Badge className="bg-primary text-white border-0 px-3 py-1 text-[9px] font-bold uppercase tracking-widest rounded-sm">
+                                <Sparkles className="h-3 w-3 mr-2" />
+                                AI Selection
                               </Badge>
                             </div>
 
                             <div className="relative aspect-[4/3] overflow-hidden bg-secondary/20 rounded-t-[20px]">
                               <Image
-                                src={primaryImage?.image_url || `/placeholder.svg?height=400&width=400&query=${product.name}`}
+                                src={primaryImage?.image_url || PRODUCT_FALLBACK_IMAGE}
                                 alt={primaryImage?.alt_text || product.name}
                                 width={400}
                                 height={300}
                                 className="h-full w-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
                               />
-                              
+
                               {hasDiscount && (
                                 <div className="absolute top-3 right-3">
                                   <Badge className="bg-destructive text-destructive-foreground border-0 px-2 py-1 text-xs font-semibold rounded-full">
@@ -358,18 +356,17 @@ export function AIKitchenMatch({ products }: AIKitchenMatchProps) {
                               <div className="flex items-center justify-between pt-2 border-t border-border/50">
                                 <span className="text-xs text-muted-foreground">AI Match</span>
                                 <div className="flex items-center gap-1">
-                                  <div className="flex space-x-1">
+                                  <div className="flex space-x-1.5">
                                     {[...Array(5)].map((_, i) => (
                                       <div
                                         key={i}
-                                        className={`w-2 h-2 rounded-full ${
-                                          i < 4 ? 'bg-amber-400' : 'bg-gray-200 dark:bg-gray-700'
-                                        }`}
+                                        className={`w-1.5 h-1.5 rounded-full ${i < 4 ? 'bg-primary' : 'bg-primary/10'
+                                          }`}
                                       />
                                     ))}
                                   </div>
-                                  <span className="text-xs font-medium text-amber-600 ml-1">
-                                    {85 + Math.floor(Math.random() * 10)}%
+                                  <span className="text-[10px] font-bold text-primary ml-2">
+                                    {85 + Math.floor(Math.random() * 10)}% Match
                                   </span>
                                 </div>
                               </div>
@@ -418,32 +415,30 @@ export function AIKitchenMatch({ products }: AIKitchenMatchProps) {
 
           {/* Tips Section */}
           {!analysisComplete && (
-            <Card>
-              <CardContent className="p-6">
-                <h4 className="font-semibold mb-4 flex items-center gap-2">
-                  <Sparkles className="h-5 w-5 text-amber-600" />
-                  Tips for Better Results
-                </h4>
-                <div className="grid md:grid-cols-2 gap-4 text-sm text-muted-foreground">
-                  <div className="flex items-start gap-2">
-                    <div className="w-2 h-2 bg-amber-500 rounded-full mt-2 flex-shrink-0"></div>
-                    <span>Include your countertops, cabinets, and existing decor</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <div className="w-2 h-2 bg-amber-500 rounded-full mt-2 flex-shrink-0"></div>
-                    <span>Ensure good lighting for accurate color analysis</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <div className="w-2 h-2 bg-amber-500 rounded-full mt-2 flex-shrink-0"></div>
-                    <span>Show multiple angles if possible</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <div className="w-2 h-2 bg-amber-500 rounded-full mt-2 flex-shrink-0"></div>
-                    <span>Clear, high-resolution images work best</span>
-                  </div>
+            <div className="border-t border-border pt-16">
+              <h4 className="font-serif text-2xl mb-8 flex items-center gap-4">
+                <div className="h-[1px] w-12 bg-primary"></div>
+                Optimizing the Vision
+              </h4>
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-12 text-sm">
+                <div className="space-y-4">
+                  <span className="text-primary font-bold text-xs uppercase tracking-widest">Environment</span>
+                  <p className="text-foreground/60 leading-relaxed font-light">Include your architectural surfaces—countertops, cabinetry, and fixtures.</p>
                 </div>
-              </CardContent>
-            </Card>
+                <div className="space-y-4">
+                  <span className="text-primary font-bold text-xs uppercase tracking-widest">Luminosity</span>
+                  <p className="text-foreground/60 leading-relaxed font-light">Natural daylight provides the most accurate color representation for our system.</p>
+                </div>
+                <div className="space-y-4">
+                  <span className="text-primary font-bold text-xs uppercase tracking-widest">Composition</span>
+                  <p className="text-foreground/60 leading-relaxed font-light">Capturing the space from multiple perspectives allows for a comprehensive analysis.</p>
+                </div>
+                <div className="space-y-4">
+                  <span className="text-primary font-bold text-xs uppercase tracking-widest">Definition</span>
+                  <p className="text-foreground/60 leading-relaxed font-light">High-resolution imagery ensures the AI detects the fine textures of your surfaces.</p>
+                </div>
+              </div>
+            </div>
           )}
         </div>
       )}

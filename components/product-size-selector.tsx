@@ -17,13 +17,15 @@ interface ProductVariant {
 interface ProductSizeSelectorProps {
   productId: string
   productPrice: number
+  productStock: number
   onVariantChange?: (selectedVariants: Record<string, ProductVariant>, totalPrice: number, totalStock: number) => void
 }
 
-export default function ProductSizeSelector({ 
-  productId, 
-  productPrice, 
-  onVariantChange 
+export default function ProductSizeSelector({
+  productId,
+  productPrice,
+  productStock,
+  onVariantChange
 }: ProductSizeSelectorProps) {
   const [variants, setVariants] = useState<ProductVariant[]>([])
   const [selectedVariants, setSelectedVariants] = useState<Record<string, ProductVariant>>({})
@@ -37,7 +39,7 @@ export default function ProductSizeSelector({
     // Calculate total price and stock based on selected variants
     const totalPrice = calculateTotalPrice()
     const totalStock = calculateTotalStock()
-    
+
     if (onVariantChange) {
       onVariantChange(selectedVariants, totalPrice, totalStock)
     }
@@ -60,21 +62,21 @@ export default function ProductSizeSelector({
 
   const calculateTotalPrice = () => {
     let totalPrice = productPrice
-    
+
     Object.values(selectedVariants).forEach(variant => {
       if (variant.price !== null) {
         totalPrice = variant.price // Use variant price override
       }
     })
-    
+
     return totalPrice
   }
 
   const calculateTotalStock = () => {
     if (Object.keys(selectedVariants).length === 0) {
-      return 0 // No variants selected
+      return productStock // Use explicit parent product stock when no variants are selected
     }
-    
+
     // Find the minimum stock among selected variants
     const stocks = Object.values(selectedVariants).map(v => v.stock)
     return Math.min(...stocks)
@@ -105,88 +107,58 @@ export default function ProductSizeSelector({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-10">
       {nonColorVariants.map(([variantName, variantList]) => (
-        <div key={variantName} className="space-y-3">
-          <div className="flex items-center gap-2">
-            <label className="font-semibold text-base text-gray-800">
-              {variantName}:
-            </label>
+        <div key={variantName} className="space-y-6">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-primary">
+              {variantName} Selection
+            </span>
             {selectedVariants[variantName] && (
-              <span className="text-sm text-gray-600 bg-gray-100 px-2 py-1 rounded">
+              <span className="text-[10px] text-foreground/40 uppercase tracking-widest font-medium">
                 {selectedVariants[variantName].value}
               </span>
             )}
           </div>
-          
-          <div className="flex flex-wrap gap-2">
+
+          <div className="flex flex-wrap gap-4">
             {variantList.map((variant) => {
               const isSelected = selectedVariants[variantName]?.id === variant.id
               const isOutOfStock = variant.stock === 0
-              
+
               return (
-                <Button
+                <button
                   key={variant.id}
-                  variant={isSelected ? "default" : "outline"}
-                  size="sm"
                   disabled={isOutOfStock}
                   onClick={() => handleVariantSelect(variantName, variant)}
                   className={cn(
-                    "relative min-w-[70px] h-10 font-medium",
-                    isSelected && "bg-primary text-primary-foreground border-primary",
-                    isOutOfStock && "opacity-50 cursor-not-allowed"
+                    "group relative h-14 min-w-[100px] border px-6 transition-all duration-500 rounded-sm overflow-hidden",
+                    isSelected
+                      ? "bg-foreground text-white border-foreground"
+                      : "bg-transparent text-foreground border-border hover:border-primary/50",
+                    isOutOfStock && "opacity-20 cursor-not-allowed"
                   )}
                 >
-                  {variant.value}
+                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] relative z-10">{variant.value}</span>
                   {variant.price && variant.price !== productPrice && (
-                    <Badge variant="secondary" className="ml-1 text-xs">
-                      +₹{variant.price - productPrice}
-                    </Badge>
-                  )}
-                  {isOutOfStock && (
-                    <span className="absolute inset-0 flex items-center justify-center bg-gray-100 bg-opacity-75 text-xs text-gray-500 rounded">
-                      Out of Stock
+                    <span className={cn(
+                      "ml-3 text-[9px] relative z-10",
+                      isSelected ? "text-primary/80" : "text-foreground/40"
+                    )}>
+                      (+₹{variant.price - productPrice})
                     </span>
                   )}
-                </Button>
+                  {isOutOfStock && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-[1px] h-full bg-foreground/20 rotate-12" />
+                    </div>
+                  )}
+                </button>
               )
             })}
           </div>
-
-          {/* Show selected variant details */}
-          {selectedVariants[variantName] && (
-            <div className="text-sm text-gray-600 bg-blue-50 p-2 rounded">
-              <span className="font-medium">{selectedVariants[variantName].value}</span>
-              {selectedVariants[variantName].price && (
-                <span className="ml-2">
-                  - ₹{selectedVariants[variantName].price}
-                </span>
-              )}
-              <span className="ml-2">
-                ({selectedVariants[variantName].stock} available)
-              </span>
-            </div>
-          )}
         </div>
       ))}
-
-      {/* Price Summary */}
-      {Object.keys(selectedVariants).length > 0 && (
-        <div className="bg-green-50 p-3 rounded-lg border border-green-200">
-          <div className="flex justify-between items-center">
-            <span className="font-semibold text-gray-800">Selected Price:</span>
-            <div className="text-right">
-              <span className="font-bold text-lg text-green-600">₹{calculateTotalPrice()}</span>
-              {calculateTotalPrice() !== productPrice && (
-                <div className="text-sm text-gray-500 line-through">₹{productPrice}</div>
-              )}
-            </div>
-          </div>
-          <div className="text-sm text-gray-600 mt-1">
-            Stock available: {calculateTotalStock()}
-          </div>
-        </div>
-      )}
     </div>
   )
 }
