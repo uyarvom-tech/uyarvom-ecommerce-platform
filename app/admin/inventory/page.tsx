@@ -151,7 +151,7 @@ export default async function AdminInventoryPage() {
                       <div key={log.id} className="px-6 py-4 hover:bg-muted/5">
                         <p className="text-xs font-bold leading-tight line-clamp-2">{log.description}</p>
                         <div className="flex justify-between items-center mt-2">
-                          <span className="text-[9px] uppercase font-bold text-muted-foreground opacity-60">{log.actor.fullName || 'Admin'}</span>
+                          <span className="text-[9px] uppercase font-bold text-muted-foreground opacity-60">{log.actor?.fullName || 'Admin'}</span>
                           <span className="text-[9px] uppercase font-bold text-muted-foreground opacity-60">{new Date(log.createdAt).toLocaleDateString()}</span>
                         </div>
                       </div>
