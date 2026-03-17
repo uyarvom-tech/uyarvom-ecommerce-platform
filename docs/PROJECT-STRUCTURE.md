@@ -8,7 +8,7 @@ Clean, organized structure for the Uyarvom e-commerce platform.
 uyarvom-ecommerce-platform/
 ├── app/                    # Next.js App Router pages and API routes
 ├── components/             # Reusable React components
-├── docs/                   # Project documentation
+├── docs/                   # Project documentation (Master: SYSTEM_BLUEPRINT.md)
 ├── hooks/                  # Custom React hooks
 ├── lib/                    # Utility functions and configurations
 ├── prisma/                 # Database schema and migrations

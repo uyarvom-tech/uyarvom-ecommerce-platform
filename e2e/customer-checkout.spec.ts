@@ -1,57 +1,90 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Customer Checkout Flow', () => {
-    test('navigates to product, adds to cart, and reaches checkout', async ({ page }) => {
-        // Navigate to homepage
-        console.log('Navigating to homepage...');
-        await page.goto('/');
+  test('navigates to product, adds to cart, and reaches checkout', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.locator('header')).toContainText(/Uyarvom/i, { timeout: 20000 });
+    await page.waitForSelector('article', { timeout: 15000 });
+    const productCount = await page.locator('article').count();
+    expect(productCount).toBeGreaterThan(0);
 
-        // Verify homepage loads core elements
-        console.log('Verifying Uyarvom text in header...');
-        await expect(page.locator('header')).toContainText(/Uyarvom/i, { timeout: 20000 });
+    const firstProductCard = page.locator('article').first();
+    const productName = await firstProductCard.locator('h3').textContent();
 
-        // Wait for product cards to appear
-        console.log('Waiting for product cards...');
-        await page.waitForSelector('article', { timeout: 15000 });
-        const productCount = await page.locator('article').count();
-        console.log(`Found ${productCount} products.`);
-        expect(productCount).toBeGreaterThan(0);
+    await Promise.all([
+      page.waitForURL(/\/products\/.+/, { timeout: 30000 }),
+      firstProductCard.locator('a[href^="/products/"]').first().click(),
+    ]);
 
-        // Get the first product card
-        const firstProductCard = page.locator('article').first();
-        const productName = await firstProductCard.locator('h3').textContent();
-        console.log(`Testing with product: ${productName?.trim()}`);
+    if (productName) {
+      await expect(page.getByRole('heading', { level: 1 })).toContainText(
+        productName.trim().substring(0, 20), { timeout: 15000 }
+      );
+    }
 
-        // Click the product link
-        await firstProductCard.locator('a[href^="/products/"]').first().click();
+    const addToCartBtn = page.getByRole('button', { name: /Add to Cart/i });
+    await expect(addToCartBtn).toBeVisible({ timeout: 10000 });
+    await addToCartBtn.click();
 
-        // On product detail page
-        console.log('Verifying product detail page (waiting for URL change)...');
-        await page.waitForURL(/\/products\/.+/, { timeout: 20000 });
-        console.log(`Current URL: ${page.url()}`);
+    // Guest user should be redirected to login
+    await expect(page).toHaveURL(/.*auth\/login.*/, { timeout: 15000 });
+    await expect(page.getByText(/Welcome Back/i).first()).toBeVisible({ timeout: 15000 });
+  });
+});
 
-        if (productName) {
-            const trimmedName = productName.trim().substring(0, 20);
-            await expect(page.getByRole('heading', { level: 1 })).toContainText(trimmedName, { timeout: 15000 });
-        }
+test.describe('Product Browsing', () => {
+  test('homepage loads with products', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.locator('header')).toBeVisible({ timeout: 20000 });
+    await page.waitForSelector('article', { timeout: 15000 });
+    const count = await page.locator('article').count();
+    expect(count).toBeGreaterThan(0);
+  });
 
-        // Find Add to Cart button
-        const addToCartBtn = page.getByRole('button', { name: /Add to Cart/i });
-        await expect(addToCartBtn).toBeVisible({ timeout: 10000 });
+  test('product detail page loads correctly', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForSelector('a[href^="/products/"]', { timeout: 15000 });
+    const firstLink = page.locator('a[href^="/products/"]').first();
+    await Promise.all([
+      page.waitForURL(/\/products\/.+/, { timeout: 30000 }),
+      firstLink.click(),
+    ]);
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible({ timeout: 15000 });
+  });
 
-        // Guest Flow: Click Add to Cart and expect login redirect
-        console.log('Clicking Add to Cart...');
-        await addToCartBtn.click();
+  test('search bar is present on homepage', async ({ page }) => {
+    await page.goto('/');
+    // Search input or button should be visible in header
+    const searchEl = page.locator('input[type="search"], input[placeholder*="search" i], button[aria-label*="search" i]').first();
+    await expect(searchEl).toBeVisible({ timeout: 15000 });
+  });
+});
 
-        // Wait for redirect to login page
-        console.log('Waiting for redirect to login...');
-        await page.waitForURL(/.*auth\/login.*/, { timeout: 20000 });
-        console.log(`Redirected to: ${page.url()}`);
+test.describe('Authentication Pages', () => {
+  test('login page renders correctly', async ({ page }) => {
+    await page.goto('/auth/login');
+    await expect(page.locator('input[type="email"]')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('input[type="password"]')).toBeVisible();
+    await expect(page.locator('button[type="submit"]')).toBeVisible();
+  });
 
-        // Final verify for login page
-        console.log('Verifying login page content...');
-        // Use first() to avoid strict mode violation if multiple matches exist
-        await expect(page.getByText(/Welcome Back/i).first()).toBeVisible({ timeout: 15000 });
-        console.log('Test completed successfully!');
-    });
+  test('login shows error for invalid credentials', async ({ page }) => {
+    await page.goto('/auth/login');
+    await page.fill('input[type="email"]', 'invalid@example.com');
+    await page.fill('input[type="password"]', 'wrongpassword');
+    await page.click('button[type="submit"]');
+    // Should show an error message, not redirect
+    await expect(page.locator('text=/invalid|error|incorrect/i').first()).toBeVisible({ timeout: 10000 });
+  });
+
+  test('register page renders correctly', async ({ page }) => {
+    await page.goto('/auth/register');
+    await expect(page.locator('input[type="email"]')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('input[type="password"]')).toBeVisible();
+  });
+
+  test('account page redirects unauthenticated users to login', async ({ page }) => {
+    await page.goto('/account');
+    await expect(page).toHaveURL(/.*login.*/, { timeout: 15000 });
+  });
 });

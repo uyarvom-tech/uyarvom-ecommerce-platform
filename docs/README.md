@@ -66,9 +66,13 @@ npm run dev
 ├── prisma/                 # Database schema and migrations
 ├── public/                 # Static assets
 ├── scripts/                # Database and utility scripts
-├── docs/                   # Documentation
-└── styles/                 # Global styles
+├── docs/                   # Full System Documentation (See SYSTEM_BLUEPRINT.md)
+├── styles/                 # Global styles
 ```
+
+## Documentation
+
+For a deep dive into the platform's architecture, API specifications, and database design, refer to the **[System Blueprint](./docs/SYSTEM_BLUEPRINT.md)**.
 
 ## Environment Variables
 
