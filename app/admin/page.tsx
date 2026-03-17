@@ -14,8 +14,10 @@ import {
   ArrowUpRight,
   TrendingDown,
   Clock,
-  ChevronRight
+  ChevronRight,
+  AlertCircle
 } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"

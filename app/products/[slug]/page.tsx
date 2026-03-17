@@ -144,7 +144,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                 </div>
               </div>
 
-              <ProductActionArea product={product} hasDiscount={hasDiscount ?? false} />
+              <ProductActionArea product={product} hasDiscount={!!hasDiscount} />
 
               <TrustBlocks />
             </div>

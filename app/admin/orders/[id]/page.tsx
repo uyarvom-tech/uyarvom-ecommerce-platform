@@ -112,7 +112,7 @@ export default async function AdminOrderDetailPage({ params }: { params: { id: s
                       </tr>
                     </thead>
                     <tbody className="divide-y">
-                      {order.orderItems.map((item) => {
+                      {order.orderItems.map((item: any) => {
                         const primImg = item.product?.images?.[0]?.imageUrl || PRODUCT_FALLBACK_IMAGE
                         return (
                           <tr key={item.id} className="hover:bg-muted/5">

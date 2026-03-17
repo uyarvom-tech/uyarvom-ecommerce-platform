@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma"
 import { AdminHeader } from "@/components/admin-header"
 import { Badge } from "@/components/ui/badge"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { SupportReplyForm } from "@/components/support-reply-form"
 import { SupportActions } from "@/components/admin/support-actions"
 import { Clock, User as UserIcon, Shield, ArrowLeft, MoreHorizontal, CheckCircle } from "lucide-react"

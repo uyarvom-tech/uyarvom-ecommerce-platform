@@ -39,6 +39,8 @@ export default async function TicketDetailPage({ params }: { params: { id: strin
         if (!admin) notFound()
     }
 
+    if (!ticket) notFound()
+
     const statusColors: Record<string, string> = {
         open: "bg-blue-500 text-white",
         resolved: "bg-green-500 text-white",
