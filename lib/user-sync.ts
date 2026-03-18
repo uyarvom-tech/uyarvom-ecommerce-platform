@@ -23,18 +23,35 @@ export async function syncAuthUserToPrisma(user: SupabaseUser) {
     throw new Error("Authenticated user is missing an email address")
   }
 
-  return prisma.user.upsert({
-    where: { id: user.id },
-    update: {
-      email: user.email,
-      fullName: getFullName(user),
-      avatarUrl: user.user_metadata?.avatar_url || null,
-    },
-    create: {
-      id: user.id,
-      email: user.email,
-      fullName: getFullName(user),
-      avatarUrl: user.user_metadata?.avatar_url || null,
-    },
-  })
+  // Try upsert by Supabase auth ID first
+  try {
+    return await prisma.user.upsert({
+      where: { id: user.id },
+      update: {
+        email: user.email,
+        fullName: getFullName(user),
+        avatarUrl: user.user_metadata?.avatar_url || null,
+      },
+      create: {
+        id: user.id,
+        email: user.email,
+        fullName: getFullName(user),
+        avatarUrl: user.user_metadata?.avatar_url || null,
+      },
+    })
+  } catch (e: any) {
+    // P2002 = unique constraint violation (email already exists with different id)
+    // This happens when beta DB was seeded from prod with different auth UUIDs
+    if (e?.code === 'P2002') {
+      return await prisma.user.update({
+        where: { email: user.email },
+        data: {
+          id: user.id,
+          fullName: getFullName(user),
+          avatarUrl: user.user_metadata?.avatar_url || null,
+        },
+      })
+    }
+    throw e
+  }
 }
