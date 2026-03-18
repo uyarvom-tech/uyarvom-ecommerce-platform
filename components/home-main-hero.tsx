@@ -135,9 +135,11 @@ export function HomeMainHero({ banners = [] }: { banners?: HeroBannerProps[] }) 
   )
 }
 
+const R2_BASE = 'https://pub-c87cc954ba2e4a289b4f50beaef0560b.r2.dev'
+
 const defaultSlides = [
   {
-    image: "/uploads/catalog/uy-dw-bcn-des-plt-prm.jpeg",
+    image: `${R2_BASE}/products/UY-DW-BCN-DES-PLT-PRM.jpeg`,
     eyebrow: "Diningware Spotlight",
     title: "SET A TABLE PEOPLE REMEMBER.",
     description: "Serveware and dining pieces styled to make everyday meals feel hosted.",
@@ -147,7 +149,7 @@ const defaultSlides = [
     secondaryLabel: "Explore Serveware",
   },
   {
-    image: "/uploads/catalog/uy-kw-ci-skl-12-ps.jpeg",
+    image: `${R2_BASE}/products/UY-KW-CI-SKL-12-PS.jpeg`,
     eyebrow: "Cookware Edit",
     title: "Handcrafted character utility.",
     description: "Bring home kitchen essentials with handcrafted character and strong everyday utility.",

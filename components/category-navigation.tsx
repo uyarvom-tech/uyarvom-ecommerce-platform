@@ -32,15 +32,17 @@ type DisplayCategory = {
   }>
 }
 
+const R2_BASE = 'https://pub-c87cc954ba2e4a289b4f50beaef0560b.r2.dev'
+
 const iconMap: Record<string, string> = {
-  sale: "/uploads/catalog/uy-gf-sw-mrb-lux-set.jpeg",
-  "new-in": "/uploads/catalog/uy-hd-irn-cnd-std.jpeg",
-  cookware: "/uploads/catalog/uy-kw-ci-skl-12-ps.jpeg",
-  serveware: "/uploads/catalog/uy-gf-sw-cer-set-03.jpeg",
-  diningware: "/uploads/catalog/uy-dw-bcn-des-plt-prm.jpeg",
-  "dining-sets": "/uploads/catalog/uy-dw-ss-thl-06-set.jpeg",
-  storage: "/uploads/catalog/uy-gf-st-oil-spc-set.jpeg",
-  gifting: "/uploads/catalog/uy-gf-sw-cop-hmr.jpeg",
+  sale:          `${R2_BASE}/products/UY-DW-BCN-DES-PLT-PRM.jpeg`,
+  "new-in":      `${R2_BASE}/products/UY-SW-STN-BWL-MD-NAT.jpeg`,
+  cookware:      `${R2_BASE}/products/UY-KW-CI-SKL-12-PS.jpeg`,
+  serveware:     `${R2_BASE}/products/UY-SW-STN-PLT-OVL-NAT.jpeg`,
+  diningware:    `${R2_BASE}/products/UY-DW-BCN-DES-PLT-PRM.jpeg`,
+  "dining-sets": `${R2_BASE}/products/UY-SW-STN-SAL-LG-NAT.jpeg`,
+  storage:       `${R2_BASE}/products/UY-ST-GLS-BOR-01L.jpeg`,
+  gifting:       `${R2_BASE}/products/UY-SW-BRS-POJ-PLT-TRD.jpeg`,
 }
 
 const displayNameMap: Record<string, string> = {

@@ -1,15 +1,22 @@
 /** @type {import('next').NextConfig} */
+const isDev = process.env.NODE_ENV === 'development'
+
 const nextConfig = {
   typescript: {
-    ignoreBuildErrors: false, // Enable strict TypeScript checking for production
+    ignoreBuildErrors: false,
   },
   transpilePackages: ["@supabase/auth-js", "@supabase/supabase-js", "@supabase/ssr"],
   images: {
-    // unoptimized: true removed to enable Vercel image optimization
+    // Skip optimization in local dev to avoid timeout fetching remote images
+    unoptimized: isDev,
     remotePatterns: [
       {
         protocol: 'https',
         hostname: 'pub-*.r2.dev',
+      },
+      {
+        protocol: 'https',
+        hostname: 'pub-c87cc954ba2e4a289b4f50beaef0560b.r2.dev',
       },
       {
         protocol: 'https',
