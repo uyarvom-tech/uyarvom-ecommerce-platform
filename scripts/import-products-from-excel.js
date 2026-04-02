@@ -5,11 +5,16 @@ const path = require("path")
 const XLSX = require("xlsx")
 const { PrismaClient } = require("@prisma/client")
 
+require("dotenv").config({ path: path.join(__dirname, "..", ".env.local") })
+
 const prisma = new PrismaClient()
 
 const ROOT_DIR = path.resolve(__dirname, "..", "..")
 const APP_DIR = path.resolve(__dirname, "..")
-const WORKBOOK_PATH = path.join(ROOT_DIR, "Uyarvom_Products_Updated.xlsx")
+const WORKBOOK_CANDIDATES = [
+  path.join(ROOT_DIR, "Uyarvom_Products_With_Images.xlsx"),
+  path.join(ROOT_DIR, "Uyarvom_Products_Updated.xlsx"),
+]
 const EXTRACTED_IMAGES_DIR = path.join(ROOT_DIR, "extracted_images")
 const CATEGORY_IMAGES_DIR = path.join(ROOT_DIR, "source_images", "category_images")
 const PUBLIC_CATALOG_DIR = path.join(APP_DIR, "public", "uploads", "catalog")
@@ -84,6 +89,16 @@ function parseInteger(value) {
 
   const parsed = Number(digits[0])
   return Number.isFinite(parsed) ? parsed : null
+}
+
+function resolveWorkbookPath() {
+  for (const candidate of WORKBOOK_CANDIDATES) {
+    if (fs.existsSync(candidate)) {
+      return candidate
+    }
+  }
+
+  return null
 }
 
 function resolveWorkbookImage(imageField) {
@@ -180,11 +195,12 @@ async function upsertCategory(name, parentId, meta = {}) {
 }
 
 async function main() {
-  if (!fs.existsSync(WORKBOOK_PATH)) {
-    throw new Error(`Workbook not found at ${WORKBOOK_PATH}`)
+  const workbookPath = resolveWorkbookPath()
+  if (!workbookPath) {
+    throw new Error(`Workbook not found at any of: ${WORKBOOK_CANDIDATES.join(", ")}`)
   }
 
-  const workbook = XLSX.readFile(WORKBOOK_PATH)
+  const workbook = XLSX.readFile(workbookPath)
   const sheet = workbook.Sheets[workbook.SheetNames[0]]
   const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" })
 
@@ -316,19 +332,52 @@ async function main() {
       ],
     })
 
-    if (productImageUrl) {
-      await prisma.productImage.deleteMany({
-        where: { productId: product.id },
-      })
+    const existingVariantCount = await prisma.productVariant.count({
+      where: { productId: product.id },
+    })
 
-      await prisma.productImage.create({
-        data: {
-          productId: product.id,
-          imageUrl: productImageUrl,
-          altText: name,
-          isPrimary: true,
-          sortOrder: 0,
-        },
+    if (existingVariantCount === 0) {
+      await prisma.$transaction(async (tx) => {
+        await tx.productColor.deleteMany({ where: { productId: product.id } })
+        await tx.productImage.deleteMany({ where: { productId: product.id } })
+        await tx.productVariant.deleteMany({ where: { productId: product.id } })
+
+        const defaultColor = await tx.productColor.create({
+          data: {
+            productId: product.id,
+            colorName: "Default",
+            colorCode: null,
+            sortOrder: 0,
+          },
+        })
+
+        if (productImageUrl) {
+          await tx.productImage.create({
+            data: {
+              productId: product.id,
+              colorId: defaultColor.id,
+              imageUrl: productImageUrl,
+              altText: name,
+              isPrimary: true,
+              sortOrder: 0,
+            },
+          })
+        }
+
+        await tx.productVariant.create({
+          data: {
+            productId: product.id,
+            colorId: defaultColor.id,
+            size: "Default",
+            price: null,
+            stock: stockQuantity,
+            sku: `${sku}-DEFAULT`,
+            isActive: true,
+            sortOrder: 0,
+            name: "Size",
+            value: "Default",
+          },
+        })
       })
     }
   }
