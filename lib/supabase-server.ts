@@ -24,12 +24,22 @@ export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
   },
 })
 
-export const isSupabaseAuthDisconnected = () => false
-export const isDatabaseDisconnected = () => false
-export const isSupabaseDisconnected = () => false
-export const markAuthDisconnected = () => undefined
-export const markDatabaseDisconnected = () => undefined
-export const resetSupabaseConnection = () => undefined
+let supabaseAuthDisconnected = false
+let databaseDisconnected = false
+
+export const isSupabaseAuthDisconnected = () => supabaseAuthDisconnected
+export const isDatabaseDisconnected = () => databaseDisconnected
+export const isSupabaseDisconnected = () => supabaseAuthDisconnected || databaseDisconnected
+export const markAuthDisconnected = () => {
+  supabaseAuthDisconnected = true
+}
+export const markDatabaseDisconnected = () => {
+  databaseDisconnected = true
+}
+export const resetSupabaseConnection = () => {
+  supabaseAuthDisconnected = false
+  databaseDisconnected = false
+}
 
 export const createSupabaseServerClient = async () => {
   const cookieStore = await cookies()

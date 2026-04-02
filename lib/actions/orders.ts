@@ -50,17 +50,14 @@ export async function requestCancellation(orderId: string, reason: string) {
 
             // 3. Restore stock
             for (const item of order.orderItems) {
-                if (item.productVariantId) {
-                    await tx.productVariant.update({
-                        where: { id: item.productVariantId },
-                        data: { stock: { increment: item.quantity } },
-                    })
-                } else {
-                    await tx.product.update({
-                        where: { id: item.productId },
-                        data: { stockQuantity: { increment: item.quantity } },
-                    })
+                if (!item.productVariantId) {
+                    throw new Error(`Order item ${item.id} is missing a variant reference.`)
                 }
+
+                await tx.productVariant.update({
+                    where: { id: item.productVariantId },
+                    data: { stock: { increment: item.quantity } },
+                })
             }
         })
 

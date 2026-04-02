@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { requireAuthenticatedUser } from "@/lib/auth-middleware"
+import { getDefaultVariant } from "@/lib/variant-stock"
 
 export async function GET(request: NextRequest) {
   const authResult = await requireAuthenticatedUser(request)
@@ -11,6 +12,11 @@ export async function GET(request: NextRequest) {
   const cartItems = await prisma.cartItem.findMany({
     where: { userId: authResult.authUser.id },
     include: {
+      productVariant: {
+        include: {
+          color: true,
+        },
+      },
       product: {
         include: {
           images: {
@@ -47,31 +53,59 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Product is required" }, { status: 400 })
     }
 
-    // Check product/variant availability
-    let availableStock = 0
-    let isActive = false
+    const product = await prisma.product.findUnique({
+      where: { id: productId },
+      include: {
+        colors: {
+          orderBy: { sortOrder: "asc" },
+          include: {
+            variants: {
+              where: { isActive: true },
+              orderBy: { sortOrder: "asc" },
+            },
+          },
+        },
+      },
+    })
+
+    if (!product || !product.isActive) {
+      return NextResponse.json({ error: "Product not found" }, { status: 404 })
+    }
+
+    let variant: any = null
 
     if (variantId) {
-      const variant = await prisma.productVariant.findUnique({
-        where: { id: variantId },
-        include: { product: true }
+      variant = await prisma.productVariant.findFirst({
+        where: {
+          id: variantId,
+          productId,
+        },
+        include: {
+          product: true,
+          color: true,
+        },
       })
-      if (!variant || !variant.isActive || !variant.product.isActive) {
-        return NextResponse.json({ error: "Variant not available" }, { status: 404 })
-      }
-      availableStock = variant.stock
-      isActive = true
     } else {
-      const product = await prisma.product.findUnique({
-        where: { id: productId },
-        select: { id: true, isActive: true, stockQuantity: true }
-      })
-      if (!product || !product.isActive) {
-        return NextResponse.json({ error: "Product not found" }, { status: 404 })
+      variant = getDefaultVariant(product as any) as any
+      if (variant?.id) {
+        variant = await prisma.productVariant.findFirst({
+          where: {
+            id: variant.id,
+            productId,
+          },
+          include: {
+            product: true,
+            color: true,
+          },
+        })
       }
-      availableStock = product.stockQuantity
-      isActive = true
     }
+
+    if (!variant || !variant.isActive || !variant.product.isActive) {
+      return NextResponse.json({ error: "Please select a valid size variant" }, { status: 404 })
+    }
+
+    const availableStock = Number(variant.stock || 0)
 
     if (availableStock <= 0) {
       return NextResponse.json({ error: "Selection is out of stock" }, { status: 409 })
@@ -83,7 +117,7 @@ export async function POST(request: NextRequest) {
       where: {
         userId: authResult.authUser.id,
         productId,
-        productVariantId: variantId,
+        productVariantId: variant.id,
       },
     })
 
@@ -102,7 +136,7 @@ export async function POST(request: NextRequest) {
       data: {
         userId: authResult.authUser.id,
         productId,
-        productVariantId: variantId,
+        productVariantId: variant.id,
         quantity,
       },
     })

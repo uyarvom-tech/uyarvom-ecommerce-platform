@@ -1,4 +1,3 @@
-import { createClient } from "@/lib/supabase/server"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { CheckoutForm } from "@/components/checkout-form"
@@ -11,53 +10,93 @@ import { Button } from "@/components/ui/button"
 import { PRODUCT_FALLBACK_IMAGE } from "@/lib/image-fallbacks"
 import Script from "next/script"
 import { getSystemSetting } from "@/lib/settings"
+import { createClient } from "@/lib/supabase/server"
+import { prisma } from "@/lib/prisma"
+import { syncAuthUserToPrisma } from "@/lib/user-sync"
 
 export default async function CheckoutPage() {
   const supabase = await createClient()
 
   const {
-    data: { user },
+    data: { user: authUser },
   } = await supabase.auth.getUser()
 
-  if (!user) {
+  if (!authUser) {
     redirect("/auth/login?redirect=/checkout")
   }
 
-  const { data: cartItems } = await supabase
-    .from("cart_items")
-    .select(
-      `
-      *,
-      product:products(
-        *,
-        images:product_images(image_url, alt_text, is_primary)
-      )
-    `
-    )
-    .eq("user_id", user.id)
+  const user = await syncAuthUserToPrisma(authUser)
+
+  const cartItems = await prisma.cartItem.findMany({
+    where: { userId: user.id },
+    include: {
+      product: {
+        include: {
+          images: {
+            orderBy: { sortOrder: "asc" },
+          },
+        },
+      },
+      productVariant: true,
+    },
+    orderBy: { createdAt: "desc" },
+  })
 
   if (!cartItems || cartItems.length === 0) {
     redirect("/cart")
   }
 
-  const { data: addresses } = await supabase.from("addresses").select("*").eq("user_id", user.id)
-  const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single()
+  const addresses = await prisma.address.findMany({
+    where: { userId: user.id },
+    orderBy: [
+      { isDefault: "desc" },
+      { createdAt: "desc" },
+    ],
+  })
+
+  const profile = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: {
+      fullName: true,
+      phone: true,
+    },
+  })
+
+  const normalizedAddresses = addresses.map((address) => ({
+    id: address.id,
+    full_name: address.fullName,
+    phone: address.phone,
+    address_line1: address.addressLine1,
+    address_line2: address.addressLine2,
+    city: address.city,
+    state: address.state,
+    postal_code: address.postalCode,
+    country: address.country,
+    is_default: address.isDefault,
+  }))
+
+  const normalizedProfile = profile
+    ? {
+        full_name: profile.fullName,
+        phone: profile.phone,
+      }
+    : null
 
   const shippingThreshold = Number(await getSystemSetting("shipping_threshold", "999"))
   const shippingFee = Number(await getSystemSetting("shipping_fee", "50"))
   const taxRate = Number(await getSystemSetting("tax_rate", "18")) / 100
 
-  const subtotal = cartItems.reduce((sum: number, item: any) => sum + item.product.price * item.quantity, 0)
+  const subtotal = cartItems.reduce((sum: number, item: any) => {
+    const unitPrice = Number(item.productVariant?.price ?? item.product.price ?? 0)
+    return sum + unitPrice * item.quantity
+  }, 0)
   const shippingCost = subtotal >= shippingThreshold ? 0 : shippingFee
   const tax = Math.round(subtotal * taxRate)
   const total = subtotal + shippingCost + tax
 
   return (
     <div className="flex min-h-screen flex-col">
-      <Script
-        id="razorpay-checkout-js"
-        src="https://checkout.razorpay.com/v1/checkout.js"
-      />
+      <Script id="razorpay-checkout-js" src="https://checkout.razorpay.com/v1/checkout.js" />
       <Header />
       <main className="flex-1 px-6 py-8">
         <div className="container mx-auto max-w-7xl">
@@ -67,8 +106,8 @@ export default async function CheckoutPage() {
             <div className="lg:col-span-2">
               <CheckoutForm
                 userId={user.id}
-                addresses={addresses || []}
-                profile={profile}
+                addresses={normalizedAddresses}
+                profile={normalizedProfile}
                 cartItems={cartItems}
                 orderTotal={{
                   subtotal,
@@ -89,6 +128,8 @@ export default async function CheckoutPage() {
                     {cartItems.map((item: any) => {
                       const primaryImage =
                         item.product.images?.find((img: any) => img.is_primary) || item.product.images?.[0]
+                      const unitPrice = Number(item.productVariant?.price ?? item.product.price ?? 0)
+
                       return (
                         <div key={item.id} className="flex gap-3">
                           <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-md bg-muted">
@@ -104,7 +145,7 @@ export default async function CheckoutPage() {
                             <p className="text-sm font-medium">{item.product.name}</p>
                             <p className="text-xs text-muted-foreground">Qty: {item.quantity}</p>
                             <p className="text-sm font-semibold">
-                              ₹{(item.product.price * item.quantity).toLocaleString("en-IN")}
+                              Rs.{(unitPrice * item.quantity).toLocaleString("en-IN")}
                             </p>
                           </div>
                         </div>
@@ -117,17 +158,17 @@ export default async function CheckoutPage() {
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Subtotal</span>
-                      <span className="font-medium">₹{subtotal.toLocaleString("en-IN")}</span>
+                      <span className="font-medium">Rs.{subtotal.toLocaleString("en-IN")}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Shipping</span>
                       <span className="font-medium">
-                        {shippingCost === 0 ? "FREE" : `₹${shippingCost.toLocaleString("en-IN")}`}
+                        {shippingCost === 0 ? "FREE" : `Rs.${shippingCost.toLocaleString("en-IN")}`}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Tax (GST {taxRate * 100}%)</span>
-                      <span className="font-medium">₹{tax.toLocaleString("en-IN")}</span>
+                      <span className="font-medium">Rs.{tax.toLocaleString("en-IN")}</span>
                     </div>
                   </div>
 
@@ -135,7 +176,7 @@ export default async function CheckoutPage() {
 
                   <div className="flex justify-between text-lg font-bold">
                     <span>Total</span>
-                    <span>₹{total.toLocaleString("en-IN")}</span>
+                    <span>Rs.{total.toLocaleString("en-IN")}</span>
                   </div>
 
                   <Button variant="outline" asChild className="w-full bg-transparent">

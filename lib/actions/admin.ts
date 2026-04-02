@@ -108,16 +108,13 @@ export async function updateStock(itemId: string, itemType: "product" | "variant
         const admin = await checkAdmin()
 
         if (itemType === "product") {
-            await prisma.product.update({
-                where: { id: itemId },
-                data: { stockQuantity: quantity }
-            })
-        } else {
-            await prisma.productVariant.update({
-                where: { id: itemId },
-                data: { stock: quantity }
-            })
+            throw new Error("Legacy product-level stock updates are disabled. Update the variant stock instead.")
         }
+
+        await prisma.productVariant.update({
+            where: { id: itemId },
+            data: { stock: quantity }
+        })
 
         await prisma.auditLog.create({
             data: {

@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma"
 import { notFound, redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
-import { Printer } from "lucide-react"
+import { OrderInvoicePrintButton } from "@/components/order-invoice-print-button"
 
 export default async function OrderInvoicePage({ params }: { params: { id: string } }) {
     const supabase = await createClient()
@@ -102,19 +102,9 @@ export default async function OrderInvoicePage({ params }: { params: { id: strin
                         This is a computer generated document for Uyarvom Homestyles.
                         Digital certification issued at {new Date().toISOString()}.
                     </div>
-                    <button onClick={() => window.print()} className="print:hidden h-12 w-12 border border-black flex items-center justify-center hover:bg-black hover:text-white transition-all">
-                        <Printer className="h-5 w-5" />
-                    </button>
+                    <OrderInvoicePrintButton />
                 </div>
             </div>
-
-            <script dangerouslySetInnerHTML={{
-                __html: `
-                // Client side helper for print
-                if (typeof window !== 'undefined' && window.location.search.includes('print')) {
-                    window.print();
-                }
-            `}} />
         </div>
     )
 }

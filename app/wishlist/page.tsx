@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { WishlistGrid } from "@/components/wishlist-grid"
+import { getWishlistItemsForUser } from "@/lib/wishlist"
 import { Heart } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
@@ -22,20 +23,7 @@ export default async function WishlistPage() {
     redirect("/auth/login?redirect=/wishlist")
   }
 
-  const { data: wishlistItems } = await supabase
-    .from("wishlists")
-    .select(
-      `
-      *,
-      product:products(
-        *,
-        category:categories(name, slug),
-        images:product_images(image_url, alt_text, is_primary)
-      )
-    `,
-    )
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false })
+  const wishlistItems = await getWishlistItemsForUser(user.id)
 
   return (
     <div className="flex min-h-screen flex-col">

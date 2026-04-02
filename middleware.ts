@@ -1,4 +1,11 @@
-import { createSupabaseProxyClient, isDatabaseDisconnected, isSupabaseAuthDisconnected, markAuthDisconnected } from '@/lib/supabase-server'
+import {
+  createSupabaseProxyClient,
+  isDatabaseDisconnected,
+  isSupabaseAuthDisconnected,
+  markAuthDisconnected,
+  markDatabaseDisconnected,
+  resetSupabaseConnection,
+} from '@/lib/supabase-server'
 import { NextRequest, NextResponse } from 'next/server'
 
 /**
@@ -20,9 +27,12 @@ export async function middleware(request: NextRequest) {
 
         let user = null
         try {
-            const { data } = await supabase.auth.getUser()
-            user = data?.user || null
-            clearTimeout(timeoutId)
+          const { data } = await supabase.auth.getUser()
+          user = data?.user || null
+          if (user) {
+            resetSupabaseConnection()
+          }
+          clearTimeout(timeoutId)
         } catch (err: any) {
             clearTimeout(timeoutId)
 
@@ -49,11 +59,16 @@ export async function middleware(request: NextRequest) {
             }
 
             // Check if user has admin role
-            const { data: adminUser } = await supabase
+            const { data: adminUser, error: adminError } = await supabase
                 .from('admin_users')
                 .select('role')
                 .eq('user_id', user.id)
                 .single()
+
+            if (adminError) {
+                markDatabaseDisconnected()
+                return NextResponse.redirect(new URL('/', request.url))
+            }
 
             if (!adminUser || !['admin', 'staff', 'super_admin'].includes(adminUser.role)) {
                 return NextResponse.redirect(new URL('/', request.url))
@@ -72,11 +87,16 @@ export async function middleware(request: NextRequest) {
             }
 
             // Check if user has admin role
-            const { data: adminUser } = await supabase
+            const { data: adminUser, error: adminError } = await supabase
                 .from('admin_users')
                 .select('role')
                 .eq('user_id', user.id)
                 .single()
+
+            if (adminError) {
+                markDatabaseDisconnected()
+                return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+            }
 
             if (!adminUser || !['admin', 'staff', 'super_admin'].includes(adminUser.role)) {
                 return NextResponse.json({ error: 'Forbidden' }, { status: 403 })

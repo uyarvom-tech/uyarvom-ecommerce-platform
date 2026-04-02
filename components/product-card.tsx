@@ -10,6 +10,7 @@ import type { FlexibleProduct, ProductImage } from "@/types"
 import { PRODUCT_FALLBACK_IMAGE } from "@/lib/image-fallbacks"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
+import { getDefaultVariant, getVariantStockSummary } from "@/lib/variant-stock"
 
 interface ProductCardProps {
   product: FlexibleProduct
@@ -62,7 +63,9 @@ export function ProductCard({ product }: ProductCardProps) {
   const hasDiscount = Boolean(comparePrice && comparePrice > currentPrice)
   const savings = hasDiscount ? Math.max(0, Math.round(comparePrice! - currentPrice)) : 0
   const discountPercent = hasDiscount ? Math.round(((comparePrice! - currentPrice) / comparePrice!) * 100) : 0
-  const stockQuantity = Number(product.stockQuantity ?? product.stock_quantity ?? 0)
+  const stockSummary = getVariantStockSummary(product as any)
+  const defaultVariant = getDefaultVariant(product as any)
+  const stockQuantity = stockSummary.total
   const lowStockThreshold = Number(product.lowStockThreshold ?? product.low_stock_threshold ?? 10)
   const isLowStock = stockQuantity <= lowStockThreshold && stockQuantity > 0
   const createdDate = product.createdAt || (product.created_at ? new Date(product.created_at) : new Date())
@@ -70,7 +73,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const primaryCategory = product.productCategories?.[0]?.category?.name || "Curated Pick"
 
   const handleAddToCart = async () => {
-    if (!product.id || stockQuantity <= 0 || isAdding) return
+    if (!product.id || stockQuantity <= 0 || isAdding || !defaultVariant?.id) return
 
     setIsAdding(true)
 
@@ -90,6 +93,7 @@ export function ProductCard({ product }: ProductCardProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           productId: product.id,
+          variantId: defaultVariant.id,
           quantity: 1,
         }),
       })

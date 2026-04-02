@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
+import { getVariantStockTotal } from "@/lib/variant-stock"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -161,8 +162,8 @@ export function SubCategoryProductsView({ mainCategory, subCategory, products, u
                 </td>
                 <td className="px-6 py-6">
                   <div className="flex items-center gap-2">
-                    <span className={`text-base font-black ${product.stockQuantity <= 10 ? 'text-red-600' : 'text-black'}`}>
-                      {product.stockQuantity}
+                    <span className={`text-base font-black ${getVariantStockTotal(product as any) <= 10 ? 'text-red-600' : 'text-black'}`}>
+                      {getVariantStockTotal(product as any)}
                     </span>
                     <span className="text-[8px] font-bold uppercase text-muted-foreground">Units</span>
                   </div>

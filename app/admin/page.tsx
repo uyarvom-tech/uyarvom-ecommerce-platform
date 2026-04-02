@@ -5,82 +5,129 @@ import { Button } from "@/components/ui/button"
 import {
   Package,
   ShoppingCart,
-  Users,
   TrendingUp,
   Eye,
   Plus,
-  BarChart3,
   Settings,
   ArrowUpRight,
-  TrendingDown,
   Clock,
   ChevronRight,
-  AlertCircle
+  AlertCircle,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
+import { getVariantStockSummary } from "@/lib/variant-stock"
 
-export const dynamic = 'force-dynamic'
+export const dynamic = "force-dynamic"
 
 export default async function AdminDashboard() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
   if (!user) redirect("/auth/login?redirect=/admin")
 
   const admin = await prisma.adminUser.findUnique({ where: { userId: user.id } })
   if (!admin) redirect("/")
 
-  // Stats Aggregation
-  const [
-    totalProducts,
-    activeProducts,
-    totalOrders,
-    pendingOrders,
-    totalRevenue,
-    lowStockCount
-  ] = await Promise.all([
+  const [totalProducts, activeProducts, totalOrders, pendingOrders, totalRevenue] = await Promise.all([
     prisma.product.count(),
     prisma.product.count({ where: { isActive: true } }),
     prisma.order.count(),
-    prisma.order.count({ where: { status: 'pending' } }),
+    prisma.order.count({ where: { status: "pending" } }),
     prisma.order.aggregate({ _sum: { total: true } }),
-    prisma.product.count({ where: { stockQuantity: { lte: 10 } } })
   ])
 
-  // Recent Global Activity
+  const inventoryProducts = await prisma.product.findMany({
+    where: { isActive: true },
+    select: {
+      id: true,
+      lowStockThreshold: true,
+      colors: {
+        select: {
+          variants: {
+            select: {
+              stock: true,
+              isActive: true,
+              sortOrder: true,
+            },
+          },
+        },
+      },
+    },
+  })
+
+  const lowStockCount = inventoryProducts.filter((product) => {
+    const summary = getVariantStockSummary(product as any)
+    const threshold = Number(product.lowStockThreshold ?? 10)
+    return summary.total > 0 && summary.total <= threshold
+  }).length
+
   const recentOrders = await prisma.order.findMany({
     take: 6,
-    orderBy: { createdAt: 'desc' },
+    orderBy: { createdAt: "desc" },
     select: {
       id: true,
       orderNumber: true,
       total: true,
       status: true,
       createdAt: true,
-      shippingName: true
-    }
+      shippingName: true,
+    },
   })
 
-  const topProducts = await prisma.product.findMany({
-    take: 4,
-    include: {
-      images: { where: { isPrimary: true }, take: 1 }
+  const topProductSales = await prisma.orderItem.groupBy({
+    by: ["productId"],
+    _sum: {
+      quantity: true,
     },
-    orderBy: { createdAt: 'desc' } // Placeholder for "popular" logic
+    orderBy: {
+      _sum: {
+        quantity: "desc",
+      },
+    },
+    take: 4,
   })
+
+  const topProductIds = topProductSales.map((item) => item.productId)
+  const topProducts = topProductIds.length
+    ? await prisma.product.findMany({
+        where: { id: { in: topProductIds } },
+        include: {
+          images: { where: { isPrimary: true }, take: 1 },
+        },
+      })
+    : []
+
+  const topProductsBySales = topProductIds
+    .map((productId) => {
+      const product = topProducts.find((item) => item.id === productId)
+      const sales = topProductSales.find((item) => item.productId === productId)
+
+      if (!product || !sales) {
+        return null
+      }
+
+      return {
+        ...product,
+        soldQuantity: sales._sum.quantity || 0,
+      }
+    })
+    .filter(Boolean)
 
   return (
     <div className="flex min-h-screen flex-col bg-muted/10">
       <AdminHeader />
       <main className="flex-1 px-8 py-10">
         <div className="container mx-auto max-w-7xl">
-          {/* Hero Notification */}
           <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div>
               <h1 className="text-6xl font-black tracking-tighter uppercase mb-2">Operations Hub</h1>
-              <p className="text-muted-foreground text-sm font-bold uppercase tracking-[.3em]">Command Center for Uyarvom Digital Asset Management</p>
+              <p className="text-muted-foreground text-sm font-bold uppercase tracking-[.3em]">
+                Command Center for Uyarvom Digital Asset Management
+              </p>
             </div>
 
             <div className="flex bg-black text-white p-2 rounded-none gap-4">
@@ -93,15 +140,20 @@ export default async function AdminDashboard() {
               </div>
               <div className="px-6 py-2 text-center">
                 <p className="text-[8px] font-bold uppercase tracking-widest text-gray-500 mb-1">Session</p>
-                <span className="text-[10px] font-black uppercase">{admin.role.replace('_', ' ')}</span>
+                <span className="text-[10px] font-black uppercase">{admin.role.replace("_", " ")}</span>
               </div>
             </div>
           </div>
 
-          {/* Core Metrics grid */}
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-12">
             {[
-              { label: "Gross Revenue", value: `₹${(totalRevenue._sum.total || 0).toLocaleString("en-IN")}`, icon: TrendingUp, color: "text-green-600", note: "Total system volume" },
+              {
+                label: "Gross Revenue",
+                value: `Rs.${(totalRevenue._sum.total || 0).toLocaleString("en-IN")}`,
+                icon: TrendingUp,
+                color: "text-green-600",
+                note: "Total system volume",
+              },
               { label: "Active Orders", value: pendingOrders, icon: ShoppingCart, color: "text-blue-600", note: "Needs fulfillment" },
               { label: "SKU Library", value: totalProducts, icon: Package, color: "text-black", note: `${activeProducts} active SKU` },
               { label: "Critical Stock", value: lowStockCount, icon: AlertCircle, color: "text-red-600", note: "Threshold violations", alert: lowStockCount > 0 },
@@ -109,21 +161,24 @@ export default async function AdminDashboard() {
               <Card key={i} className="rounded-none border-none shadow-sm overflow-hidden group hover:shadow-xl transition-all">
                 <CardContent className="p-8">
                   <div className="flex justify-between items-start mb-6">
-                    <div className={`p-3 bg-muted group-hover:bg-black group-hover:text-white transition-colors`}>
+                    <div className="p-3 bg-muted group-hover:bg-black group-hover:text-white transition-colors">
                       <stat.icon className="h-5 w-5" />
                     </div>
                     <ArrowUpRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
                   <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">{stat.label}</p>
-                  <h3 className={`text-3xl font-black italic tracking-tighter ${stat.alert ? 'text-red-600' : 'text-black'}`}>{stat.value}</h3>
-                  <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mt-4 opacity-60 group-hover:opacity-100 transition-opacity">{stat.note}</p>
+                  <h3 className={`text-3xl font-black italic tracking-tighter ${stat.alert ? "text-red-600" : "text-black"}`}>
+                    {stat.value}
+                  </h3>
+                  <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground mt-4 opacity-60 group-hover:opacity-100 transition-opacity">
+                    {stat.note}
+                  </p>
                 </CardContent>
               </Card>
             ))}
           </div>
 
           <div className="grid gap-10 lg:grid-cols-3">
-            {/* Left Column - Real-time activity */}
             <div className="lg:col-span-2 space-y-10">
               <Card className="rounded-none border-none shadow-sm h-full">
                 <CardHeader className="border-b bg-muted/5 py-6">
@@ -131,7 +186,9 @@ export default async function AdminDashboard() {
                     <CardTitle className="text-xs font-black uppercase tracking-[.2em] flex items-center gap-2">
                       <Clock className="h-4 w-4" /> Latest Operational Activity
                     </CardTitle>
-                    <Link href="/admin/orders" className="text-[9px] font-bold uppercase tracking-widest hover:underline">View All Intelligence</Link>
+                    <Link href="/admin/orders" className="text-[9px] font-bold uppercase tracking-widest hover:underline">
+                      View All Intelligence
+                    </Link>
                   </div>
                 </CardHeader>
                 <CardContent className="p-0">
@@ -143,16 +200,18 @@ export default async function AdminDashboard() {
                             ORD
                           </div>
                           <div>
-                            <p className="font-black text-sm uppercase tracking-tight">#{order.orderNumber} — {order.shippingName}</p>
+                            <p className="font-black text-sm uppercase tracking-tight">
+                              #{order.orderNumber} - {order.shippingName}
+                            </p>
                             <p className="text-[9px] font-bold text-muted-foreground uppercase mt-1 tracking-widest">
-                              {new Date(order.createdAt).toLocaleDateString("en-IN", { dateStyle: 'medium', timeStyle: 'short' })}
+                              {new Date(order.createdAt).toLocaleDateString("en-IN", { dateStyle: "medium", timeStyle: "short" })}
                             </p>
                           </div>
                         </div>
 
                         <div className="flex items-center gap-10">
                           <div className="text-right">
-                            <p className="text-sm font-black italic">₹{order.total.toLocaleString("en-IN")}</p>
+                            <p className="text-sm font-black italic">Rs.{order.total.toLocaleString("en-IN")}</p>
                             <Badge variant="outline" className="rounded-none text-[8px] font-black px-2 mt-1 uppercase border-black/10">
                               {order.status}
                             </Badge>
@@ -170,13 +229,14 @@ export default async function AdminDashboard() {
               </Card>
             </div>
 
-            {/* Right Column - System Controls & Quick Assets */}
             <div className="space-y-10">
               <Card className="rounded-none border-none shadow-sm bg-black text-white p-8 overflow-hidden relative">
                 <div className="absolute top-0 right-0 p-4 opacity-10">
                   <Settings className="h-16 w-16" />
                 </div>
-                <h3 className="text-[10px] font-black uppercase tracking-[.25em] mb-10 pb-4 border-b border-white/10">Command Directives</h3>
+                <h3 className="text-[10px] font-black uppercase tracking-[.25em] mb-10 pb-4 border-b border-white/10">
+                  Command Directives
+                </h3>
                 <div className="space-y-3">
                   <Button asChild className="w-full justify-between bg-white text-black hover:bg-white/90 rounded-none h-12 text-[10px] font-black uppercase tracking-widest px-6">
                     <Link href="/admin/catalog/new">
@@ -200,31 +260,47 @@ export default async function AdminDashboard() {
 
                 <div className="mt-10 pt-8 border-t border-white/10 text-center">
                   <p className="text-[9px] font-bold uppercase tracking-[.3em] text-gray-500 mb-4 italic">Internal Maintenance System</p>
-                  <button className="text-[9px] font-black uppercase tracking-widest underline decoration-white/20 hover:decoration-white">Rebuild System Cache</button>
+                  <button className="text-[9px] font-black uppercase tracking-widest underline decoration-white/20 hover:decoration-white">
+                    Rebuild System Cache
+                  </button>
                 </div>
               </Card>
 
-              {/* Top Assets */}
               <Card className="rounded-none border-none shadow-sm">
                 <CardHeader className="border-b bg-muted/5 py-6">
-                  <CardTitle className="text-[10px] font-black uppercase tracking-widest">Newest Platform Assets</CardTitle>
+                  <CardTitle className="text-[10px] font-black uppercase tracking-widest">Most Popular Assets</CardTitle>
                 </CardHeader>
                 <CardContent className="p-6">
                   <div className="space-y-6">
-                    {topProducts.map((product: any) => (
-                      <Link key={product.id} href={`/admin/products/${product.id}/edit`} className="flex items-center gap-4 group">
-                        <div className="h-12 w-12 bg-muted p-1 overflow-hidden shrink-0">
-                          {product.images[0] && (
-                            <img src={product.images[0].imageUrl} alt="" className="h-full w-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" />
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-black uppercase tracking-tight truncate">{product.name}</p>
-                          <p className="text-[10px] font-bold text-muted-foreground">₹{product.price.toLocaleString()}</p>
-                        </div>
-                        <ChevronRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                      </Link>
-                    ))}
+                    {topProductsBySales.length > 0 ? (
+                      topProductsBySales.map((product: any) => (
+                        <Link key={product.id} href={`/admin/products/${product.id}/edit`} className="flex items-center gap-4 group">
+                          <div className="h-12 w-12 bg-muted p-1 overflow-hidden shrink-0">
+                            {product.images[0] && (
+                              <img
+                                src={product.images[0].imageUrl}
+                                alt=""
+                                className="h-full w-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
+                              />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-black uppercase tracking-tight truncate">{product.name}</p>
+                            <p className="text-[10px] font-bold text-muted-foreground">Rs.{product.price.toLocaleString()}</p>
+                            <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
+                              {product.soldQuantity} sold
+                            </p>
+                          </div>
+                          <ChevronRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </Link>
+                      ))
+                    ) : (
+                      <div className="rounded-none border border-dashed border-black/10 p-6 text-center">
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                          No completed sales yet
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>

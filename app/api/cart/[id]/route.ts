@@ -28,7 +28,13 @@ export async function PATCH(
       include: {
         product: {
           select: {
-            stockQuantity: true,
+            id: true,
+          },
+        },
+        productVariant: {
+          select: {
+            id: true,
+            stock: true,
           },
         },
       },
@@ -38,7 +44,14 @@ export async function PATCH(
       return NextResponse.json({ error: "Cart item not found" }, { status: 404 })
     }
 
-    if (quantity > cartItem.product.stockQuantity) {
+    if (!cartItem.productVariant) {
+      return NextResponse.json(
+        { error: "Cart item is missing a selected variant. Please re-add the item." },
+        { status: 409 }
+      )
+    }
+
+    if (quantity > cartItem.productVariant.stock) {
       return NextResponse.json({ error: "Requested quantity exceeds available stock" }, { status: 409 })
     }
 

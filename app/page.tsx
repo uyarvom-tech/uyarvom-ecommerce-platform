@@ -122,6 +122,18 @@ export default async function HomePage({
           images: {
             orderBy: { sortOrder: "asc" },
           },
+          colors: {
+            orderBy: { sortOrder: "asc" },
+            include: {
+              images: {
+                orderBy: { sortOrder: "asc" },
+              },
+              variants: {
+                where: { isActive: true },
+                orderBy: { sortOrder: "asc" },
+              },
+            },
+          },
         },
         orderBy,
       })
@@ -137,6 +149,18 @@ export default async function HomePage({
           images: {
             orderBy: { sortOrder: "asc" },
           },
+          colors: {
+            orderBy: { sortOrder: "asc" },
+            include: {
+              images: {
+                orderBy: { sortOrder: "asc" },
+              },
+              variants: {
+                where: { isActive: true },
+                orderBy: { sortOrder: "asc" },
+              },
+            },
+          },
         },
       })
       : [],
@@ -149,7 +173,14 @@ export default async function HomePage({
       take: 8,
       include: {
         productCategories: { include: { category: true } },
-        images: { orderBy: { sortOrder: 'asc' } }
+        images: { orderBy: { sortOrder: 'asc' } },
+        colors: {
+          orderBy: { sortOrder: 'asc' },
+          include: {
+            images: { orderBy: { sortOrder: 'asc' } },
+            variants: { where: { isActive: true }, orderBy: { sortOrder: 'asc' } }
+          }
+        }
       }
     }),
     prisma.product.findMany({
@@ -158,7 +189,14 @@ export default async function HomePage({
       take: 8,
       include: {
         productCategories: { include: { category: true } },
-        images: { orderBy: { sortOrder: 'asc' } }
+        images: { orderBy: { sortOrder: 'asc' } },
+        colors: {
+          orderBy: { sortOrder: 'asc' },
+          include: {
+            images: { orderBy: { sortOrder: 'asc' } },
+            variants: { where: { isActive: true }, orderBy: { sortOrder: 'asc' } }
+          }
+        }
       }
     }),
     prisma.product.findMany({
@@ -166,7 +204,14 @@ export default async function HomePage({
       take: 8,
       include: {
         productCategories: { include: { category: true } },
-        images: { orderBy: { sortOrder: 'asc' } }
+        images: { orderBy: { sortOrder: 'asc' } },
+        colors: {
+          orderBy: { sortOrder: 'asc' },
+          include: {
+            images: { orderBy: { sortOrder: 'asc' } },
+            variants: { where: { isActive: true }, orderBy: { sortOrder: 'asc' } }
+          }
+        }
       }
     })
   ])

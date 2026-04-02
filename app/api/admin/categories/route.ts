@@ -2,6 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireStaffAccess } from '@/lib/auth-middleware'
 
+function toSlug(value: string) {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
 // GET /api/admin/categories - List all categories with hierarchy
 export async function GET(request: NextRequest) {
   // Check staff access (both admin and staff can view categories)
@@ -91,14 +99,29 @@ export async function POST(request: NextRequest) {
       parentId
     } = data
 
+    if (!name?.trim()) {
+      return NextResponse.json(
+        { error: 'Category name is required' },
+        { status: 400 }
+      )
+    }
+
+    const normalizedSlug = (slug?.trim() || toSlug(name)).toLowerCase()
+    const normalizedName = name.trim()
+
     // Check if slug already exists
-    const existingCategory = await prisma.category.findUnique({
-      where: { slug }
+    const existingCategory = await prisma.category.findFirst({
+      where: {
+        OR: [
+          { slug: normalizedSlug },
+          { name: { equals: normalizedName, mode: 'insensitive' } }
+        ]
+      }
     })
 
     if (existingCategory) {
       return NextResponse.json(
-        { error: 'Category with this slug already exists' },
+        { error: 'Category with this name or slug already exists' },
         { status: 400 }
       )
     }
@@ -128,12 +151,12 @@ export async function POST(request: NextRequest) {
     // Create category
     const category = await prisma.category.create({
       data: {
-        name,
-        slug,
+        name: normalizedName,
+        slug: normalizedSlug,
         description,
         imageUrl,
-        displayOrder,
-        isActive,
+        displayOrder: Number(displayOrder ?? 0) || 0,
+        isActive: isActive ?? true,
         parentId: parentId || null
       },
       include: {
@@ -178,17 +201,37 @@ export async function PUT(request: NextRequest) {
       parentId
     } = data
 
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Category id is required' },
+        { status: 400 }
+      )
+    }
+
+    if (!name?.trim()) {
+      return NextResponse.json(
+        { error: 'Category name is required' },
+        { status: 400 }
+      )
+    }
+
+    const normalizedSlug = (slug?.trim() || toSlug(name)).toLowerCase()
+    const normalizedName = name.trim()
+
     // Check if slug already exists for different category
     const existingCategory = await prisma.category.findFirst({
       where: {
-        slug,
+        OR: [
+          { slug: normalizedSlug },
+          { name: { equals: normalizedName, mode: 'insensitive' } }
+        ],
         NOT: { id }
       }
     })
 
     if (existingCategory) {
       return NextResponse.json(
-        { error: 'Category with this slug already exists' },
+        { error: 'Category with this name or slug already exists' },
         { status: 400 }
       )
     }
@@ -239,12 +282,12 @@ export async function PUT(request: NextRequest) {
     const category = await prisma.category.update({
       where: { id },
       data: {
-        name,
-        slug,
+        name: normalizedName,
+        slug: normalizedSlug,
         description,
         imageUrl,
-        displayOrder,
-        isActive,
+        displayOrder: Number(displayOrder ?? 0) || 0,
+        isActive: isActive ?? true,
         parentId: parentId || null
       },
       include: {

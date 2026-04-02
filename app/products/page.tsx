@@ -92,6 +92,18 @@ export default async function ProductsPage({
             images: {
               orderBy: { sortOrder: "asc" },
             },
+            colors: {
+              orderBy: { sortOrder: "asc" },
+              include: {
+                images: {
+                  orderBy: { sortOrder: "asc" },
+                },
+                variants: {
+                  where: { isActive: true },
+                  orderBy: { sortOrder: "asc" },
+                },
+              },
+            },
           },
           orderBy,
         })
@@ -122,6 +134,18 @@ export default async function ProductsPage({
           },
           images: {
             orderBy: { sortOrder: "asc" },
+          },
+          colors: {
+            orderBy: { sortOrder: "asc" },
+            include: {
+              images: {
+                orderBy: { sortOrder: "asc" },
+              },
+              variants: {
+                where: { isActive: true },
+                orderBy: { sortOrder: "asc" },
+              },
+            },
           },
         },
       })

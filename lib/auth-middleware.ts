@@ -107,8 +107,16 @@ export const requireAdminRole = requireAdminAccess
 
 export async function checkAdminAccess() {
   try {
-    const role = await getCurrentUserRole()
-    return ["admin", "super_admin"].includes(role || "")
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return false
+
+    const adminUser = await prisma.adminUser.findUnique({
+      where: { userId: user.id },
+      select: { role: true, isActive: true },
+    })
+
+    return !!adminUser && adminUser.isActive && ['admin', 'super_admin'].includes(adminUser.role)
   } catch (error) {
     console.error("Admin access check failed:", error)
     return false

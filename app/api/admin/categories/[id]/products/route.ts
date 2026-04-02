@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getVariantStockTotal } from '@/lib/variant-stock'
 
 export async function GET(
   request: NextRequest,
@@ -28,6 +29,13 @@ export async function GET(
           orderBy: {
             sortOrder: 'asc'
           }
+        },
+        colors: {
+          orderBy: { sortOrder: 'asc' },
+          include: {
+            images: { orderBy: { sortOrder: 'asc' } },
+            variants: { where: { isActive: true }, orderBy: { sortOrder: 'asc' } }
+          }
         }
       },
       orderBy: {
@@ -42,7 +50,7 @@ export async function GET(
       slug: product.slug,
       sku: product.sku || '',
       price: product.price,
-      stockQuantity: product.stockQuantity,
+      stockQuantity: getVariantStockTotal(product as any),
       isActive: product.isActive,
       categories: product.productCategories.map(pc => ({
         id: pc.category.id,
@@ -51,7 +59,8 @@ export async function GET(
       images: product.images.map(img => ({
         imageUrl: img.imageUrl,
         isPrimary: img.sortOrder === 0
-      }))
+      })),
+      colors: product.colors
     }))
 
     return NextResponse.json(transformedProducts)

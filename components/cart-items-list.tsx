@@ -80,10 +80,11 @@ export function CartItemsList({ items }: { items: any[] }) {
     <div className="space-y-4">
       {items.map((item) => {
         const product = item.product
+        const productVariant = item.productVariant
         const primaryImage =
           product.images?.find((img: any) => img.isPrimary || img.is_primary) || product.images?.[0]
         const imageUrl = primaryImage?.imageUrl || primaryImage?.image_url
-        const stockQuantity = Number(product.stockQuantity ?? product.stock_quantity ?? 0)
+        const stockQuantity = Number(productVariant?.stock ?? 0)
         const primaryCategory =
           product.productCategories?.find((entry: any) => entry.isPrimary)?.category ||
           product.productCategories?.[0]?.category
@@ -111,6 +112,11 @@ export function CartItemsList({ items }: { items: any[] }) {
                       <h3 className="font-semibold">{product.name}</h3>
                     </Link>
                     <p className="text-sm text-muted-foreground">{primaryCategory?.name}</p>
+                    {productVariant && (
+                      <p className="text-xs uppercase tracking-widest text-muted-foreground">
+                        {productVariant.color?.colorName || "Variant"} / {productVariant.size}
+                      </p>
+                    )}
                     <p className="mt-1 font-semibold">₹{Number(product.price || 0).toLocaleString("en-IN")}</p>
                   </div>
 

@@ -1,269 +1,91 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useMemo, useState } from 'react'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
 import { PRODUCT_FALLBACK_IMAGE } from '@/lib/image-fallbacks'
+import { useProductVariantContext } from './product-variant-context'
 
-interface ProductImage {
+interface GalleryImage {
   id?: string
   imageUrl: string
-  altText: string | null
-  isPrimary?: boolean
+  altText?: string | null
   sortOrder?: number
+  isPrimary?: boolean
 }
 
-interface ProductVariant {
+interface ProductColor {
   id: string
-  name: string
-  value: string
-  price: number | null
-  stock: number
-  isActive: boolean
+  colorName: string
   colorCode?: string | null
-  colorImage?: string | null
-  images?: Array<{
-    id: string
-    imageUrl: string
-    altText: string
-    sortOrder: number
-  }>
+  images: GalleryImage[]
 }
 
 interface FlipkartProductGalleryProps {
-  images: ProductImage[]
+  colors: ProductColor[]
+  legacyImages: GalleryImage[]
   productName: string
-  productId: string
-  productSlug?: string // Add optional slug prop
-  productPrice: number
-  onVariantChange?: (selectedVariants: Record<string, ProductVariant>, totalPrice: number, totalStock: number) => void
 }
 
-// Color mapping for common color names to hex codes
 const colorMap: Record<string, string> = {
-  'red': '#ef4444',
-  'blue': '#3b82f6',
-  'green': '#22c55e',
-  'yellow': '#eab308',
-  'purple': '#a855f7',
-  'pink': '#ec4899',
-  'orange': '#f97316',
-  'black': '#000000',
-  'white': '#ffffff',
-  'gray': '#6b7280',
-  'grey': '#6b7280',
-  'brown': '#a3a3a3',
-  'clear': '#f8fafc',
-  'transparent': '#f1f5f9',
-  'tinted': '#64748b'
+  red: '#ef4444',
+  blue: '#3b82f6',
+  green: '#22c55e',
+  yellow: '#eab308',
+  purple: '#a855f7',
+  pink: '#ec4899',
+  orange: '#f97316',
+  black: '#000000',
+  white: '#ffffff',
+  gray: '#6b7280',
+  grey: '#6b7280',
+  brown: '#a3a3a3',
 }
 
-export default function FlipkartProductGallery({
-  images,
-  productName,
-  productId,
-  productSlug,
-  productPrice,
-  onVariantChange
-}: FlipkartProductGalleryProps) {
+export default function FlipkartProductGallery({ colors, legacyImages, productName }: FlipkartProductGalleryProps) {
+  const { productColors, selectedColorId, setSelectedColorId, selectedColor } = useProductVariantContext()
   const [selectedImage, setSelectedImage] = useState(0)
-  const [variants, setVariants] = useState<ProductVariant[]>([])
-  const [selectedVariants, setSelectedVariants] = useState<Record<string, ProductVariant>>({})
-  const [loading, setLoading] = useState(true)
-  const [displayImages, setDisplayImages] = useState<ProductImage[]>([])
-  const [mounted, setMounted] = useState(false)
 
-  // Validate props
-  if (!productName || !productId) {
-    console.error('FlipkartProductGallery: Missing required props', { productName, productId })
+  const activeColors = useMemo(() => {
+    const source = colors.length > 0 ? colors : productColors
+    return source.map((color) => ({
+      ...color,
+      images: [...(color.images || [])].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0)),
+    }))
+  }, [colors, productColors])
+
+  const displayImages = useMemo(() => {
+    const selected = activeColors.find((color) => color.id === selectedColorId) || activeColors[0]
+    const candidateImages = selected?.images?.length ? selected.images : legacyImages
+    const images = candidateImages.filter((img) => img && img.imageUrl)
+    return images.length > 0 ? images : [{ imageUrl: PRODUCT_FALLBACK_IMAGE, altText: productName }]
+  }, [activeColors, legacyImages, productName, selectedColorId])
+
+  const getColorCode = (colorName: string, colorCode?: string | null) => {
+    if (colorCode) return colorCode
+    const normalized = colorName.toLowerCase().trim()
+    return colorMap[normalized] || '#94a3b8'
+  }
+
+  if (activeColors.length === 0 && legacyImages.length === 0) {
     return (
-      <div className="flex-1 min-w-0 space-y-4">
-        <div className="aspect-square overflow-hidden rounded-lg border bg-muted relative flex items-center justify-center">
-          <span className="text-gray-500">Product information unavailable</span>
-        </div>
+      <div className="aspect-square overflow-hidden rounded-lg border bg-muted relative flex items-center justify-center">
+        <span className="text-gray-500">Product information unavailable</span>
       </div>
     )
   }
 
-  // Initialize component
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  // Initialize display images
-  useEffect(() => {
-    const validImages = Array.isArray(images)
-      ? images.filter(img => img && typeof img === 'object' && img.imageUrl)
-      : []
-
-    const initialImages = validImages.length > 0
-      ? validImages
-      : [{ imageUrl: PRODUCT_FALLBACK_IMAGE, altText: productName }]
-
-    setDisplayImages(initialImages)
-    setSelectedImage(0)
-  }, [images, productName])
-
-  // Update display images when color variant is selected
-  useEffect(() => {
-    const selectedColorVariant = selectedVariants['Color'] || selectedVariants['color']
-
-    if (selectedColorVariant) {
-      // Use the variant's images if available, otherwise fallback to colorImage
-      let imagesToShow: any[] = []
-
-      if (selectedColorVariant.images && selectedColorVariant.images.length > 0) {
-        // Use the variant's multiple images
-        imagesToShow = selectedColorVariant.images.map(img => ({
-          imageUrl: img.imageUrl,
-          altText: img.altText || `${productName} - ${selectedColorVariant.value}`,
-          isPrimary: img.sortOrder === 0
-        }))
-      } else if (selectedColorVariant.colorImage) {
-        // Fallback to single colorImage
-        imagesToShow = [{
-          imageUrl: selectedColorVariant.colorImage,
-          altText: `${productName} - ${selectedColorVariant.value}`,
-          isPrimary: true
-        }]
-      }
-
-      if (imagesToShow.length > 0) {
-        setDisplayImages(imagesToShow)
-
-        // Maintain the same image position when switching colors
-        // If current selectedImage is beyond the new color's image count, go to last available image
-        const newImageIndex = Math.min(selectedImage, imagesToShow.length - 1)
-        setSelectedImage(newImageIndex)
-        return
-      }
-    }
-
-    // No color selected or no color images, show the first product image only
-    const validImages = Array.isArray(images)
-      ? images.filter(img => img && typeof img === 'object' && img.imageUrl)
-      : []
-
-    const firstImage = validImages.length > 0
-      ? [validImages[0]] // Only show the first image
-      : [{ imageUrl: PRODUCT_FALLBACK_IMAGE, altText: productName }]
-
-    setDisplayImages(firstImage)
-    setSelectedImage(0)
-  }, [selectedVariants, images, productName, selectedImage])
-
-  useEffect(() => {
-    // Calculate total price and stock based on selected variants
-    const totalPrice = calculateTotalPrice()
-    const totalStock = calculateTotalStock()
-
-    if (onVariantChange) {
-      onVariantChange(selectedVariants, totalPrice, totalStock)
-    }
-  }, [selectedVariants, productPrice])
-
-  const calculateTotalPrice = () => {
-    let totalPrice = productPrice
-
-    Object.values(selectedVariants).forEach(variant => {
-      if (variant.price !== null) {
-        totalPrice = variant.price // Use variant price override
-      }
-    })
-
-    return totalPrice
-  }
-
-  const calculateTotalStock = () => {
-    if (Object.keys(selectedVariants).length === 0) {
-      return 0 // No variants selected
-    }
-
-    // Find the minimum stock among selected variants
-    const stocks = Object.values(selectedVariants).map(v => v.stock)
-    return Math.min(...stocks)
-  }
-
-  const handleVariantSelect = (variantName: string, variant: ProductVariant) => {
-    setSelectedVariants(prev => ({
-      ...prev,
-      [variantName]: variant
-    }))
-  }
-
-  // Fetch variants from API
-  useEffect(() => {
-    if (!productId) {
-      setLoading(false)
-      return
-    }
-
-    const fetchVariants = async () => {
-      try {
-        const apiUrl = productSlug
-          ? `/api/products/${productSlug}/variants`
-          : `/api/admin/products/${productId}/variants`
-
-        const response = await fetch(apiUrl)
-
-        if (response.ok) {
-          const data = await response.json()
-
-          if (Array.isArray(data)) {
-            // Filter for active variants with stock
-            const activeVariants = data.filter((v: ProductVariant) =>
-              v && v.isActive && v.stock > 0
-            )
-            setVariants(activeVariants)
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching variants:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchVariants()
-  }, [productId, productSlug])
-
-  // Use real variants from API
-  const groupedVariants = variants.reduce((acc, variant) => {
-    if (!acc[variant.name]) {
-      acc[variant.name] = []
-    }
-    acc[variant.name].push(variant)
-    return acc
-  }, {} as Record<string, ProductVariant[]>)
-
-  // Only show color variants here
-  const colorVariants = groupedVariants['Color'] || groupedVariants['color'] || []
-
-  const getColorCode = (colorName: string, variant: ProductVariant): string => {
-    // First try to use the colorCode from the variant if available
-    if (variant.colorCode) {
-      return variant.colorCode
-    }
-
-    // Fallback to color name mapping
-    const normalizedName = colorName.toLowerCase().trim()
-    return colorMap[normalizedName] || '#94a3b8' // Default gray if color not found
-  }
-
   return (
-    <div className="flex flex-col md:flex-row gap-8 items-start">
-      {/* Vertical Thumbnails - Left Side */}
+    <div className="flex flex-col gap-8 items-start">
       {displayImages.length > 1 && (
         <div className="hidden md:flex flex-col gap-4 w-20 flex-shrink-0">
           {displayImages.map((image, index) => (
             <button
-              key={index}
+              key={`${image.imageUrl}-${index}`}
               onClick={() => setSelectedImage(index)}
               className={cn(
-                "group relative aspect-[4/5] overflow-hidden transition-all duration-500",
-                selectedImage === index
-                  ? "border border-primary"
-                  : "border border-transparent hover:border-primary/30"
+                'group relative aspect-[4/5] overflow-hidden transition-all duration-500',
+                selectedImage === index ? 'border border-primary' : 'border border-transparent hover:border-primary/30'
               )}
             >
               <Image
@@ -271,20 +93,16 @@ export default function FlipkartProductGallery({
                 alt={image.altText || `${productName} ${index + 1}`}
                 width={80}
                 height={100}
-                className={cn(
-                  "h-full w-full object-cover transition-transform duration-700",
-                  selectedImage === index ? "scale-105" : "group-hover:scale-110"
-                )}
+                className={cn('h-full w-full object-cover transition-transform duration-700', selectedImage === index ? 'scale-105' : 'group-hover:scale-110')}
               />
             </button>
           ))}
         </div>
       )}
 
-      {/* Main Showcase Area */}
-      <div className="flex-1 space-y-8">
+      <div className="flex-1 space-y-8 w-full">
         <div className="relative aspect-[4/5] overflow-hidden bg-secondary">
-          {displayImages[selectedImage] && displayImages[selectedImage].imageUrl ? (
+          {displayImages[selectedImage]?.imageUrl ? (
             <Image
               src={displayImages[selectedImage].imageUrl}
               alt={displayImages[selectedImage].altText || productName}
@@ -299,16 +117,15 @@ export default function FlipkartProductGallery({
           )}
         </div>
 
-        {/* Mobile Thumbnails */}
         {displayImages.length > 1 && (
           <div className="flex md:hidden gap-3 overflow-x-auto pb-4 scrollbar-hide">
             {displayImages.map((image, index) => (
               <button
-                key={index}
+                key={`${image.imageUrl}-${index}`}
                 onClick={() => setSelectedImage(index)}
                 className={cn(
-                  "w-20 aspect-[4/5] overflow-hidden flex-shrink-0 transition-all",
-                  selectedImage === index ? "border border-primary" : "border border-transparent"
+                  'w-20 aspect-[4/5] overflow-hidden flex-shrink-0 transition-all',
+                  selectedImage === index ? 'border border-primary' : 'border border-transparent'
                 )}
               >
                 <Image
@@ -323,44 +140,33 @@ export default function FlipkartProductGallery({
           </div>
         )}
 
-        {/* Color Palette Refined */}
-        {colorVariants.length > 0 && (
+        {activeColors.length > 0 && (
           <div className="space-y-6 pt-6 border-t border-border">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-primary">Artisan Glaze</span>
-              {(selectedVariants['Color'] || selectedVariants['color']) && (
-                <span className="text-[10px] text-foreground/60 uppercase tracking-widest">
-                  {(selectedVariants['Color'] || selectedVariants['color']).value}
-                </span>
-              )}
+              <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-primary">Color</span>
+              <span className="text-[10px] text-foreground/60 uppercase tracking-widest">
+                {selectedColor?.colorName || activeColors[0].colorName}
+              </span>
             </div>
 
             <div className="flex flex-wrap gap-4">
-              {colorVariants.map((variant) => {
-                const isSelected = selectedVariants['Color']?.id === variant.id || selectedVariants['color']?.id === variant.id
-                const isOutOfStock = variant.stock === 0
-                const colorCode = getColorCode(variant.value, variant)
+              {activeColors.map((color) => {
+                const isSelected = color.id === selectedColorId
+                const colorCode = getColorCode(color.colorName, color.colorCode)
 
                 return (
                   <button
-                    key={variant.id}
-                    disabled={isOutOfStock}
-                    onClick={() => handleVariantSelect(variant.name, variant)}
+                    key={color.id}
+                    onClick={() => setSelectedColorId(color.id)}
                     className={cn(
-                      "group relative w-10 h-10 rounded-full transition-all duration-500",
-                      isSelected ? "ring-2 ring-primary ring-offset-2" : "ring-1 ring-border ring-offset-0 hover:ring-primary/40",
-                      isOutOfStock && "opacity-20 cursor-not-allowed"
+                      'group relative w-10 h-10 rounded-full transition-all duration-500',
+                      isSelected ? 'ring-2 ring-primary ring-offset-2' : 'ring-1 ring-border ring-offset-0 hover:ring-primary/40'
                     )}
                   >
                     <div
                       className="absolute inset-1 rounded-full border border-black/5"
                       style={{ backgroundColor: colorCode }}
                     />
-                    {isOutOfStock && (
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-[1px] h-full bg-foreground/20 rotate-45" />
-                      </div>
-                    )}
                   </button>
                 )
               })}

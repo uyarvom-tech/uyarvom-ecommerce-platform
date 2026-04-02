@@ -2,34 +2,35 @@
 
 import { Button } from "@/components/ui/button"
 import { Heart } from "lucide-react"
-import { createClient } from "@/lib/supabase/client"
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
+import { createClient } from "@/lib/supabase/client"
 
 export function WishlistButton({ productId, className }: { productId: string; className?: string }) {
   const [isInWishlist, setIsInWishlist] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const supabase = createClient()
   const router = useRouter()
+  const pathname = usePathname()
 
   useEffect(() => {
     checkWishlist()
   }, [productId])
 
   const checkWishlist = async () => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-    if (!user) return
+    try {
+      const response = await fetch(`/api/wishlist?productId=${encodeURIComponent(productId)}`)
 
-    const { data } = await supabase
-      .from("wishlists")
-      .select("id")
-      .eq("user_id", user.id)
-      .eq("product_id", productId)
-      .single()
+      if (!response.ok) {
+        setIsInWishlist(false)
+        return
+      }
 
-    setIsInWishlist(!!data)
+      const payload = await response.json()
+      setIsInWishlist(Boolean(payload.isInWishlist))
+    } catch {
+      setIsInWishlist(false)
+    }
   }
 
   const toggleWishlist = async () => {
@@ -38,18 +39,29 @@ export function WishlistButton({ productId, className }: { productId: string; cl
     } = await supabase.auth.getUser()
 
     if (!user) {
-      router.push("/auth/login?redirect=/products")
+      router.push(`/auth/login?redirect=${encodeURIComponent(pathname)}`)
       return
     }
 
     setIsLoading(true)
 
-    if (isInWishlist) {
-      await supabase.from("wishlists").delete().eq("user_id", user.id).eq("product_id", productId)
-      setIsInWishlist(false)
-    } else {
-      await supabase.from("wishlists").insert({ user_id: user.id, product_id: productId })
-      setIsInWishlist(true)
+    try {
+      const response = await fetch("/api/wishlist", {
+        method: isInWishlist ? "DELETE" : "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ productId }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to update wishlist")
+      }
+
+      setIsInWishlist(!isInWishlist)
+      router.refresh()
+    } catch (error) {
+      console.error("Wishlist toggle error:", error)
     }
 
     setIsLoading(false)

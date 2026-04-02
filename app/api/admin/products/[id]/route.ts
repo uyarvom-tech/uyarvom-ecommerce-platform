@@ -27,6 +27,17 @@ export async function GET(
         },
         images: {
           orderBy: { sortOrder: 'asc' }
+        },
+        colors: {
+          orderBy: { sortOrder: 'asc' },
+          include: {
+            images: {
+              orderBy: { sortOrder: 'asc' }
+            },
+            variants: {
+              orderBy: { sortOrder: 'asc' }
+            }
+          }
         }
       }
     })
@@ -40,7 +51,8 @@ export async function GET(
       ...product,
       categories: product.productCategories.map(pc => pc.category),
       primaryCategory: product.productCategories.find(pc => pc.isPrimary)?.category,
-      categoryIds: product.productCategories.map(pc => pc.categoryId) // For form compatibility
+      categoryIds: product.productCategories.map(pc => pc.categoryId), // For form compatibility
+      colors: product.colors
     }
 
     return NextResponse.json(transformedProduct)
@@ -78,7 +90,6 @@ export async function PUT(
       shortDescription,
       price,
       compareAtPrice,
-      stockQuantity,
       lowStockThreshold,
       sku,
       weight,
@@ -130,7 +141,6 @@ export async function PUT(
           shortDescription,
           price,
           compareAtPrice,
-          stockQuantity,
           lowStockThreshold,
           sku,
           weight,
@@ -180,6 +190,18 @@ export async function PUT(
           })
         }
       }
+
+      const stockAggregate = await tx.productVariant.aggregate({
+        where: { productId: id },
+        _sum: { stock: true },
+      })
+
+      await tx.product.update({
+        where: { id },
+        data: {
+          stockQuantity: stockAggregate._sum.stock ?? 0,
+        },
+      })
 
       // Return updated product with relations
       return await tx.product.findUnique({

@@ -67,7 +67,8 @@ export async function DELETE(
       include: {
         _count: {
           select: {
-            productCategories: true
+            productCategories: true,
+            children: true
           }
         }
       }
@@ -77,17 +78,27 @@ export async function DELETE(
       return NextResponse.json({ error: 'Category not found' }, { status: 404 })
     }
 
-    if (category._count.productCategories > 0) {
+    if (category._count.children > 0) {
       return NextResponse.json(
-        { error: 'Cannot delete category with products. Please move products to other categories first.' },
+        { error: 'Cannot delete category with subcategories. Please move or delete child categories first.' },
         { status: 400 }
       )
     }
 
-    // Delete the category
-    await prisma.category.delete({
-      where: { id }
-    })
+    await prisma.$transaction([
+      prisma.productCategory.deleteMany({
+        where: { categoryId: id }
+      }),
+      prisma.category.delete({
+        where: { id }
+      })
+    ])
+
+    if (category._count.productCategories > 0) {
+      return NextResponse.json(
+        { message: 'Category deleted successfully. Product links were removed.' }
+      )
+    }
 
     return NextResponse.json({ message: 'Category deleted successfully' })
   } catch (error) {

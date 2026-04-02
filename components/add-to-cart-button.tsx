@@ -6,6 +6,7 @@ import { Minus, Plus, ShoppingCart } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { createClient } from "@/lib/supabase/client"
+import { getDefaultVariant } from "@/lib/variant-stock"
 
 export function AddToCartButton({
   product,
@@ -21,9 +22,13 @@ export function AddToCartButton({
   const router = useRouter()
   const supabase = createClient()
 
+  const variantLookup = (product.colors || [])
+    .flatMap((color: any) => color.variants || [])
+    .find((variant: any) => variant.id === variantId)
+  const defaultVariant = variantId ? variantLookup : getDefaultVariant(product)
   const stockQuantity = stockOverride !== undefined
     ? stockOverride
-    : Number(product.stockQuantity ?? product.stock_quantity ?? 0)
+    : Number(defaultVariant?.stock ?? 0)
 
   const handleAddToCart = async () => {
     setIsLoading(true)
@@ -38,6 +43,13 @@ export function AddToCartButton({
       return
     }
 
+    const resolvedVariantId = variantId || defaultVariant?.id
+    if (!resolvedVariantId) {
+      setIsLoading(false)
+      toast.error("Please select a variant before adding to cart")
+      return
+    }
+
     try {
       const response = await fetch("/api/cart", {
         method: "POST",
@@ -46,7 +58,7 @@ export function AddToCartButton({
         },
         body: JSON.stringify({
           productId: product.id,
-          variantId: variantId || null,
+          variantId: resolvedVariantId,
           quantity,
         }),
       })

@@ -3,7 +3,6 @@ import { Footer } from "@/components/footer"
 import { AIKitchenMatch } from "@/components/ai-kitchen-match"
 import { AppleReveal } from "@/components/apple-scroll-animations"
 import { createClient } from "@/lib/supabase/server"
-import { demoProducts } from "@/lib/demo-data"
 
 export const metadata = {
   title: "AI Kitchen Match | Uyarvom",
@@ -26,8 +25,7 @@ export default async function AIMatchPage() {
     .eq("is_active", true)
     .order("created_at", { ascending: false })
 
-  // Use demo data if Supabase returns empty results (development mode)
-  const products = productsData && productsData.length > 0 ? productsData : demoProducts
+  const products = productsData || []
 
   return (
     <div className="flex min-h-screen flex-col bg-background">

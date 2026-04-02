@@ -1,19 +1,17 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Label } from "@/components/ui/label"
-import { ArrowLeft, Palette, Plus, X } from "lucide-react"
-import Link from "next/link"
-import { toast } from "sonner"
-import { MultiImageManager } from "@/components/admin/multi-image-manager"
-import ColorVariantImageManager from "@/components/admin/color-variant-image-manager"
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Label } from '@/components/ui/label'
+import { ArrowLeft, Plus, Trash2, Upload, X } from 'lucide-react'
+import Link from 'next/link'
+import { toast } from 'sonner'
 
 interface Category {
   id: string
@@ -25,28 +23,42 @@ interface Category {
 
 interface ProductFormProps {
   categories: Category[]
-  product?: any // For edit mode
-  defaultCategoryId?: string // For setting default category
-  redirectPath?: string // Custom redirect path after creation/update
+  product?: any
+  defaultCategoryId?: string
+  redirectPath?: string
 }
 
-interface ProductImage {
+interface FormImage {
   id?: string
   imageUrl: string
   altText: string
-  isPrimary: boolean
   sortOrder?: number
 }
+
+interface FormColor {
+  id: string
+  colorName: string
+  colorCode: string
+  images: FormImage[]
+  sizeData: Record<string, { price: string; stock: string; sku: string; isActive: boolean }>
+}
+
+const createEmptyColor = (): FormColor => ({
+  id: `color-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+  colorName: '',
+  colorCode: '#000000',
+  images: [],
+  sizeData: {},
+})
 
 export function ProductForm({ categories, product, defaultCategoryId, redirectPath }: ProductFormProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(false)
-  
-  // Get URL parameters for pre-selecting categories
+
   const mainCategoryParam = searchParams.get('mainCategory')
   const subCategoryParam = searchParams.get('subCategory')
-  
+
   const [formData, setFormData] = useState({
     name: product?.name || '',
     slug: product?.slug || '',
@@ -61,179 +73,286 @@ export function ProductForm({ categories, product, defaultCategoryId, redirectPa
     mainCategoryId: product?.mainCategoryId || mainCategoryParam || defaultCategoryId || '',
     subCategoryId: product?.subCategoryId || subCategoryParam || '',
     isActive: product?.isActive ?? true,
-    isFeatured: product?.isFeatured ?? false
+    isFeatured: product?.isFeatured ?? false,
   })
 
-  const [images, setImages] = useState<ProductImage[]>(
-    // Only show regular images if the product doesn't have color variants
-    (!product?.hasColorVariants && product?.images) ? 
-      product.images.map((img: any, index: number) => ({
-        id: img.id,
-        imageUrl: img.imageUrl,
-        altText: img.altText || '',
-        isPrimary: img.isPrimary,
-        sortOrder: img.sortOrder || index
-      })) : []
-  )
+  const [sizeInput, setSizeInput] = useState<string>(() => {
+    const existingSizes = product?.colors?.flatMap((color: any) => color.sizes?.map((size: any) => size.size) || []) || []
+    return existingSizes.length > 0 ? Array.from(new Set(existingSizes)).join(', ') : 'S, M, L'
+  })
 
-  const [hasColorVariants, setHasColorVariants] = useState(product?.hasColorVariants || false)
-  const [colorVariants, setColorVariants] = useState<any[]>(product?.colorVariants || [])
+  const parsedSizes = useMemo(() => {
+    return sizeInput
+      .split(',')
+      .map((size) => size.trim())
+      .filter(Boolean)
+  }, [sizeInput])
 
-  // Organize categories into main and sub categories
-  const mainCategories = categories.filter(cat => !cat.parentId)
+  const [colors, setColors] = useState<FormColor[]>(() => {
+    if (Array.isArray(product?.colors) && product.colors.length > 0) {
+      return product.colors.map((color: any, colorIndex: number) => {
+        const sizeData: Record<string, { price: string; stock: string; sku: string; isActive: boolean }> = {}
+        ;(color.sizes || []).forEach((size: any, sizeIndex: number) => {
+          sizeData[size.size] = {
+            price: size.price?.toString() || '',
+            stock: size.stock?.toString() || '',
+            sku: size.sku || '',
+            isActive: size.isActive ?? true,
+          }
+          if (sizeIndex === 0 && !sizeData[size.size].stock) {
+            sizeData[size.size].stock = '0'
+          }
+        })
+
+        return {
+          id: color.id || `color-${colorIndex}`,
+          colorName: color.colorName || '',
+          colorCode: color.colorCode || '#000000',
+          images: (color.images || []).map((img: any, imageIndex: number) => ({
+            id: img.id,
+            imageUrl: img.imageUrl,
+            altText: img.altText || '',
+            sortOrder: img.sortOrder ?? imageIndex,
+          })),
+          sizeData,
+        }
+      })
+    }
+
+    return [createEmptyColor()]
+  })
+
+  const totalVariantStock = useMemo(() => {
+    return colors.reduce((total, color) => {
+      return (
+        total +
+        Object.values(color.sizeData).reduce((sum, size) => {
+          const parsed = Number(size.stock || 0)
+          return sum + (Number.isFinite(parsed) ? parsed : 0)
+        }, 0)
+      )
+    }, 0)
+  }, [colors])
+
+  useEffect(() => {
+    setColors((prev) =>
+      prev.map((color) => {
+        const nextSizeData: FormColor['sizeData'] = {}
+
+        parsedSizes.forEach((size) => {
+          nextSizeData[size] = color.sizeData[size] || {
+            price: '',
+            stock: '',
+            sku: '',
+            isActive: true,
+          }
+        })
+
+        return { ...color, sizeData: nextSizeData }
+      })
+    )
+  }, [parsedSizes.join('|')])
+
+  const mainCategories = categories.filter((cat) => !cat.parentId)
   const subCategoriesByParent = categories
-    .filter(cat => cat.parentId)
+    .filter((cat) => cat.parentId)
     .reduce((acc, cat) => {
       if (!acc[cat.parentId!]) acc[cat.parentId!] = []
       acc[cat.parentId!].push(cat)
       return acc
     }, {} as Record<string, Category[]>)
 
-  // Get available sub-categories for selected main category
-  const availableSubCategories = formData.mainCategoryId 
-    ? subCategoriesByParent[formData.mainCategoryId] || []
-    : []
+  const availableSubCategories = formData.mainCategoryId ? subCategoriesByParent[formData.mainCategoryId] || [] : []
 
   const handleInputChange = (field: string, value: any) => {
-    setFormData(prev => {
-      const newData = { ...prev, [field]: value }
-      
-      // If main category changes, reset sub-category
+    setFormData((prev) => {
+      const next = { ...prev, [field]: value }
+
       if (field === 'mainCategoryId') {
-        newData.subCategoryId = ''
+        next.subCategoryId = ''
       }
-      
-      // Auto-generate slug from name
+
       if (field === 'name' && !product) {
-        const slug = value.toLowerCase()
+        const slug = value
+          .toLowerCase()
           .replace(/[^a-z0-9]+/g, '-')
           .replace(/(^-|-$)/g, '')
-        
-        // Auto-generate SKU from name if SKU is empty
-        const sku = !prev.sku ? `UYV-${value.toLowerCase().replace(/[^a-z0-9]+/g, '').substring(0, 6).toUpperCase()}-${Date.now().toString().slice(-3)}` : prev.sku
-        
-        setFormData(prevData => ({ ...prevData, slug, sku }))
-        return newData
+        const sku = !prev.sku
+          ? `UYV-${value.toLowerCase().replace(/[^a-z0-9]+/g, '').substring(0, 6).toUpperCase()}-${Date.now().toString().slice(-3)}`
+          : prev.sku
+
+        setFormData((prevData) => ({ ...prevData, slug, sku }))
+        return next
       }
-      
-      return newData
+
+      return next
     })
+  }
+
+  const updateColor = (colorId: string, updates: Partial<FormColor>) => {
+    setColors((prev) => prev.map((color) => (color.id === colorId ? { ...color, ...updates } : color)))
+  }
+
+  const addColor = () => setColors((prev) => [...prev, createEmptyColor()])
+  const removeColor = (colorId: string) => setColors((prev) => prev.filter((color) => color.id !== colorId))
+
+  const uploadColorImages = async (colorId: string, files: FileList) => {
+    const uploaded: FormImage[] = []
+
+    for (const file of Array.from(files)) {
+      if (!file.type.startsWith('image/')) {
+        toast.error(`${file.name} is not an image file`)
+        continue
+      }
+
+      const formData = new FormData()
+      formData.append('file', file)
+
+      try {
+        const response = await fetch('/api/admin/upload', {
+          method: 'POST',
+          body: formData,
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => null)
+          throw new Error(errorData?.error || `Failed to upload ${file.name}`)
+        }
+
+        const data = await response.json()
+        uploaded.push({
+          id: `img-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          imageUrl: data.url,
+          altText: file.name,
+          sortOrder: uploaded.length,
+        })
+      } catch (error: any) {
+        console.error('Image upload error:', error)
+        toast.error(error.message || `Failed to upload ${file.name}`)
+      }
+    }
+
+    if (uploaded.length > 0) {
+      setColors((prev) =>
+        prev.map((color) => {
+          if (color.id !== colorId) return color
+          const existingImages = color.images || []
+          return {
+            ...color,
+            images: [...existingImages, ...uploaded].map((img, index) => ({
+              ...img,
+              sortOrder: index,
+            })),
+          }
+        })
+      )
+    }
+  }
+
+  const validateAndBuildPayload = () => {
+    if (!formData.name || !formData.slug || !formData.price || !formData.mainCategoryId || !formData.subCategoryId) {
+      throw new Error('Please fill in all required fields including main category and sub-category')
+    }
+
+    if (!parsedSizes.length) {
+      throw new Error('Please define at least one size option')
+    }
+
+    if (colors.length === 0) {
+      throw new Error('Please add at least one color')
+    }
+
+    const colorsPayload = colors.map((color) => {
+      if (!color.colorName.trim()) {
+        throw new Error('Every color must have a name')
+      }
+
+      if (color.images.length === 0) {
+        throw new Error(`Please upload at least one image for ${color.colorName || 'a color'}`)
+      }
+
+      const sizes = parsedSizes.map((size, index) => {
+        const sizeState = color.sizeData[size]
+        if (!sizeState) {
+          throw new Error(`Please complete the ${size} size for ${color.colorName}`)
+        }
+
+        return {
+          size,
+          price: sizeState.price,
+          stock: sizeState.stock,
+          sku: sizeState.sku,
+          isActive: sizeState.isActive,
+          sortOrder: index,
+        }
+      })
+
+      return {
+        id: color.id,
+        colorName: color.colorName,
+        colorCode: color.colorCode,
+        images: color.images,
+        sizes,
+      }
+    })
+
+    const totalStock = colorsPayload.reduce((total, color) => {
+      return (
+        total +
+        color.sizes.reduce((sum, size) => {
+          const parsed = Number(size.stock || 0)
+          return sum + (Number.isFinite(parsed) ? parsed : 0)
+        }, 0)
+      )
+    }, 0)
+
+    return {
+      ...formData,
+      price: parseFloat(String(formData.price)),
+      compareAtPrice: formData.compareAtPrice ? parseFloat(String(formData.compareAtPrice)) : null,
+      stockQuantity: totalStock,
+      lowStockThreshold: parseInt(String(formData.lowStockThreshold)),
+      weight: formData.weight ? parseFloat(String(formData.weight)) : null,
+      colors: colorsPayload,
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
 
-    console.log('🚀 FORM SUBMISSION STARTED')
-    console.log('📋 Form Data:', formData)
-    console.log('🖼️ Images State:', images)
-
     try {
-      // Validate required fields
-      if (!formData.name || !formData.slug || !formData.price || !formData.mainCategoryId || !formData.subCategoryId) {
-        throw new Error('Please fill in all required fields including main category and sub-category')
-      }
-
-      // Validate that we have images (either regular or color variants)
-      let validImages: any[] = []
-      
-      if (!hasColorVariants) {
-        validImages = images.filter(img => img.imageUrl && img.imageUrl.trim() !== '')
-        console.log('✅ Valid Images (non-empty URLs):', validImages)
-        
-        if (validImages.length === 0) {
-          throw new Error('Please upload at least one product image')
-        }
-        
-        // Ensure at least one image is marked as primary
-        const hasPrimary = validImages.some(img => img.isPrimary)
-        console.log('⭐ Has Primary Image:', hasPrimary)
-        if (!hasPrimary) {
-          validImages[0].isPrimary = true
-          console.log('🔧 Auto-set first image as primary')
-        }
-      } else {
-        // Validate color variants
-        if (colorVariants.length === 0) {
-          throw new Error('Please add at least one color variant')
-        }
-        
-        const hasImagesInVariants = colorVariants.some(variant => variant.images && variant.images.length > 0)
-        if (!hasImagesInVariants) {
-          throw new Error('Please upload images for at least one color variant')
-        }
-      }
-
-      const productData = {
-        ...formData,
-        price: parseFloat(formData.price),
-        compareAtPrice: formData.compareAtPrice ? parseFloat(formData.compareAtPrice) : null,
-        stockQuantity: parseInt(formData.stockQuantity),
-        lowStockThreshold: parseInt(formData.lowStockThreshold),
-        weight: formData.weight ? parseFloat(formData.weight) : null,
-        images: hasColorVariants ? [] : validImages, // Use regular images only if no color variants
-        hasColorVariants: hasColorVariants,
-        colorVariants: hasColorVariants ? colorVariants : []
-      }
-
-      console.log('📦 Final Product Data to Send:', productData)
-      console.log('🎨 Color Variants to Send:', productData.colorVariants)
-      console.log('🖼️ Images in Product Data:', productData.images)
-
+      const productData = validateAndBuildPayload()
       const url = '/api/admin/products'
       const method = product ? 'PUT' : 'POST'
-      const body = product ? { ...productData, id: product.id } : productData
-
-      console.log(`🌐 API Request: ${method} ${url}`)
-      console.log('📤 Request Body:', body)
+      const body = product ? { ...productData, id: product.id, categoryIds: [formData.mainCategoryId, formData.subCategoryId] } : productData
 
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
+        body: JSON.stringify(body),
       })
 
-      console.log('📡 Response Status:', response.status)
-      console.log('📡 Response OK:', response.ok)
-
       if (!response.ok) {
-        const errorData = await response.json()
-        console.error('❌ API Error Response:', errorData)
-        throw new Error(errorData.error || 'Failed to save product')
+        const errorData = await response.json().catch(() => null)
+        throw new Error(errorData?.error || 'Failed to save product')
       }
 
       const result = await response.json()
-      console.log('✅ API Success Response:', result)
-      console.log('🖼️ Saved Product Images:', result.images)
-      
-      if (product) {
-        toast.success('Product updated successfully!')
-        router.push(redirectPath || '/admin/products')
-      } else {
-        toast.success('Product created successfully!')
-        
-        // If color variants were enabled, redirect to edit mode to add them
-        if (hasColorVariants) {
-          toast.success('Redirecting to add color variants...', { duration: 2000 })
-          setTimeout(() => {
-            router.push(`/admin/products/${result.id}/edit`)
-          }, 1500)
-        } else {
-          router.push(redirectPath || '/admin/products')
-        }
-      }
+
+      toast.success(product ? 'Product updated successfully!' : 'Product created successfully!')
+      router.push(product ? redirectPath || '/admin/products' : redirectPath || '/admin/products')
+      return result
     } catch (error: any) {
-      console.error('💥 FORM SUBMISSION ERROR:', error)
+      console.error('Product form submit error:', error)
       toast.error(error.message || 'Failed to save product. Please try again.')
     } finally {
       setIsLoading(false)
-      console.log('🏁 FORM SUBMISSION ENDED')
     }
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Header */}
       <div className="flex items-center gap-4">
         <Button variant="outline" size="sm" asChild>
           <Link href="/admin/products">
@@ -244,7 +363,6 @@ export function ProductForm({ categories, product, defaultCategoryId, redirectPa
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* Main Product Info */}
         <div className="lg:col-span-2 space-y-6">
           <Card>
             <CardHeader>
@@ -253,139 +371,208 @@ export function ProductForm({ categories, product, defaultCategoryId, redirectPa
             <CardContent className="space-y-4">
               <div>
                 <Label htmlFor="name">Product Name *</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => handleInputChange('name', e.target.value)}
-                  placeholder="Enter product name"
-                  required
-                />
+                <Input id="name" value={formData.name} onChange={(e) => handleInputChange('name', e.target.value)} placeholder="Enter product name" required />
               </div>
 
               <div>
                 <Label htmlFor="slug">URL Slug *</Label>
-                <Input
-                  id="slug"
-                  value={formData.slug}
-                  onChange={(e) => handleInputChange('slug', e.target.value)}
-                  placeholder="product-url-slug"
-                  required
-                />
+                <Input id="slug" value={formData.slug} onChange={(e) => handleInputChange('slug', e.target.value)} placeholder="product-url-slug" required />
               </div>
 
               <div>
                 <Label htmlFor="shortDescription">Short Description</Label>
-                <Input
-                  id="shortDescription"
-                  value={formData.shortDescription}
-                  onChange={(e) => handleInputChange('shortDescription', e.target.value)}
-                  placeholder="Brief product description"
-                />
+                <Input id="shortDescription" value={formData.shortDescription} onChange={(e) => handleInputChange('shortDescription', e.target.value)} placeholder="Brief product description" />
               </div>
 
               <div>
                 <Label htmlFor="description">Full Description</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => handleInputChange('description', e.target.value)}
-                  placeholder="Detailed product description"
-                  rows={4}
-                />
+                <Textarea id="description" value={formData.description} onChange={(e) => handleInputChange('description', e.target.value)} placeholder="Detailed product description" rows={4} />
               </div>
             </CardContent>
           </Card>
 
-          {/* Product Images */}
           <Card>
             <CardHeader>
-              <CardTitle>Product Images</CardTitle>
+              <CardTitle>Color Images</CardTitle>
               <p className="text-sm text-muted-foreground">
-                {hasColorVariants 
-                  ? "Color variant images are managed below. You can still add general product images here."
-                  : "Upload multiple high-quality images. Drag to reorder. First image is the main product image."
-                }
+                Add multiple colors. Each color owns its own images and the sizes below map to that color.
               </p>
             </CardHeader>
-            <CardContent>
-              {!hasColorVariants ? (
-                // Default image upload
-                <div className="space-y-4">
-                  <MultiImageManager 
-                    images={images} 
-                    onImagesChange={setImages} 
-                    productId={product?.id}
-                    maxImages={10}
-                  />
-                  
-                  <div className="text-center pt-4">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={(e) => {
-                        e.preventDefault()
-                        e.stopPropagation()
-                        // Automatically add first color variant when switching
-                        const firstVariant = {
-                          id: `color-${Date.now()}`,
-                          colorName: '',
-                          colorCode: '#000000',
-                          images: []
-                        }
-                        setHasColorVariants(true)
-                        setColorVariants([firstVariant])
-                      }}
-                      className="flex items-center gap-2"
-                    >
-                      <Palette className="h-4 w-4" />
-                      Upload Multiple Color Variants Instead
-                    </Button>
-                    <p className="text-xs text-gray-600 mt-2">
-                      Switch to color variant mode if your product comes in different colors
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                // Color variant mode
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 border rounded-lg bg-blue-50">
-                    <div>
-                      <h4 className="font-medium text-blue-900">Color Variant Mode Active</h4>
-                      <p className="text-sm text-blue-700">
-                        Upload images for each color variant below
-                      </p>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={(e) => {
-                        e.preventDefault()
-                        e.stopPropagation()
-                        setHasColorVariants(false)
-                        setColorVariants([])
-                      }}
-                      className="flex items-center gap-2"
-                    >
-                      <X className="h-4 w-4" />
-                      Switch to Simple Images
-                    </Button>
-                  </div>
-                  
-                  <ColorVariantImageManager
-                    onVariantsChange={setColorVariants}
-                    initialVariants={colorVariants}
-                  />
-                </div>
-              )}
+            <CardContent className="space-y-6">
+              <div>
+                <Label htmlFor="sizes">Available Sizes *</Label>
+                <Input
+                  id="sizes"
+                  value={sizeInput}
+                  onChange={(e) => setSizeInput(e.target.value)}
+                  placeholder="S, M, L"
+                />
+                <p className="text-xs text-muted-foreground mt-1">Separate sizes with commas.</p>
+              </div>
+
+              <div className="space-y-4">
+                {colors.map((color, index) => (
+                  <Card key={color.id} className="border-dashed">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-base">
+                          Color {index + 1}
+                        </CardTitle>
+                        {colors.length > 1 && (
+                          <Button type="button" variant="ghost" size="sm" onClick={() => removeColor(color.id)}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        )}
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-5">
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div>
+                          <Label>Color Name</Label>
+                          <Input
+                            value={color.colorName}
+                            onChange={(e) => updateColor(color.id, { colorName: e.target.value })}
+                            placeholder="Red"
+                          />
+                        </div>
+                        <div>
+                          <Label>Color Code</Label>
+                          <Input
+                            type="color"
+                            value={color.colorCode}
+                            onChange={(e) => updateColor(color.id, { colorCode: e.target.value })}
+                            className="w-20 h-10 p-1"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <Label>Images for this Color</Label>
+                        <div className="flex flex-wrap gap-3">
+                          <input
+                            id={`color-upload-${color.id}`}
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            className="hidden"
+                            onChange={(e) => e.target.files && uploadColorImages(color.id, e.target.files)}
+                          />
+                          <label
+                            htmlFor={`color-upload-${color.id}`}
+                            className="flex items-center gap-2 px-4 py-2 border border-dashed rounded-md cursor-pointer hover:border-primary"
+                          >
+                            <Upload className="h-4 w-4" />
+                            Upload Images
+                          </label>
+                        </div>
+
+                        {color.images.length > 0 && (
+                          <div className="flex flex-wrap gap-3">
+                            {color.images.map((image, imageIndex) => (
+                              <div key={`${image.imageUrl}-${imageIndex}`} className="relative w-24">
+                                <img src={image.imageUrl} alt={image.altText} className="h-24 w-24 rounded object-cover border" />
+                                <button
+                                  type="button"
+                                  className="absolute -top-2 -right-2 rounded-full bg-destructive text-white p-1"
+                                  onClick={() =>
+                                    updateColor(color.id, {
+                                      images: color.images.filter((_, idx) => idx !== imageIndex).map((img, idx) => ({ ...img, sortOrder: idx })),
+                                    })
+                                  }
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="space-y-4">
+                        <Label>Sizes for this Color</Label>
+                        <div className="grid gap-3">
+                          {parsedSizes.map((size) => {
+                            const sizeState = color.sizeData[size] || { price: '', stock: '', sku: '', isActive: true }
+                            return (
+                              <div key={size} className="grid gap-3 rounded-md border p-3 md:grid-cols-4">
+                                <div className="font-medium">{size}</div>
+                                <div>
+                                  <Label className="text-xs">Price Override</Label>
+                                  <Input
+                                    type="number"
+                                    value={sizeState.price}
+                                    onChange={(e) =>
+                                      updateColor(color.id, {
+                                        sizeData: {
+                                          ...color.sizeData,
+                                          [size]: { ...sizeState, price: e.target.value },
+                                        },
+                                      })
+                                    }
+                                  />
+                                </div>
+                                <div>
+                                  <Label className="text-xs">Stock</Label>
+                                  <Input
+                                    type="number"
+                                    value={sizeState.stock}
+                                    onChange={(e) =>
+                                      updateColor(color.id, {
+                                        sizeData: {
+                                          ...color.sizeData,
+                                          [size]: { ...sizeState, stock: e.target.value },
+                                        },
+                                      })
+                                    }
+                                  />
+                                </div>
+                                <div>
+                                  <Label className="text-xs">SKU</Label>
+                                  <Input
+                                    value={sizeState.sku}
+                                    onChange={(e) =>
+                                      updateColor(color.id, {
+                                        sizeData: {
+                                          ...color.sizeData,
+                                          [size]: { ...sizeState, sku: e.target.value },
+                                        },
+                                      })
+                                    }
+                                  />
+                                </div>
+                                <div className="md:col-span-4 flex items-center gap-2">
+                                  <Checkbox
+                                    checked={sizeState.isActive}
+                                    onCheckedChange={(checked) =>
+                                      updateColor(color.id, {
+                                        sizeData: {
+                                          ...color.sizeData,
+                                          [size]: { ...sizeState, isActive: checked === true },
+                                        },
+                                      })
+                                    }
+                                  />
+                                  <Label className="text-sm">Active</Label>
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              <Button type="button" variant="outline" onClick={addColor} className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Add Another Color
+              </Button>
             </CardContent>
           </Card>
-
-          {/* Product Variants - Remove the old section */}
         </div>
 
-        {/* Sidebar */}
         <div className="space-y-6">
-          {/* Pricing */}
           <Card>
             <CardHeader>
               <CardTitle>Pricing</CardTitle>
@@ -393,73 +580,40 @@ export function ProductForm({ categories, product, defaultCategoryId, redirectPa
             <CardContent className="space-y-4">
               <div>
                 <Label htmlFor="price">Price (₹) *</Label>
-                <Input
-                  id="price"
-                  type="number"
-                  step="0.01"
-                  value={formData.price}
-                  onChange={(e) => handleInputChange('price', e.target.value)}
-                  placeholder="0.00"
-                  required
-                />
+                <Input id="price" type="number" step="0.01" value={formData.price} onChange={(e) => handleInputChange('price', e.target.value)} required />
               </div>
               <div>
                 <Label htmlFor="compareAtPrice">Compare at Price (₹)</Label>
-                <Input
-                  id="compareAtPrice"
-                  type="number"
-                  step="0.01"
-                  value={formData.compareAtPrice}
-                  onChange={(e) => handleInputChange('compareAtPrice', e.target.value)}
-                  placeholder="0.00"
-                />
+                <Input id="compareAtPrice" type="number" step="0.01" value={formData.compareAtPrice} onChange={(e) => handleInputChange('compareAtPrice', e.target.value)} />
               </div>
             </CardContent>
           </Card>
 
-          {/* Inventory */}
           <Card>
             <CardHeader>
               <CardTitle>Inventory</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label htmlFor="stockQuantity">Stock Quantity *</Label>
-                <Input
-                  id="stockQuantity"
-                  type="number"
-                  value={formData.stockQuantity}
-                  onChange={(e) => handleInputChange('stockQuantity', e.target.value)}
-                  placeholder="0"
-                  required
-                />
+                <Label>Total Variant Stock</Label>
+                <div className="rounded-md border bg-muted/40 px-3 py-2 font-medium">
+                  {totalVariantStock}
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Derived from the color and size variants below. Product-level stock is no longer edited here.
+                </p>
               </div>
               <div>
                 <Label htmlFor="lowStockThreshold">Low Stock Threshold</Label>
-                <Input
-                  id="lowStockThreshold"
-                  type="number"
-                  value={formData.lowStockThreshold}
-                  onChange={(e) => handleInputChange('lowStockThreshold', e.target.value)}
-                  placeholder="10"
-                />
+                <Input id="lowStockThreshold" type="number" value={formData.lowStockThreshold} onChange={(e) => handleInputChange('lowStockThreshold', e.target.value)} />
               </div>
               <div>
                 <Label htmlFor="sku">SKU (Optional)</Label>
-                <Input
-                  id="sku"
-                  value={formData.sku}
-                  onChange={(e) => handleInputChange('sku', e.target.value)}
-                  placeholder="Auto-generated if empty"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Leave empty to auto-generate from product name
-                </p>
+                <Input id="sku" value={formData.sku} onChange={(e) => handleInputChange('sku', e.target.value)} />
               </div>
             </CardContent>
           </Card>
 
-          {/* Organization */}
           <Card>
             <CardHeader>
               <CardTitle>Organization</CardTitle>
@@ -468,10 +622,7 @@ export function ProductForm({ categories, product, defaultCategoryId, redirectPa
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
                   <Label htmlFor="mainCategory">Main Category *</Label>
-                  <Select 
-                    value={formData.mainCategoryId} 
-                    onValueChange={(value) => handleInputChange('mainCategoryId', value)}
-                  >
+                  <Select value={formData.mainCategoryId} onValueChange={(value) => handleInputChange('mainCategoryId', value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select main category" />
                     </SelectTrigger>
@@ -483,26 +634,13 @@ export function ProductForm({ categories, product, defaultCategoryId, redirectPa
                       ))}
                     </SelectContent>
                   </Select>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Choose the primary category for this product
-                  </p>
                 </div>
-                
+
                 <div>
                   <Label htmlFor="subCategory">Sub-Category *</Label>
-                  <Select 
-                    value={formData.subCategoryId} 
-                    onValueChange={(value) => handleInputChange('subCategoryId', value)}
-                    disabled={!formData.mainCategoryId}
-                  >
+                  <Select value={formData.subCategoryId} onValueChange={(value) => handleInputChange('subCategoryId', value)} disabled={!formData.mainCategoryId}>
                     <SelectTrigger>
-                      <SelectValue placeholder={
-                        !formData.mainCategoryId 
-                          ? "Select main category first" 
-                          : availableSubCategories.length === 0
-                            ? "No sub-categories available"
-                            : "Select sub-category"
-                      } />
+                      <SelectValue placeholder={formData.mainCategoryId ? 'Select sub-category' : 'Select main category first'} />
                     </SelectTrigger>
                     <SelectContent>
                       {availableSubCategories.map((category) => (
@@ -512,63 +650,27 @@ export function ProductForm({ categories, product, defaultCategoryId, redirectPa
                       ))}
                     </SelectContent>
                   </Select>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {!formData.mainCategoryId 
-                      ? "Select a main category first"
-                      : availableSubCategories.length === 0
-                        ? "No sub-categories available for this main category"
-                        : "Choose the specific sub-category for this product"
-                    }
-                  </p>
                 </div>
               </div>
-              
-              {/* Category Hierarchy Display */}
-              {formData.mainCategoryId && formData.subCategoryId && (
-                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                  <p className="text-sm font-medium text-blue-800 mb-1">Product Category Path:</p>
-                  <p className="text-sm text-blue-700">
-                    {mainCategories.find(c => c.id === formData.mainCategoryId)?.name} 
-                    {' → '}
-                    {availableSubCategories.find(c => c.id === formData.subCategoryId)?.name}
-                  </p>
-                </div>
-              )}
-              
+
               <div>
                 <Label htmlFor="weight">Weight (kg)</Label>
-                <Input
-                  id="weight"
-                  type="number"
-                  step="0.01"
-                  value={formData.weight}
-                  onChange={(e) => handleInputChange('weight', e.target.value)}
-                  placeholder="0.00"
-                />
+                <Input id="weight" type="number" step="0.01" value={formData.weight} onChange={(e) => handleInputChange('weight', e.target.value)} />
               </div>
             </CardContent>
           </Card>
 
-          {/* Status */}
           <Card>
             <CardHeader>
               <CardTitle>Status</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="isActive"
-                  checked={formData.isActive}
-                  onCheckedChange={(checked) => handleInputChange('isActive', checked)}
-                />
+                <Checkbox id="isActive" checked={formData.isActive} onCheckedChange={(checked) => handleInputChange('isActive', checked === true)} />
                 <Label htmlFor="isActive">Active</Label>
               </div>
               <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="isFeatured"
-                  checked={formData.isFeatured}
-                  onCheckedChange={(checked) => handleInputChange('isFeatured', checked)}
-                />
+                <Checkbox id="isFeatured" checked={formData.isFeatured} onCheckedChange={(checked) => handleInputChange('isFeatured', checked === true)} />
                 <Label htmlFor="isFeatured">Featured</Label>
               </div>
             </CardContent>
@@ -576,7 +678,6 @@ export function ProductForm({ categories, product, defaultCategoryId, redirectPa
         </div>
       </div>
 
-      {/* Submit */}
       <div className="flex justify-end gap-4">
         <Button type="button" variant="outline" asChild>
           <Link href="/admin/products">Cancel</Link>

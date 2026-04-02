@@ -5,37 +5,76 @@ import { Badge } from "@/components/ui/badge"
 import { AlertCircle, Package, TrendingDown, RefreshCw, ChevronRight } from "lucide-react"
 import Link from "next/link"
 import { redirect } from "next/navigation"
-import { createClient } from "@/lib/supabase/server"
+import { getCurrentUserContext } from "@/lib/auth-middleware"
+import { InventoryReplenishButton } from "@/components/admin/inventory-replenish-button"
 
 export const dynamic = 'force-dynamic'
 
 export default async function AdminInventoryPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const context = await getCurrentUserContext()
 
-  if (!user) {
+  if (!context) {
     redirect("/auth/login?redirect=/admin/inventory")
   }
 
-  const admin = await prisma.adminUser.findUnique({ where: { userId: user.id } })
-  if (!admin) redirect("/")
+  if (!["admin", "staff", "super_admin"].includes(context.role)) {
+    redirect("/")
+  }
 
   const products = await prisma.product.findMany({
     include: {
-      productCategories: { include: { category: true }, where: { isPrimary: true }, take: 1 }
+      productCategories: {
+        include: { category: true },
+        orderBy: { isPrimary: 'desc' },
+      },
+      colors: {
+        orderBy: { sortOrder: 'asc' },
+        include: {
+          variants: {
+            orderBy: { sortOrder: 'asc' },
+          },
+        },
+      },
     },
-    orderBy: { stockQuantity: 'asc' }
+    orderBy: [{ isActive: 'desc' }, { createdAt: 'desc' }],
   })
 
   const auditLogs = await prisma.auditLog.findMany({
-    where: { action: "stock_adjustment" },
+    where: { action: { in: ["stock_adjustment", "variant_stock_update"] } },
     include: { actor: true },
     orderBy: { createdAt: 'desc' },
     take: 10
   })
 
-  const outOfStock = products.filter(p => p.stockQuantity <= 0).length
-  const lowStock = products.filter(p => p.stockQuantity > 0 && p.stockQuantity <= p.lowStockThreshold).length
+  const inventoryRows = products
+    .map((product) => {
+      const variants = product.colors.flatMap((color) =>
+        color.variants.map((variant) => ({
+          id: variant.id,
+          colorName: color.colorName,
+          size: variant.size || variant.value || variant.name || 'Size',
+          stock: Number(variant.stock || 0),
+          threshold: product.lowStockThreshold,
+        }))
+      )
+
+      const totalStock = variants.reduce((sum, variant) => sum + variant.stock, 0)
+      const lowVariants = variants.filter((variant) => variant.stock > 0 && variant.stock <= variant.threshold)
+      const outOfStockVariants = variants.filter((variant) => variant.stock <= 0)
+
+      return {
+        ...product,
+        variants,
+        totalStock,
+        lowVariants,
+        outOfStockVariants,
+        primaryCategory: product.productCategories[0]?.category,
+      }
+    })
+    .sort((a, b) => a.totalStock - b.totalStock)
+
+  const outOfStock = inventoryRows.filter((product) => product.totalStock <= 0).length
+  const lowStock = inventoryRows.filter((product) => product.totalStock > 0 && product.totalStock <= product.lowStockThreshold).length
 
   return (
     <div className="flex min-h-screen flex-col bg-muted/10">
@@ -67,14 +106,15 @@ export default async function AdminInventoryPage() {
                       <tr className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground border-b bg-muted/10">
                         <th className="px-6 py-4 text-left">Product / SKU</th>
                         <th className="px-6 py-4 text-center">Threshold</th>
-                        <th className="px-6 py-4 text-center">Available Stock</th>
+                        <th className="px-6 py-4 text-center">Variant Stock</th>
+                        <th className="px-6 py-4 text-left">Low Variants</th>
                         <th className="px-6 py-4 text-right">Status</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y">
-                      {products.map((product) => {
-                        const isLow = product.stockQuantity <= product.lowStockThreshold
-                        const isOut = product.stockQuantity <= 0
+                      {inventoryRows.map((product) => {
+                        const isLow = product.totalStock <= product.lowStockThreshold && product.totalStock > 0
+                        const isOut = product.totalStock <= 0
                         return (
                           <tr key={product.id} className="hover:bg-muted/5 transition-colors group">
                             <td className="px-6 py-6">
@@ -84,14 +124,34 @@ export default async function AdminInventoryPage() {
                               <div className="flex items-center gap-2 mt-1">
                                 <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">SKU: {product.sku || product.id.slice(0, 8)}</p>
                                 <span className="text-muted-foreground/30">•</span>
-                                <p className="text-[10px] text-muted-foreground uppercase">{product.productCategories[0]?.category.name}</p>
+                                <p className="text-[10px] text-muted-foreground uppercase">{product.primaryCategory?.name || 'Uncategorized'}</p>
+                                <span className="text-muted-foreground/30">•</span>
+                                <p className="text-[10px] text-muted-foreground uppercase">{product.variants.length} variants</p>
                               </div>
                             </td>
                             <td className="px-6 py-6 text-center text-xs font-mono opacity-50">{product.lowStockThreshold}</td>
                             <td className="px-6 py-6 text-center">
                               <span className={`text-lg font-black ${isOut ? 'text-red-600' : isLow ? 'text-amber-600' : 'text-black'}`}>
-                                {product.stockQuantity}
+                                {product.totalStock}
                               </span>
+                            </td>
+                            <td className="px-6 py-6 text-left">
+                              {product.lowVariants.length > 0 ? (
+                                <div className="space-y-1">
+                                  {product.lowVariants.slice(0, 3).map((variant) => (
+                                    <div key={variant.id} className="text-[10px] uppercase font-bold tracking-widest text-amber-700">
+                                      {variant.colorName} / {variant.size} - {variant.stock}
+                                    </div>
+                                  ))}
+                                  {product.lowVariants.length > 3 && (
+                                    <div className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">
+                                      +{product.lowVariants.length - 3} more
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground/50">None</span>
+                              )}
                             </td>
                             <td className="px-6 py-6 text-right">
                               <Badge variant="outline" className={`rounded-none px-3 py-1 text-[9px] font-black uppercase tracking-widest ${isOut ? 'bg-red-50 text-red-700 border-red-200' : isLow ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-green-50 text-green-700 border-green-200'}`}>
@@ -133,9 +193,7 @@ export default async function AdminInventoryPage() {
                   </div>
                 </div>
                 <div className="mt-10">
-                  <button className="w-full h-11 border border-white/20 text-[10px] font-bold uppercase tracking-widest hover:bg-white hover:text-black transition-all">
-                    Run Auto-Replenish Check
-                  </button>
+                  <InventoryReplenishButton />
                 </div>
               </Card>
 

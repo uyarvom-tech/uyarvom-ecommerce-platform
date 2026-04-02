@@ -9,7 +9,7 @@ async function checkSuperAdmin() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) throw new Error("Unauthorized")
 
-    const admin = await (prisma as any).adminUser.findUnique({
+    const admin = await prisma.adminUser.findUnique({
         where: { userId: user.id }
     })
 
@@ -22,7 +22,7 @@ async function checkSuperAdmin() {
 export async function updateSystemSetting(key: string, value: string) {
     try {
         await checkSuperAdmin()
-        await (prisma as any).systemSetting.upsert({
+        await prisma.systemSetting.upsert({
             where: { key },
             update: { value },
             create: { key, value }
@@ -47,14 +47,32 @@ export async function upsertHeroBanner(payload: {
 }) {
     try {
         await checkSuperAdmin()
+        if (!payload.title.trim()) {
+            return { error: "Title is required" }
+        }
+        if (!payload.imageUrl.trim()) {
+            return { error: "Image URL is required" }
+        }
+
+        const displayOrder = Number.isFinite(payload.displayOrder) ? Number(payload.displayOrder) : 0
+        const data = {
+            title: payload.title.trim(),
+            subtitle: payload.subtitle?.trim() || null,
+            imageUrl: payload.imageUrl.trim(),
+            linkUrl: payload.linkUrl?.trim() || null,
+            buttonText: payload.buttonText?.trim() || null,
+            displayOrder,
+            isActive: payload.isActive ?? true,
+        }
+
         if (payload.id) {
-            await (prisma as any).heroBanner.update({
+            await prisma.heroBanner.update({
                 where: { id: payload.id },
-                data: { ...payload, id: undefined }
+                data
             })
         } else {
-            await (prisma as any).heroBanner.create({
-                data: payload
+            await prisma.heroBanner.create({
+                data
             })
         }
         revalidatePath("/")
@@ -68,7 +86,7 @@ export async function upsertHeroBanner(payload: {
 export async function deleteHeroBanner(id: string) {
     try {
         await checkSuperAdmin()
-        await (prisma as any).heroBanner.delete({
+        await prisma.heroBanner.delete({
             where: { id }
         })
         revalidatePath("/")
