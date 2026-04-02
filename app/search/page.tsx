@@ -61,6 +61,10 @@ export default async function SearchPage({
             images: { orderBy: { sortOrder: 'asc' } },
             variants: { where: { isActive: true }, orderBy: { sortOrder: 'asc' } }
           }
+        },
+        variants: {
+          where: { isActive: true },
+          orderBy: { sortOrder: 'asc' }
         }
       },
       orderBy: { createdAt: 'desc' },

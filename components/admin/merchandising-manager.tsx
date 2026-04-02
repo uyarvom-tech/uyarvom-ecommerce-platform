@@ -153,7 +153,7 @@ export function MerchandisingManager({ banners }: { banners: MerchandisingBanner
               <Image src={banner.imageUrl} alt={banner.title} fill className="object-cover opacity-60 group-hover:opacity-80 transition-opacity" />
               <div className="absolute inset-x-6 bottom-6">
                 <Badge className={`mb-3 rounded-none px-3 text-[9px] font-black uppercase tracking-widest ${banner.isActive ? "bg-green-600" : "bg-red-600"}`}>
-                  {banner.isActive ? "Operational" : "Offline"}
+                  {banner.isActive ? "Active" : "Inactive"}
                 </Badge>
                 <h3 className="text-white font-playfair text-2xl font-black mb-1">{banner.title}</h3>
                 <p className="text-white/70 text-[10px] uppercase tracking-widest font-bold truncate">{banner.subtitle}</p>
@@ -195,7 +195,7 @@ export function MerchandisingManager({ banners }: { banners: MerchandisingBanner
         {banners.length === 0 && (
           <Card className="lg:col-span-2 border-2 border-dashed border-muted bg-white/50 p-20 flex flex-col items-center justify-center text-center">
             <Layout className="h-10 w-10 text-muted-foreground mb-4 opacity-20" />
-            <p className="text-muted-foreground text-xs font-bold uppercase tracking-widest">No active hero banners detected in the matrix</p>
+            <p className="text-muted-foreground text-xs font-bold uppercase tracking-widest">No active banners found</p>
             <Button type="button" onClick={openCreate} className="mt-6 bg-black text-white px-8 h-10 text-[10px] items-center gap-2">
               <Plus className="h-4 w-4" />
               Construct Primary Banner

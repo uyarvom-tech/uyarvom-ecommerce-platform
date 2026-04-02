@@ -5,6 +5,7 @@ import FlipkartProductGallery from "@/components/flipkart-product-gallery"
 import { ProductActionArea } from "@/components/product-action-area"
 import { ProductReviews } from "@/components/product-reviews"
 import { ProductVariantProvider } from "@/components/product-variant-context"
+import { WishlistButton } from "@/components/wishlist-button"
 import { Star } from "lucide-react"
 import { notFound } from "next/navigation"
 import type { Metadata } from "next"
@@ -69,6 +70,10 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           },
         },
       },
+      variants: {
+        where: { isActive: true },
+        orderBy: { sortOrder: "asc" },
+      },
       reviews: {
         select: {
           rating: true,
@@ -123,16 +128,22 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
               <div className="flex flex-col space-y-10">
                 <div className="space-y-6">
-                  <div className="flex items-center gap-4">
-                    <span className="text-primary text-[10px] font-bold uppercase tracking-[0.4em]">
-                      {primaryCategory?.name || "Artisanal Collection"}
-                    </span>
-                    <div className="h-[1px] w-8 bg-border"></div>
-                    {new Date(product.createdAt) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) && (
-                      <span className="text-foreground text-[10px] font-bold uppercase tracking-[0.4em]">
-                        New Arrival
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex flex-wrap items-center gap-4">
+                      <span className="text-primary text-[10px] font-bold uppercase tracking-[0.4em]">
+                        {primaryCategory?.name || "Artisanal Collection"}
                       </span>
-                    )}
+                      <div className="h-[1px] w-8 bg-border"></div>
+                      {new Date(product.createdAt) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) && (
+                        <span className="text-foreground text-[10px] font-bold uppercase tracking-[0.4em]">
+                          New Arrival
+                        </span>
+                      )}
+                    </div>
+                    <WishlistButton
+                      productId={product.id}
+                      className="h-11 w-11 rounded-full border-border/70 bg-white text-foreground shadow-sm hover:bg-primary hover:text-white"
+                    />
                   </div>
 
                   <h1 className="text-4xl md:text-6xl font-serif text-foreground leading-[1.1]">

@@ -87,17 +87,16 @@ export function CatalogView({ categories, userRole = 'staff' }: CatalogViewProps
 
   return (
     <div className="space-y-10">
-      {/* Operative Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-          <h1 className="text-5xl font-black tracking-tighter uppercase mb-2">Architectural Nodes</h1>
-          <p className="text-muted-foreground text-sm font-bold uppercase tracking-[.3em]">Configure high-level taxonomies for digital distribution</p>
+          <h1 className="text-5xl font-black tracking-tighter uppercase mb-2">Categories</h1>
+          <p className="text-muted-foreground text-sm font-bold uppercase tracking-[.3em]">Manage product groups and subgroups</p>
         </div>
         <Button
           onClick={() => router.push('/admin/catalog/new')}
           className="bg-black text-white hover:bg-black/90 rounded-none h-12 px-8 text-[10px] font-black uppercase tracking-widest flex items-center gap-2"
         >
-          <Plus className="h-4 w-4" /> Initialize New Category
+          <Plus className="h-4 w-4" /> Add Category
         </Button>
       </div>
 
@@ -107,7 +106,7 @@ export function CatalogView({ categories, userRole = 'staff' }: CatalogViewProps
           <div className="relative flex-1">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Find category node..."
+              placeholder="Search categories..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-12 rounded-none border-muted h-11 text-xs bg-white shadow-sm"
@@ -181,16 +180,16 @@ export function CatalogView({ categories, userRole = 'staff' }: CatalogViewProps
                   )}
                 </div>
                 <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mb-6 h-4 overflow-hidden truncate">
-                  {category.description || 'No conceptual description'}
+                  {category.description || 'No description available'}
                 </p>
                 <div className="flex justify-between items-center border-t border-black/5 pt-4">
                   <div className="space-y-1">
-                    <p className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">Topology</p>
-                    <p className="text-[10px] font-black uppercase tracking-widest">{category.subCategoryCount} Childs</p>
+                    <p className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">Subcategories</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest">{category.subCategoryCount} items</p>
                   </div>
                   <div className="text-right space-y-1">
-                    <p className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">Inventory</p>
-                    <p className="text-[10px] font-black uppercase tracking-widest">{category.productCount} Assets</p>
+                    <p className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">Products</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest">{category.productCount} products</p>
                   </div>
                 </div>
               </div>
@@ -201,10 +200,10 @@ export function CatalogView({ categories, userRole = 'staff' }: CatalogViewProps
         <div className="bg-white border rounded-none overflow-hidden shadow-sm">
           <table className="w-full text-left">
             <thead>
-              <tr className="border-b bg-muted/30 text-[10px] font-black uppercase tracking-[.2em] text-muted-foreground">
-                <th className="px-6 py-4">Node Identity</th>
-                <th className="px-6 py-4">Structure</th>
-                <th className="px-6 py-4">Asset Volume</th>
+            <tr className="border-b bg-muted/30 text-[10px] font-black uppercase tracking-[.2em] text-muted-foreground">
+                <th className="px-6 py-4">Category</th>
+                <th className="px-6 py-4">Subcategories</th>
+                <th className="px-6 py-4">Products</th>
                 <th className="px-6 py-4">Status</th>
                 <th className="px-6 py-4"></th>
               </tr>
@@ -222,12 +221,12 @@ export function CatalogView({ categories, userRole = 'staff' }: CatalogViewProps
                   </td>
                   <td className="px-6 py-6">
                     <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                      {category.subCategoryCount} Sub-Categories
+                    {category.subCategoryCount} subcategories
                     </p>
                   </td>
                   <td className="px-6 py-6">
                     <p className="text-sm font-black italic tracking-tighter">
-                      {category.productCount} Global Assets
+                      {category.productCount} products
                     </p>
                   </td>
                   <td className="px-6 py-6">
@@ -252,8 +251,8 @@ export function CatalogView({ categories, userRole = 'staff' }: CatalogViewProps
       {filteredCategories.length === 0 && (
         <div className="py-32 text-center border-2 border-dashed border-black/5 bg-white shadow-inner">
           <Folder className="h-20 w-20 mx-auto mb-6 text-muted-foreground opacity-10" />
-          <h3 className="text-2xl font-black uppercase tracking-tight mb-2">No nodes discovered</h3>
-          <p className="text-muted-foreground font-bold uppercase tracking-[.2em] text-[10px]">Adjust search parameters or initialize new high-level node</p>
+          <h3 className="text-2xl font-black uppercase tracking-tight mb-2">No categories found</h3>
+          <p className="text-muted-foreground font-bold uppercase tracking-[.2em] text-[10px]">Try a different search or add a new category</p>
         </div>
       )}
 
@@ -261,18 +260,18 @@ export function CatalogView({ categories, userRole = 'staff' }: CatalogViewProps
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent className="rounded-none border-4 border-black">
           <AlertDialogHeader>
-            <AlertDialogTitle className="font-black uppercase tracking-tighter text-3xl italic">Confirm Purge</AlertDialogTitle>
+            <AlertDialogTitle className="font-black uppercase tracking-tighter text-3xl italic">Delete Category</AlertDialogTitle>
             <AlertDialogDescription className="text-sm font-bold uppercase tracking-widest py-4 border-y border-black/5 my-4">
-              Authorized personnel only. Are you sure you want to permanently delete "{categoryToDelete?.name}"? All relational data will be affected.
+              Are you sure you want to delete "{categoryToDelete?.name}"? This cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-none uppercase text-xs font-black">Abort</AlertDialogCancel>
+            <AlertDialogCancel className="rounded-none uppercase text-xs font-black">Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirm}
               className="bg-red-600 text-white rounded-none uppercase text-xs font-black hover:bg-red-700"
             >
-              {isDeleting ? 'Processing...' : 'Execute Purge'}
+              {isDeleting ? 'Deleting...' : 'Delete'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -284,7 +283,7 @@ export function CatalogView({ categories, userRole = 'staff' }: CatalogViewProps
         type="category"
         itemId={ticketCategoryId || ''}
         itemName={ticketCategoryName}
-        onTicketCreated={() => toast.success('Purge request registered in governance log')}
+        onTicketCreated={() => toast.success('Delete request sent for review')}
       />
     </div>
   )

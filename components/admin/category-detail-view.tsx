@@ -94,7 +94,6 @@ export function CategoryDetailView({ mainCategory, subCategories, userRole = 'st
 
   return (
     <div className="space-y-10">
-      {/* Operative Header */}
       <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
         <div className="flex gap-6">
           <button
@@ -105,13 +104,13 @@ export function CategoryDetailView({ mainCategory, subCategories, userRole = 'st
           </button>
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-[10px] font-black uppercase tracking-[.3em] text-muted-foreground">Architectural Tree</span>
+              <span className="text-[10px] font-black uppercase tracking-[.3em] text-muted-foreground">Catalog</span>
               <ChevronRight className="h-3 w-3 text-muted-foreground/30" />
               <span className="text-[10px] font-black uppercase tracking-[.3em]">{mainCategory.name}</span>
             </div>
             <h1 className="text-5xl font-black tracking-tighter uppercase mb-4">{mainCategory.name}</h1>
             <p className="max-w-xl text-muted-foreground text-sm font-medium leading-relaxed italic border-l-2 border-black/5 pl-6 py-1">
-              {mainCategory.description || 'No specialized metadata available for this node.'}
+              {mainCategory.description || 'No description available.'}
             </p>
           </div>
         </div>
@@ -128,22 +127,21 @@ export function CategoryDetailView({ mainCategory, subCategories, userRole = 'st
             onClick={() => router.push(`/admin/catalog/${mainCategory.id}/new`)}
             className="bg-black text-white hover:bg-black/90 rounded-none h-12 px-8 text-[10px] font-black uppercase tracking-widest flex items-center gap-2"
           >
-            <Plus className="h-4 w-4" /> Append Sub-Node
+            <Plus className="h-4 w-4" /> Add Subcategory
           </Button>
         </div>
       </div>
 
       <div className="grid gap-10 lg:grid-cols-3">
-        {/* Left: Sub-Category Intelligence */}
         <div className="lg:col-span-2 space-y-8">
           <div className="flex items-center justify-between border-b border-black/5 pb-6">
             <h3 className="text-xs font-black uppercase tracking-[.2em] flex items-center gap-2">
-              <Layers className="h-4 w-4" /> Relational Sub-Nodes ({subCategories.length})
+              <Layers className="h-4 w-4" /> Subcategories ({subCategories.length})
             </h3>
             <div className="relative w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input
-                placeholder="Filter hierarchy..."
+                placeholder="Search subcategories..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9 h-9 border-muted rounded-none text-xs bg-white"
@@ -167,7 +165,7 @@ export function CategoryDetailView({ mainCategory, subCategories, userRole = 'st
                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-4">/{sub.slug}</p>
                 <div className="flex justify-between items-end">
                   <Badge variant="outline" className="rounded-none text-[9px] font-black uppercase border-black/10">
-                    {sub.productCount} Assets Linked
+                    {sub.productCount} Products
                   </Badge>
                   <ChevronRight className="h-4 w-4 transform group-hover:translate-x-1 transition-transform" />
                 </div>
@@ -177,13 +175,12 @@ export function CategoryDetailView({ mainCategory, subCategories, userRole = 'st
 
             {filteredSubCategories.length === 0 && (
               <div className="col-span-full py-20 text-center border-2 border-dashed border-black/5 bg-white/50">
-                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">No child nodes discovered in this branch</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">No subcategories found</p>
               </div>
             )}
           </div>
         </div>
 
-        {/* Right: Asset Health & Control */}
         <div className="space-y-10">
           <Card className="rounded-none border-none bg-black text-white p-8">
             <h3 className="text-[10px] font-black uppercase tracking-[.3em] mb-8 pb-4 border-b border-white/10">Hierarchy Control</h3>
@@ -199,19 +196,19 @@ export function CategoryDetailView({ mainCategory, subCategories, userRole = 'st
               </div>
 
               <div className="pt-6">
-                <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-3">Governance Status</p>
+                <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-3">Status</p>
                 <div className="flex items-center gap-3">
                   <div className={`h-2 w-2 rounded-full ${mainCategory.isActive ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-red-500'}`} />
-                  <span className="text-[10px] font-black uppercase tracking-widest">{mainCategory.isActive ? 'Network Live' : 'Network Obscured'}</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest">{mainCategory.isActive ? 'Active' : 'Inactive'}</span>
                 </div>
               </div>
 
               <div className="pt-10 flex flex-col gap-3">
                 <button className="h-11 border border-white/20 text-[10px] font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all">
-                  Synchronize Assets
+                  Sync Products
                 </button>
                 <button className="h-11 border border-white/20 text-[10px] font-black uppercase tracking-widest hover:bg-red-600 hover:border-red-600 transition-all">
-                  Decommission Node
+                  Delete Category
                 </button>
               </div>
             </div>
@@ -219,17 +216,17 @@ export function CategoryDetailView({ mainCategory, subCategories, userRole = 'st
 
           <div className="bg-white border p-6">
             <h4 className="text-[10px] font-black uppercase tracking-widest mb-4 flex items-center gap-2">
-              <MoreVertical className="h-3 w-3" /> Branch Operations
+              <MoreVertical className="h-3 w-3" /> More Actions
             </h4>
             <ul className="space-y-4">
               <li>
                 <button className="text-[10px] font-bold uppercase tracking-widest underline decoration-muted hover:decoration-black transition-all">
-                  Export Logical Structure (.JSON)
+                  Export JSON
                 </button>
               </li>
               <li>
                 <button className="text-[10px] font-bold uppercase tracking-widest underline decoration-muted hover:decoration-black transition-all">
-                  Move all children to sibling
+                  Move all subcategories
                 </button>
               </li>
             </ul>
@@ -241,18 +238,18 @@ export function CategoryDetailView({ mainCategory, subCategories, userRole = 'st
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent className="rounded-none border-4 border-black">
           <AlertDialogHeader>
-            <AlertDialogTitle className="font-black uppercase tracking-tighter text-3xl italic">Purge Sub-Node</AlertDialogTitle>
+            <AlertDialogTitle className="font-black uppercase tracking-tighter text-3xl italic">Delete Subcategory</AlertDialogTitle>
             <AlertDialogDescription className="text-sm font-bold uppercase tracking-widest py-4 border-y border-black/5 my-4">
-              Authorized personnel only. Deleting "{categoryToDelete?.name}" will decouple linked assets. This action is irreversible.
+              Deleting "{categoryToDelete?.name}" will remove this subcategory. This cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-none uppercase text-xs font-black">Abort</AlertDialogCancel>
+            <AlertDialogCancel className="rounded-none uppercase text-xs font-black">Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirm}
               className="bg-red-600 text-white rounded-none uppercase text-xs font-black hover:bg-red-700"
             >
-              {isDeleting ? 'Executing...' : 'Confirm Purge'}
+              {isDeleting ? 'Deleting...' : 'Delete'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -264,7 +261,7 @@ export function CategoryDetailView({ mainCategory, subCategories, userRole = 'st
         type="category"
         itemId={ticketCategoryId || ''}
         itemName={ticketCategoryName}
-        onTicketCreated={() => toast.success('Purge request submitted for administrative review')}
+        onTicketCreated={() => toast.success('Delete request sent for review')}
       />
     </div>
   )

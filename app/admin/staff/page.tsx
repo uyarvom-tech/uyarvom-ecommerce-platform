@@ -40,9 +40,9 @@ export default async function StaffPage() {
   const transformedStaff = staff.map((u: any) => ({
     id: u.id,
     email: u.email,
-    fullName: u.fullName || 'Unidentified Personnel',
+    fullName: u.fullName || 'No Name',
     avatarUrl: u.avatarUrl,
-    role: u.adminProfile?.role || 'staff',
+    role: u.adminProfile?.role === 'staff' ? 'manager' : (u.adminProfile?.role || 'manager'),
     createdAt: u.createdAt,
     lastLogin: u.updatedAt,
     isActive: true

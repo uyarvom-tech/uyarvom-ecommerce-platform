@@ -123,10 +123,10 @@ export default async function AdminDashboard() {
       <main className="flex-1 px-8 py-10">
         <div className="container mx-auto max-w-7xl">
           <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
-            <div>
-              <h1 className="text-6xl font-black tracking-tighter uppercase mb-2">Operations Hub</h1>
+          <div>
+              <h1 className="text-6xl font-black tracking-tighter uppercase mb-2">Admin Dashboard</h1>
               <p className="text-muted-foreground text-sm font-bold uppercase tracking-[.3em]">
-                Command Center for Uyarvom Digital Asset Management
+                Orders, products, stock, and support
               </p>
             </div>
 
@@ -135,12 +135,12 @@ export default async function AdminDashboard() {
                 <p className="text-[8px] font-bold uppercase tracking-widest text-gray-500 mb-1">Status</p>
                 <div className="flex items-center gap-2">
                   <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-                  <span className="text-[10px] font-black uppercase">Live System</span>
+                  <span className="text-[10px] font-black uppercase">Online</span>
                 </div>
               </div>
               <div className="px-6 py-2 text-center">
-                <p className="text-[8px] font-bold uppercase tracking-widest text-gray-500 mb-1">Session</p>
-                <span className="text-[10px] font-black uppercase">{admin.role.replace("_", " ")}</span>
+                <p className="text-[8px] font-bold uppercase tracking-widest text-gray-500 mb-1">Role</p>
+                <span className="text-[10px] font-black uppercase">{admin.role === "super_admin" ? "Super Admin" : "Admin"}</span>
               </div>
             </div>
           </div>
@@ -148,15 +148,15 @@ export default async function AdminDashboard() {
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-12">
             {[
               {
-                label: "Gross Revenue",
+                label: "Revenue",
                 value: `Rs.${(totalRevenue._sum.total || 0).toLocaleString("en-IN")}`,
                 icon: TrendingUp,
                 color: "text-green-600",
-                note: "Total system volume",
+                note: "Total sales",
               },
-              { label: "Active Orders", value: pendingOrders, icon: ShoppingCart, color: "text-blue-600", note: "Needs fulfillment" },
-              { label: "SKU Library", value: totalProducts, icon: Package, color: "text-black", note: `${activeProducts} active SKU` },
-              { label: "Critical Stock", value: lowStockCount, icon: AlertCircle, color: "text-red-600", note: "Threshold violations", alert: lowStockCount > 0 },
+              { label: "Pending Orders", value: pendingOrders, icon: ShoppingCart, color: "text-blue-600", note: "Needs action" },
+              { label: "Products", value: totalProducts, icon: Package, color: "text-black", note: `${activeProducts} active` },
+              { label: "Low Stock", value: lowStockCount, icon: AlertCircle, color: "text-red-600", note: "Needs restock", alert: lowStockCount > 0 },
             ].map((stat, i) => (
               <Card key={i} className="rounded-none border-none shadow-sm overflow-hidden group hover:shadow-xl transition-all">
                 <CardContent className="p-8">
@@ -184,10 +184,10 @@ export default async function AdminDashboard() {
                 <CardHeader className="border-b bg-muted/5 py-6">
                   <div className="flex justify-between items-center">
                     <CardTitle className="text-xs font-black uppercase tracking-[.2em] flex items-center gap-2">
-                      <Clock className="h-4 w-4" /> Latest Operational Activity
+                      <Clock className="h-4 w-4" /> Recent Orders
                     </CardTitle>
                     <Link href="/admin/orders" className="text-[9px] font-bold uppercase tracking-widest hover:underline">
-                      View All Intelligence
+                      View All
                     </Link>
                   </div>
                 </CardHeader>
@@ -235,24 +235,24 @@ export default async function AdminDashboard() {
                   <Settings className="h-16 w-16" />
                 </div>
                 <h3 className="text-[10px] font-black uppercase tracking-[.25em] mb-10 pb-4 border-b border-white/10">
-                  Command Directives
+                  Quick Actions
                 </h3>
                 <div className="space-y-3">
                   <Button asChild className="w-full justify-between bg-white text-black hover:bg-white/90 rounded-none h-12 text-[10px] font-black uppercase tracking-widest px-6">
                     <Link href="/admin/catalog/new">
-                      Initialize New Category
+                      Add Category
                       <Plus className="h-4 w-4" />
                     </Link>
                   </Button>
                   <Button asChild variant="outline" className="w-full justify-between border-white/20 text-white hover:bg-white hover:text-black rounded-none h-12 text-[10px] font-black uppercase tracking-widest px-6">
                     <Link href="/admin/products/new">
-                      Deploy Asset Group
+                      Add Product
                       <Package className="h-4 w-4" />
                     </Link>
                   </Button>
                   <Button asChild variant="outline" className="w-full justify-between border-white/20 text-white hover:bg-white hover:text-black rounded-none h-12 text-[10px] font-black uppercase tracking-widest px-6">
                     <Link href="/admin/support">
-                      Intervene in Concierge
+                      View Support
                       <Eye className="h-4 w-4" />
                     </Link>
                   </Button>
@@ -268,7 +268,7 @@ export default async function AdminDashboard() {
 
               <Card className="rounded-none border-none shadow-sm">
                 <CardHeader className="border-b bg-muted/5 py-6">
-                  <CardTitle className="text-[10px] font-black uppercase tracking-widest">Most Popular Assets</CardTitle>
+              <CardTitle className="text-[10px] font-black uppercase tracking-widest">Top Products</CardTitle>
                 </CardHeader>
                 <CardContent className="p-6">
                   <div className="space-y-6">

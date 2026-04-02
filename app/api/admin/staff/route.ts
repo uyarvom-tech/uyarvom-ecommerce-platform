@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
       email: member.email,
       fullName: member.fullName || "Unidentified Personnel",
       avatarUrl: member.avatarUrl,
-      role: member.adminProfile?.role || "staff",
+      role: member.adminProfile?.role === "staff" ? "manager" : member.adminProfile?.role || "manager",
       createdAt: member.createdAt,
       lastLogin: member.adminProfile?.lastActiveAt || member.updatedAt,
       isActive: member.adminProfile?.isActive ?? true,
@@ -70,7 +70,53 @@ export async function POST(request: NextRequest) {
       return authResult
     }
 
-    const { email, fullName, role, password } = await request.json()
+    const { email, fullName, role, password, userId } = await request.json()
+
+    const validRoles = ["manager", "admin", "staff"]
+    if (!validRoles.includes(role)) {
+      return NextResponse.json(
+        { error: "Invalid role. Must be manager or admin" },
+        { status: 400 }
+      )
+    }
+
+    const normalizedRole = role === "manager" ? "staff" : role
+
+    if (userId) {
+      const existingUser = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, email: true, fullName: true },
+      })
+
+      if (!existingUser) {
+        return NextResponse.json({ error: "User not found" }, { status: 404 })
+      }
+
+      await prisma.adminUser.upsert({
+        where: { userId },
+        create: {
+          userId,
+          role: normalizedRole,
+        },
+        update: {
+          role: normalizedRole,
+        },
+      })
+
+      return NextResponse.json({
+        message: "Staff member updated successfully",
+        staff: {
+          id: existingUser.id,
+          email: existingUser.email,
+          fullName: existingUser.fullName,
+          role,
+          avatarUrl: null,
+          createdAt: new Date().toISOString(),
+          lastLogin: new Date().toISOString(),
+          isActive: true,
+        },
+      })
+    }
 
     if (!email || !fullName || !role || !password) {
       return NextResponse.json(
@@ -84,14 +130,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid email format" }, { status: 400 })
     }
 
-    const validRoles = ["staff", "admin"]
-    if (!validRoles.includes(role)) {
-      return NextResponse.json(
-        { error: "Invalid role. Must be staff or admin" },
-        { status: 400 }
-      )
-    }
-
     const existingUser = await prisma.user.findUnique({
       where: { email },
       select: { id: true },
@@ -99,7 +137,7 @@ export async function POST(request: NextRequest) {
 
     if (existingUser) {
       return NextResponse.json(
-        { error: "A user with this email already exists" },
+        { error: "This email already exists. Search for the user and add them as staff instead." },
         { status: 409 }
       )
     }
@@ -118,35 +156,35 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const userId = authData.user.id
+    const createdUserId = authData.user.id
 
     await prisma.$transaction([
       prisma.user.create({
         data: {
-          id: userId,
+          id: createdUserId,
           email,
           fullName,
         },
       }),
       prisma.adminUser.create({
         data: {
-          userId,
-          role,
+          userId: createdUserId,
+          role: normalizedRole,
         },
       }),
     ])
 
     return NextResponse.json({
       message: "Staff member created successfully",
-      staff: {
-        id: userId,
-        email,
-        fullName,
-        role,
-        avatarUrl: null,
-        createdAt: new Date().toISOString(),
-        lastLogin: new Date().toISOString(),
-        isActive: true,
+        staff: {
+          id: createdUserId,
+          email,
+          fullName,
+          role,
+          avatarUrl: null,
+          createdAt: new Date().toISOString(),
+          lastLogin: new Date().toISOString(),
+          isActive: true,
       },
     })
   } catch (error: any) {

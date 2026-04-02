@@ -104,6 +104,10 @@ export default async function ProductsPage({
                 },
               },
             },
+            variants: {
+              where: { isActive: true },
+              orderBy: { sortOrder: "asc" },
+            },
           },
           orderBy,
         })
@@ -146,6 +150,10 @@ export default async function ProductsPage({
                 orderBy: { sortOrder: "asc" },
               },
             },
+          },
+          variants: {
+            where: { isActive: true },
+            orderBy: { sortOrder: "asc" },
           },
         },
       })

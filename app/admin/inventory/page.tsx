@@ -83,11 +83,11 @@ export default async function AdminInventoryPage() {
         <div className="container mx-auto max-w-7xl">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
             <div>
-              <h1 className="text-4xl font-black tracking-tight mb-2 uppercase">Stock Governance</h1>
-              <p className="text-muted-foreground text-sm uppercase tracking-widest font-bold">Monitor and synchronize physical inventory levels</p>
+              <h1 className="text-4xl font-black tracking-tight mb-2 uppercase">Inventory</h1>
+              <p className="text-muted-foreground text-sm uppercase tracking-widest font-bold">Track stock by product variant</p>
             </div>
             <Link href="/admin/products/new" className="bg-black text-white px-8 h-12 flex items-center text-[10px] font-bold uppercase tracking-widest hover:bg-black/90">
-              Onboard New Product
+              Add Product
             </Link>
           </div>
 
@@ -97,7 +97,7 @@ export default async function AdminInventoryPage() {
               <Card className="rounded-none border-none shadow-sm">
                 <CardHeader className="border-b bg-muted/5 py-6">
                   <CardTitle className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-                    <Package className="h-4 w-4" /> SKU Inventory Matrix
+                    <Package className="h-4 w-4" /> Stock List
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">

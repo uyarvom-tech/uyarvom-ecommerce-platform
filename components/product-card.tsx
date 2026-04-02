@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { Heart, ShoppingCart, Star } from "lucide-react"
+import { ShoppingCart, Star } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
@@ -11,6 +11,7 @@ import { PRODUCT_FALLBACK_IMAGE } from "@/lib/image-fallbacks"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { getDefaultVariant, getVariantStockSummary } from "@/lib/variant-stock"
+import { WishlistButton } from "@/components/wishlist-button"
 
 interface ProductCardProps {
   product: FlexibleProduct
@@ -140,16 +141,12 @@ export function ProductCard({ product }: ProductCardProps) {
             )}
           </div>
 
-          <button
-            type="button"
-            onClick={(event) => {
-              event.preventDefault()
-              event.stopPropagation()
-            }}
-            className="absolute right-3 top-3 z-10 flex h-10 w-10 items-center justify-center rounded-xl border border-white/40 bg-white/80 text-foreground backdrop-blur transition-all duration-300 hover:bg-primary hover:text-white"
-          >
-            <Heart className="h-4 w-4" />
-          </button>
+          <div className="absolute right-3 top-3 z-10">
+            <WishlistButton
+              productId={product.id}
+              className="h-10 w-10 rounded-xl border border-white/40 bg-white/80 text-foreground backdrop-blur transition-all duration-300 hover:bg-primary hover:text-white"
+            />
+          </div>
 
           {displayImages.map((image, index) => (
             <div

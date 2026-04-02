@@ -87,9 +87,9 @@ export function TicketManagement({ tickets: initialTickets }: TicketManagementPr
       {/* Metrics Surface */}
       <div className="grid gap-6 md:grid-cols-3">
         {[
-          { label: "Pending Intervention", value: tickets.filter(t => t.status === 'pending').length, color: "text-orange-600", icon: Clock },
-          { label: "Total Executions", value: tickets.filter(t => t.status === 'approved').length, color: "text-green-600", icon: CheckCircle },
-          { label: "Vetoed Requests", value: tickets.filter(t => t.status === 'rejected').length, color: "text-red-600", icon: XCircle },
+          { label: "Pending", value: tickets.filter(t => t.status === 'pending').length, color: "text-orange-600", icon: Clock },
+          { label: "Approved", value: tickets.filter(t => t.status === 'approved').length, color: "text-green-600", icon: CheckCircle },
+          { label: "Rejected", value: tickets.filter(t => t.status === 'rejected').length, color: "text-red-600", icon: XCircle },
         ].map((m, i) => (
           <div key={i} className="bg-white border p-6 flex items-center justify-between">
             <div>
@@ -106,11 +106,11 @@ export function TicketManagement({ tickets: initialTickets }: TicketManagementPr
         <table className="w-full text-left">
           <thead>
             <tr className="border-b bg-muted/30 text-[10px] font-black uppercase tracking-[.2em] text-muted-foreground">
-              <th className="px-6 py-4">Node Target</th>
-              <th className="px-6 py-4">Proposing Agent</th>
-              <th className="px-6 py-4">Rationale</th>
+              <th className="px-6 py-4">Item</th>
+              <th className="px-6 py-4">Requested By</th>
+              <th className="px-6 py-4">Reason</th>
               <th className="px-6 py-4">Status</th>
-              <th className="px-6 py-4 text-right">Intervention</th>
+              <th className="px-6 py-4 text-right">Action</th>
             </tr>
           </thead>
           <tbody className="divide-y text-sm">
@@ -130,7 +130,7 @@ export function TicketManagement({ tickets: initialTickets }: TicketManagementPr
                 <td className="px-6 py-6 font-medium">
                   <div className="flex items-center gap-2">
                     <User className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span className="text-[10px] uppercase font-black tracking-widest">{ticket.requester.fullName || 'Anonymous Agent'}</span>
+                    <span className="text-[10px] uppercase font-black tracking-widest">{ticket.requester.fullName || 'Anonymous'}</span>
                   </div>
                 </td>
                 <td className="px-6 py-6 max-w-xs">
@@ -158,7 +158,7 @@ export function TicketManagement({ tickets: initialTickets }: TicketManagementPr
                       </button>
                     </div>
                   ) : (
-                    <p className="text-[9px] font-bold uppercase text-muted-foreground">Process finalized</p>
+                    <p className="text-[9px] font-bold uppercase text-muted-foreground">Done</p>
                   )}
                 </td>
               </tr>
@@ -169,7 +169,7 @@ export function TicketManagement({ tickets: initialTickets }: TicketManagementPr
         {tickets.length === 0 && (
           <div className="py-24 text-center">
             <ShieldAlert className="h-20 w-20 mx-auto mb-6 text-muted-foreground opacity-10" />
-            <p className="text-[10px] font-black uppercase tracking-[.3em] text-muted-foreground">Oversight clear: No pending destructive requests</p>
+            <p className="text-[10px] font-black uppercase tracking-[.3em] text-muted-foreground">No requests waiting</p>
           </div>
         )}
       </div>
@@ -178,23 +178,23 @@ export function TicketManagement({ tickets: initialTickets }: TicketManagementPr
         <AlertDialogContent className="rounded-none border-4 border-black">
           <AlertDialogHeader>
             <AlertDialogTitle className="font-black uppercase tracking-tighter text-4xl italic flex items-center gap-3">
-              <ShieldAlert className="h-10 w-10 text-red-600" /> Confirm Directive
+              <ShieldAlert className="h-10 w-10 text-red-600" /> Confirm Action
             </AlertDialogTitle>
             <AlertDialogDescription className="py-6 border-y border-black/5 my-6 text-[11px] font-bold uppercase tracking-widest leading-relaxed">
               {reviewAction === 'approve' ? (
-                <>Confirming the absolute destruction of <span className="text-black font-black">"{selectedTicket?.itemName}"</span>. All relational branches and asset associations will be purged from the live cluster.</>
+                <>Approve deletion of <span className="text-black font-black">"{selectedTicket?.itemName}"</span>. This will remove the item and its linked data.</>
               ) : (
-                <>Confirming the veto of this destruction request. The node will remain operative and the request will be archived as rejected.</>
+                <>Reject this request. The item will stay unchanged.</>
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-none h-12 px-8 text-[10px] font-black uppercase tracking-[.25em]">Abort Command</AlertDialogCancel>
+            <AlertDialogCancel className="rounded-none h-12 px-8 text-[10px] font-black uppercase tracking-[.25em]">Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleReviewConfirm}
               className={`rounded-none h-12 px-10 text-[10px] font-black uppercase tracking-[.25em] ${reviewAction === 'approve' ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-black text-white hover:bg-black/90'}`}
             >
-              Authorize {reviewAction}
+              Confirm
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -19,13 +19,15 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
 
     // Validate role
-    const validRoles = ['staff', 'admin']
+    const validRoles = ['manager', 'staff', 'admin']
     if (!validRoles.includes(role)) {
       return NextResponse.json(
-        { error: 'Invalid role. Must be staff or admin' },
+        { error: 'Invalid role. Must be manager or admin' },
         { status: 400 }
       )
     }
+
+    const normalizedRole = role === 'manager' ? 'staff' : role
 
     // Check if user exists
     const existingUser = await prisma.user.findUnique({
@@ -65,8 +67,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       }),
       prisma.adminUser.upsert({
         where: { userId: id },
-        update: { role },
-        create: { userId: id, role }
+        update: { role: normalizedRole },
+        create: { userId: id, role: normalizedRole }
       })
     ])
 

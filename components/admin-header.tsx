@@ -53,13 +53,13 @@ export async function AdminHeader() {
                   Staff
                 </Link>
                 <Link href="/admin/merchandising" className="text-[10px] font-bold uppercase tracking-[.2em] hover:text-primary transition-colors">
-                  Identity
+                  Banners
                 </Link>
                 <Link href="/admin/settings" className="text-[10px] font-bold uppercase tracking-[.2em] hover:text-primary transition-colors">
-                  Parameters
+                  Settings
                 </Link>
                 <Link href="/admin/tickets" className="text-[10px] font-bold uppercase tracking-[.2em] hover:text-primary transition-colors">
-                  Governance
+                  Tickets
                 </Link>
               </>
             )}

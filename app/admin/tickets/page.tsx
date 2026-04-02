@@ -14,7 +14,7 @@ export default async function TicketsPage() {
 
   const admin = await prisma.adminUser.findUnique({ where: { userId: user.id } })
 
-  // High-level governance: Only super_admin can review deletion tickets
+  // Only super_admin can review deletion requests
   if (!admin || admin.role !== 'super_admin') {
     redirect('/admin/catalog')
   }
@@ -40,12 +40,12 @@ export default async function TicketsPage() {
         <div className="container mx-auto max-w-7xl">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
             <div>
-              <h1 className="text-5xl font-black tracking-tighter uppercase mb-2 text-red-600 italic">Governance Log</h1>
-              <p className="text-muted-foreground text-sm font-bold uppercase tracking-[.3em]">Reviewing destructive operational requests</p>
+              <h1 className="text-5xl font-black tracking-tighter uppercase mb-2 text-red-600 italic">Delete Requests</h1>
+              <p className="text-muted-foreground text-sm font-bold uppercase tracking-[.3em]">Review pending delete requests</p>
             </div>
             <div className="bg-black text-white px-6 py-2 text-[10px] font-black uppercase tracking-widest flex items-center gap-3">
               <div className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
-              Critical Oversight Mode
+              Review Mode
             </div>
           </div>
 

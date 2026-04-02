@@ -71,10 +71,15 @@ export function WishlistButton({ productId, className }: { productId: string; cl
     <Button
       variant="outline"
       size="icon"
-      onClick={toggleWishlist}
+      onClick={(event) => {
+        event.preventDefault()
+        event.stopPropagation()
+        toggleWishlist()
+      }}
       disabled={isLoading}
       className={className}
       aria-label={isInWishlist ? "Remove from wishlist" : "Add to wishlist"}
+      aria-pressed={isInWishlist}
     >
       <Heart className={`h-5 w-5 ${isInWishlist ? "fill-red-500 text-red-500" : ""}`} />
     </Button>
