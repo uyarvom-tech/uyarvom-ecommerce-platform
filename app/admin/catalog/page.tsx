@@ -22,6 +22,11 @@ export default async function CatalogPage() {
       parentId: null
     },
     include: {
+      children: {
+        select: {
+          id: true,
+        },
+      },
       _count: {
         select: {
           productCategories: true,
@@ -32,11 +37,30 @@ export default async function CatalogPage() {
     orderBy: { displayOrder: 'asc' }
   })
 
-  const transformedCategories = categories.map((c: any) => ({
-    ...c,
-    productCount: c._count.productCategories,
-    subCategoryCount: c._count.children
-  }))
+  const transformedCategories = await Promise.all(
+    categories.map(async (category: any) => {
+      const descendantIds = (category.children || []).map((child: any) => child.id)
+
+      const productCount = await prisma.product.count({
+        where: {
+          isActive: true,
+          productCategories: {
+            some: {
+              categoryId: {
+                in: [category.id, ...descendantIds],
+              },
+            },
+          },
+        },
+      })
+
+      return {
+        ...category,
+        productCount,
+        subCategoryCount: category._count.children,
+      }
+    })
+  )
 
   return (
     <div className="flex min-h-screen flex-col bg-muted/10">

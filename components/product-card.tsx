@@ -134,9 +134,9 @@ export function ProductCard({ product }: ProductCardProps) {
                 New
               </span>
             )}
-            {isLowStock && (
-              <span className="rounded-full bg-foreground px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white">
-                Only {stockQuantity} left
+            {stockQuantity > 0 && (
+              <span className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] ${isLowStock ? "bg-foreground text-white" : "bg-white/95 text-foreground"}`}>
+                {stockQuantity} in stock
               </span>
             )}
           </div>
@@ -219,19 +219,19 @@ export function ProductCard({ product }: ProductCardProps) {
         </div>
 
         <div className="mt-auto border-t border-border/50 pt-3">
-          <div className="flex items-end justify-between gap-4">
-            <div className="min-w-0">
-              <div className="flex items-baseline gap-2">
-                <span className="text-xl font-bold tracking-tight text-foreground">{"\u20B9"}{currentPrice.toLocaleString("en-IN")}</span>
-                {hasDiscount && (
-                  <span className="text-sm text-muted-foreground line-through">{"\u20B9"}{comparePrice?.toLocaleString("en-IN")}</span>
-                )}
+              <div className="flex items-end justify-between gap-4">
+                <div className="min-w-0">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-xl font-bold tracking-tight text-foreground">{"\u20B9"}{currentPrice.toLocaleString("en-IN")}</span>
+                    {hasDiscount && (
+                      <span className="text-sm text-muted-foreground line-through">{"\u20B9"}{comparePrice?.toLocaleString("en-IN")}</span>
+                    )}
+                  </div>
+                  <p className="mt-1 text-[11px] text-muted-foreground">
+                    {stockQuantity > 0 ? `${stockQuantity} available` : "Out of stock"}
+                  </p>
+                </div>
               </div>
-              <p className="mt-1 text-[11px] text-muted-foreground">
-                {stockQuantity > 0 ? "Ready to order" : "Notify me when back"}
-              </p>
-            </div>
-          </div>
 
           <Button
             type="button"

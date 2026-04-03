@@ -138,7 +138,7 @@ model ProductVariant {
   colorId   String?
   size      String?
   price     Float?   // Optional price override (if null, uses product price)
-  stock     Int      @default(0)
+  stock     Int      @default(1)
   sku       String?  @unique
   isActive  Boolean  @default(true)
   sortOrder Int      @default(0)

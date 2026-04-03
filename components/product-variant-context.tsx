@@ -41,18 +41,32 @@ const ProductVariantContext = createContext<ProductVariantContextValue | null>(n
 
 export function ProductVariantProvider({
   productColors,
+  productVariants = [],
   children,
 }: {
   productColors: ProductColorOption[]
+  productVariants?: ProductVariantOption[]
   children: ReactNode
 }) {
   const normalizedColors = useMemo(() => {
+    if ((productColors || []).length === 0 && (productVariants || []).length > 0) {
+      return [
+        {
+          id: 'default-color',
+          colorName: 'Default',
+          colorCode: null,
+          images: [],
+          variants: [...productVariants].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0)),
+        },
+      ]
+    }
+
     return (productColors || []).map((color) => ({
       ...color,
       variants: [...(color.variants || [])].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0)),
       images: [...(color.images || [])].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0)),
     }))
-  }, [productColors])
+  }, [productColors, productVariants])
 
   const [selectedColorId, setSelectedColorIdState] = useState<string | null>(
     normalizedColors[0]?.id || null

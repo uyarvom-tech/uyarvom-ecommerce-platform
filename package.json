@@ -16,6 +16,7 @@
     "db:generate": "npx prisma generate",
     "db:push": "npx prisma db push",
     "db:reset": "npx prisma migrate reset",
+    "db:backfill-stock": "node scripts/backfill-variant-stock.js",
     "catalog:import": "node scripts/import-products-from-excel.js",
     "postinstall": "prisma generate",
     "vercel-build": "next build",

@@ -33,20 +33,30 @@ export default async function CategoryDetailPage({
     where: {
       parentId: categoryId,
     },
-    include: {
-      _count: {
-        select: {
-          productCategories: true
-        }
-      }
-    },
     orderBy: { displayOrder: 'asc' }
   })
 
-  const transformedSubCategories = subCategories.map((sc: any) => ({
-    ...sc,
-    productCount: sc._count.productCategories
-  }))
+  const transformedSubCategories = await Promise.all(
+    subCategories.map(async (sc) => {
+      const productCount = await prisma.product.count({
+        where: {
+          isActive: true,
+          productCategories: {
+            some: {
+              categoryId: {
+                in: [sc.id, categoryId],
+              },
+            },
+          },
+        },
+      })
+
+      return {
+        ...sc,
+        productCount,
+      }
+    })
+  )
 
   return (
     <div className="flex min-h-screen flex-col bg-muted/10">

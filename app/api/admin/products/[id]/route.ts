@@ -199,7 +199,7 @@ export async function PUT(
       await tx.product.update({
         where: { id },
         data: {
-          stockQuantity: stockAggregate._sum.stock ?? 0,
+          stockQuantity: stockAggregate._sum.stock ?? 1,
         },
       })
 

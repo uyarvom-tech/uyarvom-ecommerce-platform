@@ -38,30 +38,38 @@ export default async function SubCategoryProductsPage({
 
   if (!subCategory) notFound()
 
-  const productCategories = await prisma.productCategory.findMany({
+  const products = await prisma.product.findMany({
     where: {
-      categoryId: subCategoryId,
+      isActive: true,
+      productCategories: {
+        some: {
+          categoryId: {
+            in: [subCategoryId, categoryId],
+          },
+        },
+      },
     },
     include: {
-      product: {
+      productCategories: {
         include: {
-          images: { where: { isPrimary: true }, take: 1 }
-        }
-      }
+          category: true,
+        },
+        orderBy: { isPrimary: 'desc' },
+      },
+      images: {
+        where: { isPrimary: true },
+        take: 1,
+      },
     },
     orderBy: {
-      product: {
-        createdAt: 'desc'
-      }
+      createdAt: 'desc'
     }
   })
 
-  const products = productCategories
-    .filter((pc: any) => pc.product)
-    .map((pc: any) => ({
-      ...pc.product,
-      primaryImage: pc.product.images[0]?.imageUrl
-    }))
+  const transformedProducts = products.map((product: any) => ({
+    ...product,
+    primaryImage: product.images[0]?.imageUrl
+  }))
 
   return (
     <div className="flex min-h-screen flex-col bg-muted/10">
@@ -71,7 +79,7 @@ export default async function SubCategoryProductsPage({
           <SubCategoryProductsView
             mainCategory={mainCategory}
             subCategory={subCategory}
-            products={products}
+            products={transformedProducts}
             userRole={admin.role}
           />
         </div>

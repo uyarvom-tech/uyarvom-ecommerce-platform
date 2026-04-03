@@ -1,11 +1,12 @@
 import Link from "next/link"
 import Image from "next/image"
-import { Heart, ShoppingBag, Shield } from "lucide-react"
+import { ShoppingBag, Shield } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { AuthButton } from "@/components/auth-button"
 import { ProductsMobileMenu } from "@/components/products-mobile-menu"
 import { CategoriesDropdown } from "@/components/categories-dropdown"
 import { AdminCustomerToggle } from "@/components/admin-customer-toggle"
+import { HeaderWishlistButton } from "@/components/header-wishlist-button"
 import type { Category } from "@/types"
 
 interface ProductsHeaderProps {
@@ -57,17 +58,7 @@ export function ProductsHeader({ categories }: ProductsHeaderProps) {
 
             {/* Desktop Actions */}
             <div className="hidden md:flex items-center gap-3">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-8 w-8 hover:bg-black/10 text-amber-800 hover:text-amber-900 transition-all duration-300" 
-                asChild
-              >
-                <Link href="/wishlist">
-                  <Heart className="h-4 w-4" />
-                  <span className="sr-only">Wishlist</span>
-                </Link>
-              </Button>
+              <HeaderWishlistButton />
               
               <Button 
                 variant="ghost" 

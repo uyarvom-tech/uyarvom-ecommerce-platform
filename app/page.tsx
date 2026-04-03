@@ -310,7 +310,7 @@ export default async function HomePage({
                   />
                 </div>
 
-                <div className="grid gap-6 xl:grid-cols-[250px_minmax(0,1fr)] 2xl:grid-cols-[260px_minmax(0,1fr)]">
+                <div className="grid gap-6 xl:grid-cols-[auto_minmax(0,1fr)]">
                   <aside className="hidden lg:block">
                     <div className="sticky top-[210px]">
                       <ProductFilters
@@ -325,11 +325,12 @@ export default async function HomePage({
                           })),
                         }))}
                         basePath="/"
+                        scrollTargetId="store-grid"
                       />
                     </div>
                   </aside>
 
-                  <div>
+                  <div id="store-grid" className="min-w-0">
                     {displayProducts.length > 0 ? (
                       <div className="grid grid-cols-2 gap-x-4 gap-y-10 sm:gap-x-5 md:grid-cols-3 md:gap-x-6 md:gap-y-12 xl:grid-cols-4 2xl:gap-x-7">
                         {displayProducts.map((product: any) => (

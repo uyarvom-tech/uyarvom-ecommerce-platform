@@ -1,8 +1,8 @@
 import Link from "next/link"
 import Image from "next/image"
-import { Heart } from "lucide-react"
 import { AuthButton } from "@/components/auth-button"
 import { HeaderCartButton } from "@/components/header-cart-button"
+import { HeaderWishlistButton } from "@/components/header-wishlist-button"
 import { ProductsSearch } from "@/components/products-search"
 import { Button } from "@/components/ui/button"
 
@@ -67,17 +67,7 @@ export async function Header() {
             </div>
 
             <div className="flex items-center justify-end gap-2 md:gap-5 xl:min-w-[280px]">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="group h-11 w-11 rounded-full border border-transparent transition-all duration-300 hover:border-primary/20 hover:bg-white"
-                asChild
-              >
-                <Link href="/wishlist">
-                  <Heart className="h-5 w-5 text-foreground transition-all duration-300 group-hover:text-primary" />
-                  <span className="sr-only">Favorites</span>
-                </Link>
-              </Button>
+              <HeaderWishlistButton />
 
               <HeaderCartButton />
 

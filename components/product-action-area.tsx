@@ -34,6 +34,9 @@ export function ProductActionArea({ product, hasDiscount }: { product: any; hasD
             </span>
           )}
         </div>
+        <p className="mt-2 text-[11px] uppercase tracking-[0.18em] text-foreground/55">
+          {dynamicStock > 0 ? `${dynamicStock} left for this size` : "Out of stock"}
+        </p>
         <p className="mt-2 text-[10px] uppercase leading-none tracking-widest text-foreground/40">
           Complimentary artisan shipping within India
         </p>

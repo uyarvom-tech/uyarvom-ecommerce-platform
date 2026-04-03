@@ -59,6 +59,7 @@ export function WishlistButton({ productId, className }: { productId: string; cl
       }
 
       setIsInWishlist(!isInWishlist)
+      window.dispatchEvent(new CustomEvent("wishlist:changed"))
       router.refresh()
     } catch (error) {
       console.error("Wishlist toggle error:", error)

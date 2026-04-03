@@ -41,7 +41,7 @@ function normalizeColors(input: any): IncomingColor[] {
         {
           size: 'Default',
           price: variant.price ?? null,
-          stock: variant.stock ?? 0,
+          stock: variant.stock ?? 1,
           sku: variant.sku ?? null,
           isActive: true,
           sortOrder: 0,
@@ -60,7 +60,7 @@ function normalizeColors(input: any): IncomingColor[] {
           {
             size: 'Default',
             price: null,
-            stock: 0,
+            stock: 1,
             sku: input.sku ?? null,
             isActive: true,
             sortOrder: 0,
@@ -108,14 +108,14 @@ async function replaceProductStructure(tx: any, productId: string, colors: Incom
     const sizes = Array.isArray(color.sizes) ? color.sizes : []
     if (sizes.length > 0) {
       await tx.productVariant.createMany({
-        data: sizes
+          data: sizes
           .filter((size) => size?.size?.trim())
           .map((size, sizeIndex) => ({
             productId,
             colorId: createdColor.id,
             size: size.size.trim(),
             price: parseNumber(size.price),
-            stock: Number(size.stock ?? 0),
+            stock: Math.max(Number(size.stock ?? 1), 1),
             sku: size.sku || null,
             isActive: size.isActive ?? true,
             sortOrder: size.sortOrder ?? sizeIndex,
@@ -290,7 +290,7 @@ export async function POST(request: NextRequest) {
 
     if (!colors.length) {
       return NextResponse.json(
-        { error: 'At least one color with images and sizes is required' },
+        { error: 'At least one product option is required' },
         { status: 400 }
       )
     }
@@ -304,7 +304,7 @@ export async function POST(request: NextRequest) {
           shortDescription,
           price,
           compareAtPrice,
-          stockQuantity: 0,
+          stockQuantity: 1,
           lowStockThreshold,
           sku,
           weight,
@@ -334,7 +334,7 @@ export async function POST(request: NextRequest) {
       await tx.product.update({
         where: { id: createdProduct.id },
         data: {
-          stockQuantity: stockAggregate._sum.stock ?? 0,
+          stockQuantity: stockAggregate._sum.stock ?? 1,
         },
       })
 
@@ -487,7 +487,7 @@ export async function PUT(request: NextRequest) {
       await tx.product.update({
         where: { id },
         data: {
-          stockQuantity: stockAggregate._sum.stock ?? 0,
+          stockQuantity: stockAggregate._sum.stock ?? 1,
         },
       })
 

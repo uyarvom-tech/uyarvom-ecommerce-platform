@@ -116,8 +116,12 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             </div>
           )}
 
+          <div className="mb-8 inline-flex rounded-full border border-border/70 bg-white px-4 py-2 text-[10px] font-bold uppercase tracking-[0.22em] text-foreground/70">
+            {stockQuantity > 0 ? `${stockQuantity} in stock` : "Out of stock"}
+          </div>
+
           <div className="grid gap-16 lg:grid-cols-2 lg:items-start">
-            <ProductVariantProvider productColors={product.colors as any}>
+            <ProductVariantProvider productColors={product.colors as any} productVariants={product.variants as any}>
               <div className="sticky top-32">
                 <FlipkartProductGallery
                   colors={product.colors as any}

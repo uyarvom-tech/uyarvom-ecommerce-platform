@@ -85,7 +85,7 @@ export async function PUT(
     await prisma.product.update({
       where: { id },
       data: {
-        stockQuantity: stockAggregate._sum.stock ?? 0,
+        stockQuantity: stockAggregate._sum.stock ?? 1,
       },
     })
 
@@ -148,7 +148,7 @@ export async function DELETE(
     await prisma.product.update({
       where: { id },
       data: {
-        stockQuantity: stockAggregate._sum.stock ?? 0,
+        stockQuantity: stockAggregate._sum.stock ?? 1,
       },
     })
 

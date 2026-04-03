@@ -193,11 +193,11 @@ export default async function ProductsPage({
                 <AIKitchenMatch products={displayProducts || []} />
               </AppleReveal>
             ) : (
-              <div className="grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
-                <aside className="hidden lg:block lg:col-span-1">
-                  <AppleReveal delay={100}>
-                    <div className="sticky top-20">
-                      <ProductFilters
+                <div className="grid gap-6 lg:grid-cols-[auto_minmax(0,1fr)]">
+                  <aside className="hidden lg:block lg:col-span-1">
+                    <AppleReveal delay={100}>
+                      <div className="sticky top-20">
+                        <ProductFilters
                         categories={categories.map((category) => ({
                           id: category.id,
                           name: category.name,
@@ -209,12 +209,13 @@ export default async function ProductsPage({
                           })),
                         }))}
                         basePath="/products"
+                        scrollTargetId="store-grid"
                       />
                     </div>
                   </AppleReveal>
                 </aside>
 
-                <div>
+                <div id="store-grid" className="min-w-0">
                   {searchQuery && (
                     <div className="mb-6 p-4 bg-primary/5 border border-primary/20 rounded-lg">
                       <p className="text-sm text-primary">

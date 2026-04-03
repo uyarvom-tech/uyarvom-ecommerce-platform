@@ -45,16 +45,28 @@ interface FormColor {
 
 const createEmptyColor = (): FormColor => ({
   id: `color-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-  colorName: '',
+  colorName: 'Default',
   colorCode: '#000000',
   images: [],
-  sizeData: {},
+  sizeData: {
+    Default: {
+      price: '',
+      stock: '1',
+      sku: '',
+      isActive: true,
+    },
+  },
 })
 
 export function ProductForm({ categories, product, defaultCategoryId, redirectPath }: ProductFormProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(false)
+  const [enableColorVariants, setEnableColorVariants] = useState<boolean>(Array.isArray(product?.colors) ? product.colors.length > 1 : false)
+  const [enableSizeVariants, setEnableSizeVariants] = useState<boolean>(() => {
+    const existingSizes = product?.colors?.flatMap((color: any) => color.sizes?.map((size: any) => size.size) || []) || []
+    return existingSizes.length > 1 || (existingSizes.length === 1 && existingSizes[0] !== 'Default')
+  })
 
   const mainCategoryParam = searchParams.get('mainCategory')
   const subCategoryParam = searchParams.get('subCategory')
@@ -82,27 +94,28 @@ export function ProductForm({ categories, product, defaultCategoryId, redirectPa
   })
 
   const parsedSizes = useMemo(() => {
+    if (!enableSizeVariants) {
+      return ['Default']
+    }
+
     return sizeInput
       .split(',')
       .map((size) => size.trim())
       .filter(Boolean)
-  }, [sizeInput])
+  }, [enableSizeVariants, sizeInput])
 
   const [colors, setColors] = useState<FormColor[]>(() => {
     if (Array.isArray(product?.colors) && product.colors.length > 0) {
       return product.colors.map((color: any, colorIndex: number) => {
-        const sizeData: Record<string, { price: string; stock: string; sku: string; isActive: boolean }> = {}
-        ;(color.sizes || []).forEach((size: any, sizeIndex: number) => {
-          sizeData[size.size] = {
-            price: size.price?.toString() || '',
-            stock: size.stock?.toString() || '',
-            sku: size.sku || '',
-            isActive: size.isActive ?? true,
-          }
-          if (sizeIndex === 0 && !sizeData[size.size].stock) {
-            sizeData[size.size].stock = '0'
-          }
-        })
+          const sizeData: Record<string, { price: string; stock: string; sku: string; isActive: boolean }> = {}
+          ;(color.sizes || []).forEach((size: any, sizeIndex: number) => {
+            sizeData[size.size] = {
+              price: size.price?.toString() || '',
+              stock: size.stock?.toString() || '1',
+              sku: size.sku || '',
+              isActive: size.isActive ?? true,
+            }
+          })
 
         return {
           id: color.id || `color-${colorIndex}`,
@@ -142,7 +155,7 @@ export function ProductForm({ categories, product, defaultCategoryId, redirectPa
         parsedSizes.forEach((size) => {
           nextSizeData[size] = color.sizeData[size] || {
             price: '',
-            stock: '',
+            stock: '1',
             sku: '',
             isActive: true,
           }
@@ -263,18 +276,20 @@ export function ProductForm({ categories, product, defaultCategoryId, redirectPa
     }
 
     const colorsPayload = colors.map((color) => {
-      if (!color.colorName.trim()) {
+      const colorName = color.colorName.trim() || 'Default'
+
+      if (enableColorVariants && !colorName) {
         throw new Error('Every color must have a name')
       }
 
       if (color.images.length === 0) {
-        throw new Error(`Please upload at least one image for ${color.colorName || 'a color'}`)
+        throw new Error(`Please upload at least one image for ${colorName || 'a color'}`)
       }
 
       const sizes = parsedSizes.map((size, index) => {
         const sizeState = color.sizeData[size]
         if (!sizeState) {
-          throw new Error(`Please complete the ${size} size for ${color.colorName}`)
+          throw new Error(`Please complete the ${size} size for ${colorName}`)
         }
 
         return {
@@ -289,7 +304,7 @@ export function ProductForm({ categories, product, defaultCategoryId, redirectPa
 
       return {
         id: color.id,
-        colorName: color.colorName,
+        colorName,
         colorCode: color.colorCode,
         images: color.images,
         sizes,
@@ -314,6 +329,8 @@ export function ProductForm({ categories, product, defaultCategoryId, redirectPa
       lowStockThreshold: parseInt(String(formData.lowStockThreshold)),
       weight: formData.weight ? parseFloat(String(formData.weight)) : null,
       colors: colorsPayload,
+      enableColorVariants,
+      enableSizeVariants,
     }
   }
 
@@ -392,22 +409,48 @@ export function ProductForm({ categories, product, defaultCategoryId, redirectPa
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle>Color Images</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Add multiple colors. Each color owns its own images and the sizes below map to that color.
-              </p>
-            </CardHeader>
-            <CardContent className="space-y-6">
+          <CardHeader>
+            <CardTitle>Color Images</CardTitle>
+            <p className="text-sm text-muted-foreground">
+                Start simple with one default color and size, or turn on the extra variant options below.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="flex flex-wrap gap-4 rounded-lg border bg-muted/20 p-4">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="enableColorVariants"
+                  checked={enableColorVariants}
+                  onCheckedChange={(checked) => setEnableColorVariants(checked === true)}
+                />
+                <Label htmlFor="enableColorVariants" className="text-sm">
+                  Add more colors
+                </Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="enableSizeVariants"
+                  checked={enableSizeVariants}
+                  onCheckedChange={(checked) => setEnableSizeVariants(checked === true)}
+                />
+                <Label htmlFor="enableSizeVariants" className="text-sm">
+                  Add more sizes
+                </Label>
+              </div>
+            </div>
+
               <div>
-                <Label htmlFor="sizes">Available Sizes *</Label>
+                <Label htmlFor="sizes">Available Sizes {enableSizeVariants ? '*' : ''}</Label>
                 <Input
                   id="sizes"
-                  value={sizeInput}
+                  value={enableSizeVariants ? sizeInput : 'Default'}
                   onChange={(e) => setSizeInput(e.target.value)}
                   placeholder="S, M, L"
+                  disabled={!enableSizeVariants}
                 />
-                <p className="text-xs text-muted-foreground mt-1">Separate sizes with commas.</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {enableSizeVariants ? 'Separate sizes with commas.' : 'Basic mode uses one default size.'}
+                </p>
               </div>
 
               <div className="space-y-4">
@@ -418,7 +461,7 @@ export function ProductForm({ categories, product, defaultCategoryId, redirectPa
                         <CardTitle className="text-base">
                           Color {index + 1}
                         </CardTitle>
-                        {colors.length > 1 && (
+                        {enableColorVariants && colors.length > 1 && (
                           <Button type="button" variant="ghost" size="sm" onClick={() => removeColor(color.id)}>
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
@@ -432,7 +475,7 @@ export function ProductForm({ categories, product, defaultCategoryId, redirectPa
                           <Input
                             value={color.colorName}
                             onChange={(e) => updateColor(color.id, { colorName: e.target.value })}
-                            placeholder="Red"
+                            placeholder={enableColorVariants ? 'Red' : 'Default'}
                           />
                         </div>
                         <div>
@@ -564,10 +607,12 @@ export function ProductForm({ categories, product, defaultCategoryId, redirectPa
                 ))}
               </div>
 
-              <Button type="button" variant="outline" onClick={addColor} className="flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                Add Another Color
-              </Button>
+              {enableColorVariants && (
+                <Button type="button" variant="outline" onClick={addColor} className="flex items-center gap-2">
+                  <Plus className="h-4 w-4" />
+                  Add Another Color
+                </Button>
+              )}
             </CardContent>
           </Card>
         </div>
