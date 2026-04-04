@@ -28,9 +28,9 @@ export function SaleBanner() {
 
   return (
     <section className="border-b border-border/10 bg-[linear-gradient(135deg,#fffaf2_0%,#fff_48%,#f7efe1_100%)]">
-      <div className="mx-auto max-w-[1400px] px-4 py-8 sm:px-6 md:py-10">
-        <div className="grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
-          <div className="overflow-hidden rounded-[30px] border border-[#e9dcc5] bg-[#f7eddc] p-6 shadow-sm md:p-8">
+      <div className="mx-auto max-w-[1400px] px-4 py-5 sm:px-6 md:py-6">
+        <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+          <div className="overflow-hidden rounded-[28px] border border-[#e9dcc5] bg-[#f7eddc] p-5 shadow-sm md:p-6">
             <div className="flex flex-wrap items-center gap-3">
               <span className="rounded-full bg-white px-4 py-1.5 text-[10px] font-bold uppercase tracking-[0.3em] text-primary">
                 Limited Time Edit
@@ -40,70 +40,70 @@ export function SaleBanner() {
               </span>
             </div>
 
-            <div className="mt-5 max-w-3xl space-y-4">
-              <h2 className="mb-0 text-3xl leading-tight md:text-5xl">
+            <div className="mt-4 max-w-3xl space-y-3">
+              <h2 className="mb-0 text-2xl leading-tight md:text-4xl">
                 Upgrade your kitchen and dining setup with offer-led bestsellers.
               </h2>
-              <p className="max-w-2xl text-sm leading-7 text-muted-foreground md:text-base">
+              <p className="max-w-2xl text-xs leading-6 text-muted-foreground md:text-sm">
                 Inspired by retail-first merchandising, this section puts the strongest value message up front so shoppers
                 instantly see what is hot, what is discounted, and what is worth opening right now.
               </p>
             </div>
 
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Link href="/offers" className="apple-button inline-flex h-12 items-center px-6">
+            <div className="mt-5 flex flex-wrap gap-3">
+              <Link href="/offers" className="apple-button inline-flex h-10 items-center px-5">
                 Shop Offers
               </Link>
               <Link
                 href="/?sort=newest"
-                className="inline-flex h-12 items-center rounded-full border border-foreground/15 bg-white px-6 text-sm font-semibold text-foreground transition-colors hover:border-primary/40 hover:text-primary"
+                className="inline-flex h-10 items-center rounded-full border border-foreground/15 bg-white px-5 text-sm font-semibold text-foreground transition-colors hover:border-primary/40 hover:text-primary"
               >
                 Explore New Arrivals
               </Link>
             </div>
 
-            <div className="mt-6 grid gap-3 sm:grid-cols-3">
+            <div className="mt-5 grid gap-3 sm:grid-cols-3">
               {perks.map((perk) => (
-                <div key={perk.label} className="rounded-2xl border border-white/70 bg-white/70 p-4">
+                <div key={perk.label} className="rounded-2xl border border-white/70 bg-white/70 p-3.5">
                   <perk.icon className="h-5 w-5 text-primary" />
-                  <p className="mt-3 text-sm font-semibold text-foreground">{perk.label}</p>
+                  <p className="mt-2 text-xs font-semibold text-foreground">{perk.label}</p>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="grid gap-5">
-            <div className="rounded-[30px] border border-border/60 bg-[#111111] p-6 text-white shadow-sm md:p-7">
+          <div className="grid gap-4">
+            <div className="rounded-[28px] border border-border/60 bg-[#111111] p-5 text-white shadow-sm md:p-6">
               <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-primary">Offer Countdown</p>
-              <div className="mt-4 flex gap-3">
+              <div className="mt-3 flex gap-3">
                 {[
                   { value: timeLeft.hours, label: "Hours" },
                   { value: timeLeft.minutes, label: "Mins" },
                   { value: timeLeft.seconds, label: "Secs" },
                 ].map((item) => (
-                  <div key={item.label} className="min-w-[74px] rounded-2xl border border-white/10 bg-white/5 px-3 py-4 text-center">
-                    <p className="text-2xl font-semibold">{String(item.value).padStart(2, "0")}</p>
+                  <div key={item.label} className="min-w-[68px] rounded-2xl border border-white/10 bg-white/5 px-3 py-3 text-center">
+                    <p className="text-xl font-semibold">{String(item.value).padStart(2, "0")}</p>
                     <p className="mt-1 text-[10px] uppercase tracking-[0.22em] text-white/55">{item.label}</p>
                   </div>
                 ))}
               </div>
-              <p className="mt-4 text-sm leading-6 text-white/70">
+              <p className="mt-3 text-xs leading-6 text-white/70">
                 Use code <span className="font-bold text-white">ODS30</span> on selected collections while the timer is live.
               </p>
             </div>
 
-            <div className="rounded-[30px] border border-border/60 bg-white p-6 shadow-sm md:p-7">
+            <div className="rounded-[28px] border border-border/60 bg-white p-5 shadow-sm md:p-6">
               <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-primary">Quick Value Picks</p>
-              <div className="mt-4 space-y-3">
+              <div className="mt-3 space-y-2.5">
                 {[
-                  { title: "Cookware under ₹2,999", href: "/?category=cookware&max=2999" },
+                  { title: "Cookware under â‚¹2,999", href: "/?category=cookware&max=2999" },
                   { title: "Gift-ready sets", href: "/?category=gifting-sets" },
                   { title: "Diningware deals", href: "/?category=diningware&sort=price-desc" },
                 ].map((item) => (
                   <Link
                     key={item.title}
                     href={item.href}
-                    className="flex items-center justify-between rounded-2xl border border-border/60 bg-secondary/30 px-4 py-4 text-sm font-semibold text-foreground transition-all hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
+                    className="flex items-center justify-between rounded-2xl border border-border/60 bg-secondary/30 px-4 py-3 text-sm font-semibold text-foreground transition-all hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
                   >
                     <span>{item.title}</span>
                     <ArrowRight className="h-4 w-4" />

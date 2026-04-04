@@ -1,14 +1,13 @@
-'use client'
+"use client"
 
 import Link from "next/link"
 import Image from "next/image"
 import { ShoppingCart, Star } from "lucide-react"
-import { useEffect, useState } from "react"
+import { memo, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import type { FlexibleProduct, ProductImage } from "@/types"
 import { PRODUCT_FALLBACK_IMAGE } from "@/lib/image-fallbacks"
-import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { getDefaultVariant, getVariantStockSummary } from "@/lib/variant-stock"
 import { WishlistButton } from "@/components/wishlist-button"
@@ -19,30 +18,36 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
   const router = useRouter()
-  const supabase = createClient()
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [isHovering, setIsHovering] = useState(false)
   const [isAdding, setIsAdding] = useState(false)
 
-  const productImages = product.images || []
-  const mainImages = productImages.filter((img: any) => {
-    if (typeof img === "string") {
-      return img && img.trim() !== ""
+  const { displayImages, mainImages } = useMemo(() => {
+    const productImages = product.images || []
+    const filteredImages = productImages.filter((img: any) => {
+      if (typeof img === "string") {
+        return img && img.trim() !== ""
+      }
+
+      return img && (img.imageUrl || img.image_url) && (img.imageUrl || img.image_url)!.trim() !== ""
+    })
+
+    const mappedImages: ProductImage[] =
+      filteredImages.length > 0
+        ? filteredImages.map((img: any) => {
+            if (typeof img === "string") {
+              return { imageUrl: img, altText: product.name }
+            }
+
+            return img
+          })
+        : [{ imageUrl: PRODUCT_FALLBACK_IMAGE, altText: product.name }]
+
+    return {
+      displayImages: mappedImages,
+      mainImages: filteredImages,
     }
-
-    return img && (img.imageUrl || img.image_url) && (img.imageUrl || img.image_url)!.trim() !== ""
-  })
-
-  const displayImages: ProductImage[] =
-    mainImages.length > 0
-      ? mainImages.map((img: any) => {
-          if (typeof img === "string") {
-            return { imageUrl: img, altText: product.name }
-          }
-
-          return img
-        })
-      : [{ imageUrl: PRODUCT_FALLBACK_IMAGE, altText: product.name }]
+  }, [product.images, product.name])
 
   useEffect(() => {
     if (!isHovering || mainImages.length <= 1) return
@@ -64,8 +69,8 @@ export function ProductCard({ product }: ProductCardProps) {
   const hasDiscount = Boolean(comparePrice && comparePrice > currentPrice)
   const savings = hasDiscount ? Math.max(0, Math.round(comparePrice! - currentPrice)) : 0
   const discountPercent = hasDiscount ? Math.round(((comparePrice! - currentPrice) / comparePrice!) * 100) : 0
-  const stockSummary = getVariantStockSummary(product as any)
-  const defaultVariant = getDefaultVariant(product as any)
+  const stockSummary = useMemo(() => getVariantStockSummary(product as any), [product])
+  const defaultVariant = useMemo(() => getDefaultVariant(product as any), [product])
   const stockQuantity = stockSummary.total
   const lowStockThreshold = Number(product.lowStockThreshold ?? product.low_stock_threshold ?? 10)
   const isLowStock = stockQuantity <= lowStockThreshold && stockQuantity > 0
@@ -78,6 +83,8 @@ export function ProductCard({ product }: ProductCardProps) {
 
     setIsAdding(true)
 
+    const { createClient } = await import("@/lib/supabase/client")
+    const supabase = createClient()
     const {
       data: { user },
     } = await supabase.auth.getUser()
@@ -153,11 +160,12 @@ export function ProductCard({ product }: ProductCardProps) {
               key={index}
               className={`absolute inset-0 transition-opacity duration-700 ${index === currentImageIndex ? "opacity-100" : "opacity-0"}`}
             >
-              <Image
+                <Image
                 src={image?.imageUrl || image?.image_url || PRODUCT_FALLBACK_IMAGE}
                 alt={image?.altText || image?.alt_text || product.name}
                 width={480}
                 height={600}
+                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
                 className="h-full w-full object-cover object-center transition-transform duration-1000 group-hover:scale-105"
               />
             </div>
@@ -247,3 +255,5 @@ export function ProductCard({ product }: ProductCardProps) {
     </article>
   )
 }
+
+export const MemoizedProductCard = memo(ProductCard)

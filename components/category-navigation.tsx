@@ -113,20 +113,26 @@ export function CategoryNavigation({ categories }: { categories: StoreNavigation
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768)
     checkMobile()
-    window.addEventListener("resize", checkMobile)
-    return () => window.removeEventListener("resize", checkMobile)
+    let resizeTimer: ReturnType<typeof setTimeout>
+    const onResize = () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(checkMobile, 150) }
+    window.addEventListener("resize", onResize)
+    return () => { window.removeEventListener("resize", onResize); clearTimeout(resizeTimer) }
   }, [])
 
   useEffect(() => {
+    // Use a ref to avoid re-registering the listener on every isScrolled change
     const handleScroll = () => {
       const scrollTop = window.scrollY
-      if (scrollTop > 100 && !isScrolled) setIsScrolled(true)
-      else if (scrollTop < 50 && isScrolled) setIsScrolled(false)
+      setIsScrolled(prev => {
+        if (scrollTop > 100 && !prev) return true
+        if (scrollTop < 50 && prev) return false
+        return prev
+      })
     }
 
     window.addEventListener("scroll", handleScroll, { passive: true })
     return () => window.removeEventListener("scroll", handleScroll)
-  }, [isScrolled])
+  }, []) // empty dep array — no re-registration on state change
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -135,7 +141,7 @@ export function CategoryNavigation({ categories }: { categories: StoreNavigation
       }
     }
 
-    document.addEventListener("mousedown", handleClickOutside)
+    document.addEventListener("mousedown", handleClickOutside, { passive: true })
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [])
 
@@ -146,15 +152,15 @@ export function CategoryNavigation({ categories }: { categories: StoreNavigation
       ref={wrapperRef}
       className={cn(
         "relative w-full border-b border-border/40 bg-white",
-        isScrolled ? "sticky top-[148px] z-40 bg-white/95 shadow-sm backdrop-blur" : ""
+        isScrolled ? "bg-white/95 shadow-sm backdrop-blur" : ""
       )}
       onMouseLeave={() => {
         if (!isMobile) setActiveCategory(null)
       }}
     >
-      <div className={cn("mx-auto max-w-[1400px] px-4 transition-all duration-300 sm:px-6", isScrolled ? "py-3" : "py-5")}>
+      <div className={cn("mx-auto max-w-[1400px] px-4 pb-3 pt-0 transition-all duration-300 sm:px-6", isScrolled ? "pb-2" : "")}>
         {!isScrolled && (
-          <div className="mb-4 text-center">
+          <div className="mb-2 text-center">
             <p className="text-[10px] font-bold uppercase tracking-[0.34em] text-primary">Shop By Collection</p>
           </div>
         )}
@@ -169,7 +175,7 @@ export function CategoryNavigation({ categories }: { categories: StoreNavigation
                 if (!isMobile) setActiveCategory(category.id)
               }}
               className={cn(
-                "group flex min-w-[82px] flex-col items-center transition-all duration-300 md:min-w-[98px]",
+                "group flex min-w-[82px] flex-col items-center md:min-w-[98px]",
                 isScrolled ? "px-1 py-0.5" : "px-1 py-0"
               )}
             >
@@ -185,7 +191,7 @@ export function CategoryNavigation({ categories }: { categories: StoreNavigation
                   alt={category.name}
                   width={96}
                   height={96}
-                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  className="h-full w-full object-cover"
                   onError={(event) => {
                     const target = event.target as HTMLImageElement
                     target.src = CATEGORY_FALLBACK_IMAGE

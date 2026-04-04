@@ -24,12 +24,12 @@ export function ProductHorizontalScroll({ title, subtitle, products }: ProductHo
     }
 
     return (
-        <section className="py-12 md:py-20 border-b border-border/10">
+        <section className="py-6 md:py-8 border-b border-border/10">
             <div className="mx-auto w-full max-w-[1800px] px-4 sm:px-6 xl:px-8">
-                <div className="flex items-end justify-between mb-10">
+                <div className="flex items-end justify-between mb-4 md:mb-6">
                     <div>
                         <h2 className="font-playfair text-3xl md:text-5xl font-black tracking-tighter uppercase">{title}</h2>
-                        {subtitle && <p className="mt-4 text-muted-foreground text-sm md:text-base font-medium uppercase tracking-[0.2em]">{subtitle}</p>}
+                        {subtitle && <p className="mt-2 text-muted-foreground text-sm md:text-base font-medium uppercase tracking-[0.2em]">{subtitle}</p>}
                     </div>
                     <div className="flex gap-2">
                         <Button
@@ -53,7 +53,7 @@ export function ProductHorizontalScroll({ title, subtitle, products }: ProductHo
 
                 <div
                     ref={scrollRef}
-                    className="flex gap-6 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-4"
+                    className="flex gap-5 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-1"
                     style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                 >
                     {products.map((product) => (

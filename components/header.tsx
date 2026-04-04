@@ -8,9 +8,9 @@ import { Button } from "@/components/ui/button"
 
 export async function Header() {
   return (
-    <div className="sticky top-0 z-50 flex w-full flex-col">
-      <div className="w-full border-b border-white/5 bg-[#111111] px-4 py-1.5 text-white sm:px-6">
-        <div className="mx-auto flex max-w-[1400px] items-center justify-between text-[8px] font-bold uppercase tracking-[0.2em] md:text-[9px]">
+    <div className="m-0 flex w-full flex-col gap-0">
+      <div className="m-0 w-full border-0 bg-[#111111] px-4 py-2 text-white sm:px-6">
+        <div className="mx-auto flex max-w-[1400px] items-center justify-between text-[8px] font-bold uppercase leading-none tracking-[0.2em] md:text-[9px]">
           <div className="flex items-center gap-4 md:gap-8">
             <div className="flex items-center gap-2">
               <span className="text-primary">{"\u2022"}</span>
@@ -35,38 +35,38 @@ export async function Header() {
         </div>
       </div>
 
-      <header className="w-full border-b border-primary/20 bg-[#faf8f2]/95 shadow-sm backdrop-blur-md">
-        <div className="mx-auto max-w-[1400px] px-4 py-4 sm:px-6">
-          <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-            <div className="flex items-center justify-between gap-4 xl:min-w-[320px]">
-              <Link href="/" className="group flex items-center gap-4">
-                <div className="relative h-16 w-16 overflow-hidden rounded-full border border-primary/10 bg-white shadow-sm transition-all duration-500 group-hover:border-primary/30">
+      <header className="m-0 w-full border-0 bg-[#faf8f2]/95 shadow-none backdrop-blur-md">
+        <div className="mx-auto max-w-[1400px] px-4 py-2.5 sm:px-6">
+          <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+            <div className="flex items-center justify-between gap-3 xl:min-w-[300px]">
+              <Link href="/" className="group flex items-center gap-3">
+                <div className="relative h-12 w-12 overflow-hidden rounded-full border border-primary/10 bg-white shadow-sm transition-all duration-500 group-hover:border-primary/30">
                   <Image
                     src="/logos/logo.png"
                     alt="Uyarvom"
                     fill
-                    className="object-contain p-1.5 transition-transform duration-500 group-hover:scale-105"
+                    className="object-contain p-1 transition-transform duration-500 group-hover:scale-105"
                     priority
                   />
                 </div>
                 <div className="min-w-0 leading-none">
-                  <span className="block font-serif text-[2.1rem] tracking-[0.08em] text-[#6b140f] md:text-[2.45rem]">
+                  <span className="block font-serif text-[1.75rem] tracking-[0.08em] text-[#6b140f] md:text-[2rem]">
                     Uyarvom
                   </span>
-                  <span className="mt-1 block font-serif text-[1.15rem] tracking-[0.22em] text-[#b48a2b] md:text-[1.35rem]">
+                  <span className="mt-0.5 block font-serif text-[0.95rem] tracking-[0.22em] text-[#b48a2b] md:text-[1.05rem]">
                     Homestyles
                   </span>
                 </div>
               </Link>
             </div>
 
-            <div className="min-w-0 flex-1 xl:px-6">
+            <div className="min-w-0 flex-1 xl:px-4">
               <div className="mx-auto max-w-[760px]">
                 <ProductsSearch />
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 md:gap-5 xl:min-w-[280px]">
+            <div className="flex items-center justify-end gap-2 md:gap-4 xl:min-w-[260px]">
               <HeaderWishlistButton />
 
               <HeaderCartButton />
@@ -79,8 +79,8 @@ export async function Header() {
         </div>
       </header>
 
-      <div className="w-full overflow-hidden border-b border-primary/10 bg-[#FAF9F6] py-2">
-        <div className="mx-auto flex max-w-[1400px] items-center justify-center gap-3 px-4 text-[9px] font-bold uppercase tracking-[0.28em] sm:px-6 md:text-[10px]">
+      <div className="m-0 w-full border-0 bg-[#FAF9F6] py-2">
+        <div className="mx-auto flex max-w-[1400px] items-center justify-center gap-3 px-4 text-[9px] font-bold uppercase leading-none tracking-[0.28em] sm:px-6 md:text-[10px]">
           <Link href="/offers" className="group flex items-center gap-3">
             <span className="text-foreground/40">First Order Offer:</span>
             <span className="text-foreground transition-colors group-hover:text-primary">

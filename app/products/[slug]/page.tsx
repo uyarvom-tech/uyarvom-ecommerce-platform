@@ -107,7 +107,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       <Header />
 
       <main className="flex-1">
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-12 lg:py-20">
+        <div className="max-w-[1600px] mx-auto px-3 sm:px-4 py-10 lg:py-16">
           {isLowStock && (
             <div className="mb-10 p-4 border-l-2 border-primary bg-primary/5">
               <p className="text-xs uppercase tracking-[0.2em] font-bold text-primary">

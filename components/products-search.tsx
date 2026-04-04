@@ -1,6 +1,6 @@
-'use client'
+"use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useDeferredValue, useEffect, useRef, useState, useTransition } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { createPortal } from "react-dom"
 import { Button } from "@/components/ui/button"
@@ -21,10 +21,12 @@ export function ProductsSearch() {
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [selectedIndex, setSelectedIndex] = useState(-1)
   const [isLoading, setIsLoading] = useState(false)
+  const [isPending, startTransition] = useTransition()
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 })
   const inputRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const suggestionsRef = useRef<HTMLDivElement>(null)
+  const deferredQuery = useDeferredValue(query)
 
   const updateDropdownPosition = () => {
     if (!containerRef.current) return
@@ -39,8 +41,8 @@ export function ProductsSearch() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (query.length >= 2) {
-        fetchSuggestions(query)
+      if (deferredQuery.length >= 2) {
+        fetchSuggestions(deferredQuery)
       } else {
         setSuggestions([])
         setShowSuggestions(false)
@@ -48,7 +50,7 @@ export function ProductsSearch() {
     }, 250)
 
     return () => clearTimeout(timer)
-  }, [query])
+  }, [deferredQuery])
 
   useEffect(() => {
     if (!showSuggestions) return
@@ -100,15 +102,19 @@ export function ProductsSearch() {
 
     const params = new URLSearchParams(searchParams.toString())
     params.set("search", queryToSearch)
-    router.push(`/?${params.toString()}`)
-    setShowSuggestions(false)
-    inputRef.current?.blur()
+    startTransition(() => {
+      router.replace(`/?${params.toString()}`, { scroll: false })
+      setShowSuggestions(false)
+      inputRef.current?.blur()
+    })
   }
 
   const goToSuggestion = (suggestion: Suggestion) => {
     setQuery(suggestion.text)
     setShowSuggestions(false)
-    router.push(suggestion.href)
+    startTransition(() => {
+      router.replace(suggestion.href, { scroll: false })
+    })
   }
 
   const handleSubmit = (event: React.FormEvent) => {
@@ -145,7 +151,9 @@ export function ProductsSearch() {
     setShowSuggestions(false)
     const params = new URLSearchParams(searchParams.toString())
     params.delete("search")
-    router.push(params.toString() ? `/?${params.toString()}` : "/")
+    startTransition(() => {
+      router.replace(params.toString() ? `/?${params.toString()}` : "/", { scroll: false })
+    })
   }
 
   const getSuggestionIcon = (type: Suggestion["type"]) => {
@@ -222,8 +230,8 @@ export function ProductsSearch() {
   return (
     <div ref={containerRef} className="relative w-full">
       <form onSubmit={handleSubmit}>
-        <div className="relative flex items-center rounded-full border border-primary/15 bg-white p-1 shadow-[0_8px_22px_rgba(17,17,17,0.05)] transition-all duration-300 focus-within:border-primary/35 focus-within:shadow-[0_14px_34px_rgba(156,124,56,0.14)]">
-          <div className="ml-2 flex h-9 w-9 items-center justify-center text-primary">
+        <div className="relative flex items-center rounded-full border border-primary/15 bg-white p-0.5 shadow-[0_8px_22px_rgba(17,17,17,0.05)] transition-all duration-300 focus-within:border-primary/35 focus-within:shadow-[0_14px_34px_rgba(156,124,56,0.14)]">
+          <div className="ml-1.5 flex h-8 w-8 items-center justify-center text-primary">
             <Search className="h-4 w-4" />
           </div>
           <Input
@@ -236,12 +244,13 @@ export function ProductsSearch() {
             onFocus={() => {
               if (suggestions.length > 0) setShowSuggestions(true)
             }}
-            className="h-11 border-0 bg-transparent pl-2 pr-14 text-sm shadow-none focus-visible:ring-0"
+            className="h-10 border-0 bg-transparent pl-2 pr-12 text-sm shadow-none focus-visible:ring-0"
             autoComplete="off"
+            aria-busy={isLoading || isPending}
           />
           <div className="absolute right-1 flex items-center">
             {query && (
-              <Button type="button" variant="ghost" size="icon" onClick={clearSearch} className="h-9 w-9 rounded-full">
+              <Button type="button" variant="ghost" size="icon" onClick={clearSearch} className="h-8 w-8 rounded-full">
                 <X className="h-4 w-4" />
               </Button>
             )}

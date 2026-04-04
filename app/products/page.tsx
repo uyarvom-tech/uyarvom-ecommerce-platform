@@ -1,13 +1,11 @@
 import { prisma } from "@/lib/prisma-safe"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
-import { ProductCard } from "@/components/product-card"
-import { ProductFilters } from "@/components/product-filters"
 import { AppleReveal } from "@/components/apple-scroll-animations"
 import { AIKitchenMatch } from "@/components/ai-kitchen-match"
 import { ProductsSearch } from "@/components/products-search"
-import { Search } from "lucide-react"
 import { STORE_ROOT_CATEGORY_NAMES } from "@/lib/store-catalog"
+import { StorefrontGrid } from "@/components/storefront-grid"
 
 export const dynamic = "force-dynamic"
 export const revalidate = 0
@@ -168,7 +166,7 @@ export default async function ProductsPage({
       <main className="flex-1">
         {!isAITab && (
           <section className="py-4 border-b border-border/50">
-            <div className="max-w-[980px] mx-auto px-6">
+            <div className="w-full px-2 sm:px-4 xl:px-6">
               <AppleReveal>
                 <div className="mb-6">
                   <ProductsSearch />
@@ -187,70 +185,33 @@ export default async function ProductsPage({
         )}
 
         <section className="py-8">
-          <div className="max-w-[1200px] mx-auto px-6">
-            {isAITab ? (
+          {isAITab ? (
+            <div className="w-full px-2 sm:px-3 lg:px-0">
               <AppleReveal>
                 <AIKitchenMatch products={displayProducts || []} />
               </AppleReveal>
-            ) : (
-                <div className="grid gap-6 lg:grid-cols-[auto_minmax(0,1fr)]">
-                  <aside className="hidden lg:block lg:col-span-1">
-                    <AppleReveal delay={100}>
-                      <div className="sticky top-20">
-                        <ProductFilters
-                        categories={categories.map((category) => ({
-                          id: category.id,
-                          name: category.name,
-                          slug: category.slug,
-                          children: category.children.map((child) => ({
-                            id: child.id,
-                            name: child.name,
-                            slug: child.slug,
-                          })),
-                        }))}
-                        basePath="/products"
-                        scrollTargetId="store-grid"
-                      />
-                    </div>
-                  </AppleReveal>
-                </aside>
-
-                <div id="store-grid" className="min-w-0">
-                  {searchQuery && (
-                    <div className="mb-6 p-4 bg-primary/5 border border-primary/20 rounded-lg">
-                      <p className="text-sm text-primary">
-                        Showing {displayProducts?.length || 0} results for "<strong>{searchQuery}</strong>"
-                      </p>
-                    </div>
-                  )}
-
-                  {displayProducts && displayProducts.length > 0 ? (
-                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                      {displayProducts.map((product: any, index: number) => (
-                        <AppleReveal key={product.id} delay={index * 100}>
-                          <ProductCard product={product} />
-                        </AppleReveal>
-                      ))}
-                    </div>
-                  ) : (
-                    <AppleReveal>
-                      <div className="apple-card p-12 text-center">
-                        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
-                          <Search className="w-8 h-8 text-muted-foreground" />
-                        </div>
-                        <h3 className="text-xl font-semibold mb-2">
-                          {searchQuery ? `No products found for "${searchQuery}"` : "No products found"}
-                        </h3>
-                        <p className="apple-body">
-                          Try adjusting your filters, category, or search terms.
-                        </p>
-                      </div>
-                    </AppleReveal>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
+            </div>
+          ) : (
+            <StorefrontGrid
+              categories={categories.map((category) => ({
+                id: category.id,
+                name: category.name,
+                slug: category.slug,
+                children: category.children.map((child) => ({
+                  id: child.id,
+                  name: child.name,
+                  slug: child.slug,
+                })),
+              }))}
+              products={displayProducts || []}
+              basePath="/products"
+              searchQuery={searchQuery}
+              scrollTargetId="store-grid"
+              emptyTitle={searchQuery ? `No products found for "${searchQuery}"` : "No products found"}
+              emptyDescription="Try adjusting your filters, category, or search terms."
+              emptyButtonLabel="View all products"
+            />
+          )}
         </section>
       </main>
 

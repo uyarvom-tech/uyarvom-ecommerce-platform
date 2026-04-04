@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo, useState, useTransition } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -21,16 +21,24 @@ export function ProductFilters({
   categories,
   basePath = "/",
   scrollTargetId = "store-grid",
+  isCollapsed,
+  onCollapsedChange,
 }: {
   categories: FilterCategory[]
   basePath?: string
   scrollTargetId?: string
+  isCollapsed?: boolean
+  onCollapsedChange?: (collapsed: boolean) => void
 }) {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const [isPending, startTransition] = useTransition()
   const [minPrice, setMinPrice] = useState(searchParams.get("min") || "")
   const [maxPrice, setMaxPrice] = useState(searchParams.get("max") || "")
-  const [isCollapsed, setIsCollapsed] = useState(false)
+  const [localCollapsed, setLocalCollapsed] = useState(false)
+
+  const collapsed = isCollapsed ?? localCollapsed
+  const setCollapsed = onCollapsedChange ?? setLocalCollapsed
 
   const activeCategory = searchParams.get("category") || ""
   const activeSubCategory = searchParams.get("sub") || ""
@@ -45,55 +53,54 @@ export function ProductFilters({
     const params = new URLSearchParams(searchParams.toString())
     updater(params)
     const query = params.toString()
-    router.push(query ? `${basePath}?${query}` : basePath, { scroll: false })
-    window.setTimeout(() => {
-      document.getElementById(scrollTargetId)?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      })
-    }, 0)
+    startTransition(() => {
+      router.replace(query ? `${basePath}?${query}` : basePath, { scroll: false })
+    })
   }
 
   const clearAll = () => {
     setMinPrice("")
     setMaxPrice("")
-    router.push(basePath, { scroll: false })
+    startTransition(() => {
+      router.replace(basePath, { scroll: false })
+    })
   }
 
   return (
-    <div className={`overflow-hidden rounded-[28px] border border-border/60 bg-white shadow-[0_20px_50px_rgba(0,0,0,0.06)] transition-all duration-300 ease-out ${isCollapsed ? "w-[68px]" : "w-full max-w-[286px]"}`}>
-      <div className={`border-b border-border/50 ${isCollapsed ? "p-2" : "bg-gradient-to-r from-primary/8 to-transparent p-4"}`}>
-        <div className={`flex items-center ${isCollapsed ? "flex-col gap-2" : "justify-between gap-3"}`}>
-          <div className={`inline-flex items-center gap-2 rounded-full bg-primary/8 font-bold uppercase tracking-[0.24em] text-primary ${isCollapsed ? "px-2 py-2 text-[8px] [writing-mode:vertical-rl] rotate-180 rounded-full" : "px-3 py-1 text-[10px]"}`}>
+    <div className={`overflow-hidden rounded-[24px] border border-border/60 bg-white shadow-[0_16px_34px_rgba(0,0,0,0.06)] ${collapsed ? "w-[72px]" : "w-full max-w-[276px]"}`}>
+      <div className={`border-b border-border/50 transition-all duration-300 ${collapsed ? "p-2" : "bg-gradient-to-r from-primary/8 to-transparent p-3"}`}>
+        <div className={`flex items-center transition-all duration-300 ${collapsed ? "flex-col gap-2" : "justify-between gap-3"}`}>
+          <div className={`inline-flex items-center gap-2 rounded-full bg-primary/8 font-bold uppercase tracking-[0.24em] text-primary transition-all duration-300 ${collapsed ? "px-2 py-2 text-[8px] [writing-mode:vertical-rl] rotate-180 rounded-full" : "px-3 py-1 text-[9px]"}`}>
             <SlidersHorizontal className="h-3.5 w-3.5" />
-            {!isCollapsed && "Filters"}
+            {!collapsed && "Filters"}
           </div>
           <Button
             variant="ghost"
-            onClick={() => setIsCollapsed((prev) => !prev)}
-            className={`text-[11px] font-semibold text-muted-foreground hover:text-primary ${isCollapsed ? "h-10 w-10 rounded-full px-0" : "h-8 px-3"}`}
-            aria-label={isCollapsed ? "Show filters" : "Hide filters"}
+            onClick={() => setCollapsed(!collapsed)}
+            className={`text-[11px] font-semibold text-muted-foreground hover:text-primary transition-all duration-300 ${collapsed ? "h-9 w-9 rounded-full px-0" : "h-7 px-2.5"}`}
+            aria-label={collapsed ? "Show filters" : "Hide filters"}
+            aria-busy={isPending}
           >
-            {isCollapsed ? ">" : "Hide"}
+            {collapsed ? "<" : ">"}
           </Button>
         </div>
 
-        {!isCollapsed && (
-          <div className="mt-3 flex items-center justify-between gap-2">
-            <Button variant="ghost" onClick={clearAll} className="h-8 px-3 text-[11px] text-muted-foreground hover:text-primary">
+        {!collapsed && (
+          <div className="mt-2 flex items-center justify-between gap-2">
+            <Button variant="ghost" onClick={clearAll} className="h-7 px-2.5 text-[10px] text-muted-foreground hover:text-primary">
               Clear
             </Button>
-            <span className="text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground/70">
+            <span className="text-[9px] font-medium uppercase tracking-[0.18em] text-muted-foreground/70">
               Narrow and quick
             </span>
           </div>
         )}
       </div>
 
-      <div className={`overflow-hidden transition-all duration-300 ease-out ${isCollapsed ? "max-h-0 opacity-0" : "max-h-[1200px] opacity-100"}`}>
-        <div className="space-y-4 overflow-y-auto overscroll-contain p-4 pr-3 md:max-h-[calc(100vh-14rem)]">
+      <div className={`overflow-hidden ${collapsed ? "hidden" : "block"}`}>
+        <div className="space-y-3 overflow-y-auto overscroll-contain px-3 py-3 pr-2 md:max-h-[calc(100vh-10rem)]">
           {(activeCategory || activeSubCategory || minPrice || maxPrice || activeSort !== "newest") && (
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1.5">
               {activeCategory && (
                 <button
                   type="button"
@@ -103,20 +110,20 @@ export function ProductFilters({
                       params.delete("sub")
                     })
                   }
-                  className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-primary"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/5 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.1em] text-primary"
                 >
                   {selectedCategory?.name || activeCategory}
-                  <X className="h-3.5 w-3.5" />
+                  <X className="h-3 w-3" />
                 </button>
               )}
               {activeSubCategory && (
                 <button
                   type="button"
                   onClick={() => pushParams((params) => params.delete("sub"))}
-                  className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-primary"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/5 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.1em] text-primary"
                 >
                   {selectedCategory?.children?.find((child) => child.slug === activeSubCategory)?.name || activeSubCategory}
-                  <X className="h-3.5 w-3.5" />
+                  <X className="h-3 w-3" />
                 </button>
               )}
               {(minPrice || maxPrice) && (
@@ -130,18 +137,18 @@ export function ProductFilters({
                       setMaxPrice("")
                     })
                   }
-                  className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-primary"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/5 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.1em] text-primary"
                 >
                   Price range
-                  <X className="h-3.5 w-3.5" />
+                  <X className="h-3 w-3" />
                 </button>
               )}
             </div>
           )}
 
-          <section className="space-y-2">
-            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-foreground/75">Category</p>
-            <div className="flex flex-wrap gap-2">
+          <section className="space-y-1.5">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-foreground/75">Category</p>
+            <div className="flex flex-wrap gap-1.5">
               <button
                 type="button"
                 onClick={() =>
@@ -150,7 +157,7 @@ export function ProductFilters({
                     params.delete("sub")
                   })
                 }
-                className={`rounded-full px-4 py-2 text-sm transition-all ${
+                className={`rounded-full px-3 py-1.5 text-[11px] transition-all ${
                   !activeCategory ? "bg-primary text-white" : "bg-secondary/70 text-foreground hover:bg-secondary"
                 }`}
               >
@@ -166,10 +173,10 @@ export function ProductFilters({
                       params.delete("sub")
                     })
                   }
-                  className={`rounded-full px-4 py-2 text-sm transition-all ${
-                    activeCategory === category.slug
-                      ? "bg-primary text-white"
-                      : "bg-secondary/70 text-foreground hover:bg-secondary"
+                className={`rounded-full px-3 py-1.5 text-[11px] transition-all ${
+                  activeCategory === category.slug
+                    ? "bg-primary text-white"
+                    : "bg-secondary/70 text-foreground hover:bg-secondary"
                   }`}
                 >
                   {category.name}
@@ -179,15 +186,15 @@ export function ProductFilters({
           </section>
 
           {selectedCategory && selectedCategory.children && selectedCategory.children.length > 0 && (
-            <section className="space-y-2">
-              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-foreground/75">Subcategory</p>
-              <div className="grid grid-cols-1 gap-2">
+            <section className="space-y-1.5">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-foreground/75">Subcategory</p>
+              <div className="grid grid-cols-1 gap-1.5">
                 {selectedCategory.children.map((child) => (
                   <button
                     key={child.id}
                     type="button"
                     onClick={() => pushParams((params) => params.set("sub", child.slug))}
-                    className={`rounded-xl border px-4 py-2.5 text-left text-sm transition-all ${
+                    className={`rounded-xl border px-3 py-2 text-left text-[11px] transition-all ${
                       activeSubCategory === child.slug
                         ? "border-primary bg-primary/5 text-primary"
                         : "border-border bg-background text-foreground hover:border-primary/30"
@@ -200,9 +207,9 @@ export function ProductFilters({
             </section>
           )}
 
-          <section className="space-y-2 rounded-2xl border border-border/60 bg-gradient-to-b from-white to-muted/20 p-3">
-            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-foreground/75">Sort by</p>
-            <div className="grid grid-cols-1 gap-2">
+          <section className="space-y-1.5 rounded-2xl border border-border/60 bg-gradient-to-b from-white to-muted/20 p-2.5">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-foreground/75">Sort by</p>
+            <div className="grid grid-cols-1 gap-1.5">
               {[
                 { value: "newest", label: "Newest" },
                 { value: "price-asc", label: "Price: Low to High" },
@@ -213,7 +220,7 @@ export function ProductFilters({
                   key={option.value}
                   type="button"
                   onClick={() => pushParams((params) => params.set("sort", option.value))}
-                  className={`rounded-xl border px-4 py-2.5 text-left text-sm transition-all ${
+                  className={`rounded-xl border px-3 py-2 text-left text-[11px] transition-all ${
                     activeSort === option.value
                       ? "border-primary bg-primary/5 text-primary"
                       : "border-border bg-background text-foreground hover:border-primary/30"
@@ -225,16 +232,16 @@ export function ProductFilters({
             </div>
           </section>
 
-          <section className="space-y-2 rounded-2xl border border-border/60 bg-gradient-to-b from-white to-muted/20 p-3">
-            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-foreground/75">Price range</p>
-            <div className="grid grid-cols-2 gap-3">
+          <section className="space-y-1.5 rounded-2xl border border-border/60 bg-gradient-to-b from-white to-muted/20 p-2.5">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-foreground/75">Price range</p>
+            <div className="grid grid-cols-2 gap-2">
               <Input
                 type="number"
                 inputMode="numeric"
                 value={minPrice}
                 onChange={(event) => setMinPrice(event.target.value)}
                 placeholder="Min"
-                className="h-10 rounded-xl"
+                className="h-9 rounded-xl text-[11px]"
               />
               <Input
                 type="number"
@@ -242,7 +249,7 @@ export function ProductFilters({
                 value={maxPrice}
                 onChange={(event) => setMaxPrice(event.target.value)}
                 placeholder="Max"
-                className="h-10 rounded-xl"
+                className="h-9 rounded-xl text-[11px]"
               />
             </div>
             <Button
@@ -255,7 +262,7 @@ export function ProductFilters({
                   else params.delete("max")
                 })
               }
-              className="h-10 w-full rounded-full bg-primary text-[11px] font-bold uppercase tracking-[0.18em] text-white hover:bg-foreground"
+              className="h-9 w-full rounded-full bg-primary text-[10px] font-bold uppercase tracking-[0.16em] text-white hover:bg-foreground"
             >
               Apply
             </Button>
