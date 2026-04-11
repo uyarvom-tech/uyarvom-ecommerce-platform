@@ -177,27 +177,27 @@ export function ProductsSearch() {
               width: dropdownPosition.width,
               zIndex: 99999,
             }}
-            className="overflow-hidden rounded-[26px] border border-border bg-white shadow-2xl"
+            className="overflow-hidden rounded-[22px] border border-border bg-white shadow-2xl"
           >
-            <div className="border-b border-border/10 px-5 py-4">
-              <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-primary">Search the whole app</span>
-            </div>
+              <div className="border-b border-border/10 px-4 py-3 md:px-5 md:py-4">
+              <span className="text-[9px] font-bold uppercase tracking-[0.26em] text-primary md:text-[10px] md:tracking-[0.3em]">Search the whole app</span>
+              </div>
             <div className="max-h-80 overflow-y-auto">
               {suggestions.map((suggestion, index) => (
                 <button
                   key={`${suggestion.type}-${suggestion.text}`}
                   type="button"
                   onClick={() => goToSuggestion(suggestion)}
-                  className={`flex w-full items-center gap-4 px-5 py-4 text-left transition-colors ${
+                  className={`flex w-full items-center gap-3 px-4 py-3 text-left transition-colors md:gap-4 md:px-5 md:py-4 ${
                     index === selectedIndex ? "bg-secondary" : "hover:bg-secondary"
                   }`}
                 >
-                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-primary">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-primary md:h-9 md:w-9">
                     {getSuggestionIcon(suggestion.type)}
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-semibold text-foreground">{suggestion.text}</p>
-                    <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground">{suggestion.type}</p>
+                    <p className="text-[13px] font-semibold text-foreground md:text-sm">{suggestion.text}</p>
+                    <p className="text-[10px] uppercase tracking-[0.22em] text-muted-foreground md:text-[11px] md:tracking-[0.25em]">{suggestion.type}</p>
                   </div>
                 </button>
               ))}
@@ -214,7 +214,7 @@ export function ProductsSearch() {
               width: dropdownPosition.width,
               zIndex: 99999,
             }}
-            className="rounded-[26px] border border-border bg-white p-5 shadow-xl"
+            className="rounded-[22px] border border-border bg-white p-4 shadow-xl md:p-5"
           >
             <div className="flex items-center gap-3 text-sm text-muted-foreground">
               <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
@@ -231,26 +231,26 @@ export function ProductsSearch() {
     <div ref={containerRef} className="relative w-full">
       <form onSubmit={handleSubmit}>
         <div className="relative flex items-center rounded-full border border-primary/15 bg-white p-0.5 shadow-[0_8px_22px_rgba(17,17,17,0.05)] transition-all duration-300 focus-within:border-primary/35 focus-within:shadow-[0_14px_34px_rgba(156,124,56,0.14)]">
-          <div className="ml-1.5 flex h-8 w-8 items-center justify-center text-primary">
-            <Search className="h-4 w-4" />
+          <div className="ml-1.5 flex h-7 w-7 items-center justify-center text-primary md:h-8 md:w-8">
+            <Search className="h-3.5 w-3.5 md:h-4 md:w-4" />
           </div>
           <Input
             ref={inputRef}
             type="text"
-            placeholder="Search products, categories, pages, or support"
+            placeholder="Search products, categories, or support"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             onKeyDown={handleKeyDown}
             onFocus={() => {
               if (suggestions.length > 0) setShowSuggestions(true)
             }}
-            className="h-10 border-0 bg-transparent pl-2 pr-12 text-sm shadow-none focus-visible:ring-0"
+            className="h-9 border-0 bg-transparent pl-2 pr-12 text-sm shadow-none focus-visible:ring-0 md:h-10"
             autoComplete="off"
             aria-busy={isLoading || isPending}
           />
           <div className="absolute right-1 flex items-center">
             {query && (
-              <Button type="button" variant="ghost" size="icon" onClick={clearSearch} className="h-8 w-8 rounded-full">
+              <Button type="button" variant="ghost" size="icon" onClick={clearSearch} className="h-7 w-7 rounded-full md:h-8 md:w-8">
                 <X className="h-4 w-4" />
               </Button>
             )}

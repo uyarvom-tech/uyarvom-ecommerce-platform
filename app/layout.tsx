@@ -38,7 +38,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`scroll-smooth ${lato.variable} ${playfair.variable}`} suppressHydrationWarning>
-      <body className={`${lato.className} antialiased`}>
+      <body className={`${lato.className} min-h-screen overflow-x-hidden antialiased`}>
         <SecretThemeProvider>
           {children}
           <FloatingAIButton />

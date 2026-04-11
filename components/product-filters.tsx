@@ -23,21 +23,29 @@ export function ProductFilters({
   scrollTargetId = "store-grid",
   isCollapsed,
   onCollapsedChange,
+  defaultCollapsed = false,
+  mobileCompact = false,
+  mobileDrawer = false,
+  onMobileDrawerClose,
 }: {
   categories: FilterCategory[]
   basePath?: string
   scrollTargetId?: string
   isCollapsed?: boolean
   onCollapsedChange?: (collapsed: boolean) => void
+  defaultCollapsed?: boolean
+  mobileCompact?: boolean
+  mobileDrawer?: boolean
+  onMobileDrawerClose?: () => void
 }) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [isPending, startTransition] = useTransition()
   const [minPrice, setMinPrice] = useState(searchParams.get("min") || "")
   const [maxPrice, setMaxPrice] = useState(searchParams.get("max") || "")
-  const [localCollapsed, setLocalCollapsed] = useState(false)
+  const [localCollapsed, setLocalCollapsed] = useState(defaultCollapsed)
 
-  const collapsed = isCollapsed ?? localCollapsed
+  const collapsed = mobileDrawer ? false : (isCollapsed ?? localCollapsed)
   const setCollapsed = onCollapsedChange ?? setLocalCollapsed
 
   const activeCategory = searchParams.get("category") || ""
@@ -48,6 +56,21 @@ export function ProductFilters({
     () => categories.find((category) => category.slug === activeCategory),
     [categories, activeCategory]
   )
+  const rootClassName = mobileDrawer
+    ? "w-full overflow-hidden rounded-none border-0 bg-background shadow-none"
+    : mobileCompact
+      ? "w-full max-w-none"
+      : collapsed
+        ? "w-[72px]"
+        : "w-full max-w-[276px]"
+
+  const headerClassName = mobileDrawer
+    ? "border-b border-border/10 bg-gradient-to-r from-primary/8 to-transparent p-4"
+    : mobileCompact
+      ? "border-b border-border/50 bg-gradient-to-r from-primary/8 to-transparent p-3"
+      : collapsed
+        ? "border-b border-border/50 p-2"
+        : "border-b border-border/50 bg-gradient-to-r from-primary/8 to-transparent p-3"
 
   const pushParams = (updater: (params: URLSearchParams) => void) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -67,25 +90,48 @@ export function ProductFilters({
   }
 
   return (
-    <div className={`overflow-hidden rounded-[24px] border border-border/60 bg-white shadow-[0_16px_34px_rgba(0,0,0,0.06)] ${collapsed ? "w-[72px]" : "w-full max-w-[276px]"}`}>
-      <div className={`border-b border-border/50 transition-all duration-300 ${collapsed ? "p-2" : "bg-gradient-to-r from-primary/8 to-transparent p-3"}`}>
-        <div className={`flex items-center transition-all duration-300 ${collapsed ? "flex-col gap-2" : "justify-between gap-3"}`}>
-          <div className={`inline-flex items-center gap-2 rounded-full bg-primary/8 font-bold uppercase tracking-[0.24em] text-primary transition-all duration-300 ${collapsed ? "px-2 py-2 text-[8px] [writing-mode:vertical-rl] rotate-180 rounded-full" : "px-3 py-1 text-[9px]"}`}>
-            <SlidersHorizontal className="h-3.5 w-3.5" />
-            {!collapsed && "Filters"}
-          </div>
-          <Button
-            variant="ghost"
-            onClick={() => setCollapsed(!collapsed)}
-            className={`text-[11px] font-semibold text-muted-foreground hover:text-primary transition-all duration-300 ${collapsed ? "h-9 w-9 rounded-full px-0" : "h-7 px-2.5"}`}
-            aria-label={collapsed ? "Show filters" : "Hide filters"}
-            aria-busy={isPending}
+    <div className={rootClassName}>
+      <div className={`${headerClassName} transition-all duration-300`}>
+        <div
+          className={`flex items-center transition-all duration-300 ${
+            mobileDrawer || mobileCompact ? "justify-between gap-3" : collapsed ? "flex-col gap-2" : "justify-between gap-3"
+          }`}
+        >
+          <div
+            className={`inline-flex items-center gap-2 rounded-full bg-primary/8 font-bold uppercase tracking-[0.24em] text-primary transition-all duration-300 ${
+              mobileDrawer || mobileCompact ? "px-3 py-1 text-[9px]" : collapsed ? "px-2 py-2 text-[8px] [writing-mode:vertical-rl] rotate-180 rounded-full" : "px-3 py-1 text-[9px]"
+            }`}
           >
-            {collapsed ? "<" : ">"}
-          </Button>
+            <SlidersHorizontal className="h-3.5 w-3.5" />
+            {(!collapsed || mobileCompact) && "Filters"}
+          </div>
+          {mobileDrawer ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={onMobileDrawerClose}
+              className="h-9 w-9 rounded-full"
+              aria-label="Close filters"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          ) : (
+            <Button
+              variant="ghost"
+              onClick={() => setCollapsed(!collapsed)}
+              className={`text-[11px] font-semibold text-muted-foreground hover:text-primary transition-all duration-300 ${
+                mobileCompact ? "h-8 rounded-full px-3" : collapsed ? "h-9 w-9 rounded-full px-0" : "h-7 px-2.5"
+              }`}
+              aria-label={collapsed ? "Show filters" : "Hide filters"}
+              aria-busy={isPending}
+            >
+              {collapsed ? "Show" : "Hide"}
+            </Button>
+          )}
         </div>
 
-        {!collapsed && (
+        {!collapsed && !mobileDrawer && (
           <div className="mt-2 flex items-center justify-between gap-2">
             <Button variant="ghost" onClick={clearAll} className="h-7 px-2.5 text-[10px] text-muted-foreground hover:text-primary">
               Clear
@@ -95,10 +141,20 @@ export function ProductFilters({
             </span>
           </div>
         )}
+        {mobileDrawer && (
+          <div className="mt-2 flex items-center justify-between gap-2">
+            <Button variant="ghost" onClick={clearAll} className="h-7 px-2.5 text-[10px] text-muted-foreground hover:text-primary">
+              Clear all
+            </Button>
+            <span className="text-[9px] font-medium uppercase tracking-[0.18em] text-muted-foreground/70">
+              Tap any chip to apply
+            </span>
+          </div>
+        )}
       </div>
 
       <div className={`overflow-hidden ${collapsed ? "hidden" : "block"}`}>
-        <div className="space-y-3 overflow-y-auto overscroll-contain px-3 py-3 pr-2 md:max-h-[calc(100vh-10rem)]">
+        <div className={`space-y-3 overflow-y-auto overscroll-contain px-3 py-3 pr-2 ${mobileDrawer ? "max-h-[calc(100dvh-8rem)]" : mobileCompact ? "max-h-[70vh]" : "md:max-h-[calc(100vh-10rem)]"}`}>
           {(activeCategory || activeSubCategory || minPrice || maxPrice || activeSort !== "newest") && (
             <div className="flex flex-wrap gap-1.5">
               {activeCategory && (

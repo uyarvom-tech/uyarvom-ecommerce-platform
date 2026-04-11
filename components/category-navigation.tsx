@@ -58,6 +58,18 @@ export function CategoryNavigation({ categories }: { categories: StoreNavigation
   const [isMobile, setIsMobile] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
   const wrapperRef = useRef<HTMLDivElement>(null)
+  const mobileLinks = useMemo(
+    () => [
+      { id: "sale", name: "Sale", href: "/offers" },
+      { id: "living-room", name: "Living Room", href: "/?category=serveware" },
+      { id: "bedroom", name: "Bedroom", href: "/?category=storage" },
+      { id: "dining-room", name: "Dining Room", href: "/?category=diningware" },
+      { id: "decor", name: "Decor", href: "/?category=serveware" },
+      { id: "kitchen", name: "Kitchen", href: "/?category=cookware" },
+      { id: "gifting", name: "Gifting", href: "/?category=gifting-sets" },
+    ],
+    []
+  )
 
   const displayCategories = useMemo<DisplayCategory[]>(() => {
     const baseCategories: DisplayCategory[] = [
@@ -165,50 +177,64 @@ export function CategoryNavigation({ categories }: { categories: StoreNavigation
           </div>
         )}
 
-        <div className="flex items-start gap-3 overflow-x-auto scrollbar-hide md:justify-center md:gap-5">
-          {displayCategories.map((category) => (
-            <button
-              key={category.id}
-              type="button"
-              onClick={() => setActiveCategory(activeCategory === category.id ? null : category.id)}
-              onMouseEnter={() => {
-                if (!isMobile) setActiveCategory(category.id)
-              }}
-              className={cn(
-                "group flex min-w-[82px] flex-col items-center md:min-w-[98px]",
-                isScrolled ? "px-1 py-0.5" : "px-1 py-0"
-              )}
-            >
-              <div
+        {isMobile ? (
+          <div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap pb-1 scrollbar-hide">
+            {mobileLinks.map((item) => (
+              <Link
+                key={item.id}
+                href={item.href}
+                className="inline-flex items-center rounded-full border border-border/50 bg-white px-4 py-2 text-[10px] font-bold uppercase tracking-[0.24em] text-foreground shadow-sm transition-colors hover:border-primary/30 hover:text-primary"
+              >
+                {item.name}
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div className="flex items-start gap-3 overflow-x-auto scrollbar-hide md:justify-center md:gap-5">
+            {displayCategories.map((category) => (
+              <button
+                key={category.id}
+                type="button"
+                onClick={() => setActiveCategory(activeCategory === category.id ? null : category.id)}
+                onMouseEnter={() => {
+                  if (!isMobile) setActiveCategory(category.id)
+                }}
                 className={cn(
-                  "relative overflow-hidden rounded-full border border-border/15 bg-secondary shadow-sm transition-all duration-300",
-                  isScrolled ? "mb-0 h-0 w-0 scale-0 opacity-0" : "mb-2.5 h-16 w-16 scale-100 opacity-100 md:h-[72px] md:w-[72px]",
-                  activeCategory === category.id && !isScrolled ? "border-primary shadow-md" : "group-hover:border-primary/35 group-hover:shadow-md"
+                  "group flex min-w-[82px] flex-col items-center md:min-w-[98px]",
+                  isScrolled ? "px-1 py-0.5" : "px-1 py-0"
                 )}
               >
-                <Image
-                  src={category.icon}
-                  alt={category.name}
-                  width={96}
-                  height={96}
-                  className="h-full w-full object-cover"
-                  onError={(event) => {
-                    const target = event.target as HTMLImageElement
-                    target.src = CATEGORY_FALLBACK_IMAGE
-                  }}
-                />
-              </div>
-              <span
-                className={cn(
-                  "text-center text-[10px] font-bold uppercase tracking-[0.24em] text-foreground transition-colors md:text-[11px]",
-                  activeCategory === category.id ? "text-primary" : "group-hover:text-primary"
-                )}
-              >
-                {category.name}
-              </span>
-            </button>
-          ))}
-        </div>
+                <div
+                  className={cn(
+                    "relative overflow-hidden rounded-full border border-border/15 bg-secondary shadow-sm transition-all duration-300",
+                    isScrolled ? "mb-0 h-0 w-0 scale-0 opacity-0" : "mb-2.5 h-16 w-16 scale-100 opacity-100 md:h-[72px] md:w-[72px]",
+                    activeCategory === category.id && !isScrolled ? "border-primary shadow-md" : "group-hover:border-primary/35 group-hover:shadow-md"
+                  )}
+                >
+                  <Image
+                    src={category.icon}
+                    alt={category.name}
+                    width={96}
+                    height={96}
+                    className="h-full w-full object-cover"
+                    onError={(event) => {
+                      const target = event.target as HTMLImageElement
+                      target.src = CATEGORY_FALLBACK_IMAGE
+                    }}
+                  />
+                </div>
+                <span
+                  className={cn(
+                    "text-center text-[10px] font-bold uppercase tracking-[0.24em] text-foreground transition-colors md:text-[11px]",
+                    activeCategory === category.id ? "text-primary" : "group-hover:text-primary"
+                  )}
+                >
+                  {category.name}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {activeCategoryData && (

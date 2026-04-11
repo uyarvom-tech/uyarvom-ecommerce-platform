@@ -44,8 +44,8 @@ export function HomeMainHero({ banners = [] }: { banners?: HeroBannerProps[] }) 
   const goToNext = () => setActiveIndex((current) => (current + 1) % activeSlides.length)
 
   return (
-    <section className="relative w-full overflow-hidden border-b border-border/10">
-      <div className="relative h-[54vh] min-h-[380px] w-full md:h-[64vh] md:min-h-[500px]">
+    <section className="relative w-full overflow-hidden border-b border-border/10 bg-[#f7f3eb]">
+      <div className="relative h-[38vh] min-h-[280px] w-full md:h-[60vh] md:min-h-[500px]">
         {activeSlides.map((slide, index) => (
           <div
             key={index}
@@ -62,27 +62,27 @@ export function HomeMainHero({ banners = [] }: { banners?: HeroBannerProps[] }) 
               className="object-cover"
               sizes="100vw"
             />
-            <div className="absolute inset-0 bg-black/30 md:bg-black/20" />
+            <div className="absolute inset-0 bg-black/28 md:bg-black/20" />
 
-            <div className="absolute inset-0 flex items-center md:items-end">
-              <div className="w-full px-6 py-10 md:px-12 md:pb-16 lg:px-20 lg:pb-24">
+            <div className="absolute inset-0 flex items-end">
+              <div className="w-full px-4 py-7 md:px-12 md:pb-16 lg:px-20 lg:pb-20">
                 <div className="max-w-4xl">
-                  <p className="text-[10px] font-black uppercase tracking-[.4em] text-primary mb-4 drop-shadow-md">
+                  <p className="mb-2.5 text-[9px] font-black uppercase tracking-[.32em] text-primary drop-shadow-md md:mb-4 md:text-[10px] md:tracking-[.4em]">
                     {slide.eyebrow}
                   </p>
-                  <h1 className="font-playfair text-4xl md:text-6xl lg:text-8xl font-black leading-[0.9] text-white tracking-tighter drop-shadow-2xl">
+                  <h1 className="max-w-[10ch] font-playfair text-[2.15rem] font-black leading-[0.9] tracking-tighter text-white drop-shadow-2xl md:max-w-none md:text-5xl lg:text-7xl">
                     {slide.title}
                   </h1>
-                  <p className="mt-5 max-w-2xl text-sm md:text-base leading-relaxed text-white/90 font-medium drop-shadow-lg lg:text-lg">
+                  <p className="mt-3 max-w-[30ch] text-[12px] leading-relaxed text-white/90 font-medium drop-shadow-lg md:mt-5 md:max-w-2xl md:text-base lg:text-lg">
                     {slide.description}
                   </p>
-                  <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                    <Link href={slide.primaryHref} className="h-12 bg-white text-black px-8 flex items-center justify-center text-[10px] font-black uppercase tracking-widest hover:bg-primary transition-all shadow-xl">
+                  <div className="mt-5 flex flex-col gap-2.5 sm:flex-row md:mt-8 md:gap-3">
+                    <Link href={slide.primaryHref} className="flex h-10 items-center justify-center bg-white px-5 text-[10px] font-black uppercase tracking-widest text-black shadow-xl transition-all hover:bg-primary sm:px-8 md:h-11">
                       {slide.primaryLabel}
                     </Link>
                     <Link
                       href={slide.secondaryHref}
-                      className="h-12 border border-white/40 bg-white/5 backdrop-blur-md text-white px-8 flex items-center justify-center text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all"
+                      className="flex h-10 items-center justify-center border border-white/40 bg-white/5 px-5 text-[10px] font-black uppercase tracking-widest text-white backdrop-blur-md transition-all hover:bg-white/10 sm:px-8 md:h-11"
                     >
                       {slide.secondaryLabel}
                     </Link>
@@ -100,7 +100,7 @@ export function HomeMainHero({ banners = [] }: { banners?: HeroBannerProps[] }) 
               variant="ghost"
               size="icon"
               onClick={goToPrev}
-              className="absolute left-6 top-1/2 z-10 h-12 w-12 -translate-y-1/2 rounded-none border border-white/20 bg-black/10 text-white backdrop-blur-sm hover:bg-black/40 transition-all hidden md:flex"
+              className="absolute left-6 top-1/2 z-10 hidden h-12 w-12 -translate-y-1/2 rounded-none border border-white/20 bg-black/10 text-white backdrop-blur-sm transition-all hover:bg-black/40 md:flex"
             >
               <ChevronLeft className="h-6 w-6" />
             </Button>
@@ -109,20 +109,20 @@ export function HomeMainHero({ banners = [] }: { banners?: HeroBannerProps[] }) 
               variant="ghost"
               size="icon"
               onClick={goToNext}
-              className="absolute right-6 top-1/2 z-10 h-12 w-12 -translate-y-1/2 rounded-none border border-white/20 bg-black/10 text-white backdrop-blur-sm hover:bg-black/40 transition-all hidden md:flex"
+              className="absolute right-6 top-1/2 z-10 hidden h-12 w-12 -translate-y-1/2 rounded-none border border-white/20 bg-black/10 text-white backdrop-blur-sm transition-all hover:bg-black/40 md:flex"
             >
               <ChevronRight className="h-6 w-6" />
             </Button>
 
-            <div className="absolute bottom-7 left-1/2 z-10 flex -translate-x-1/2 gap-3">
+            <div className="absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 gap-2 md:bottom-7 md:gap-3">
               {activeSlides.map((_, index) => (
                 <button
                   key={index}
                   type="button"
                   onClick={() => setActiveIndex(index)}
-                  className={cn(
+                className={cn(
                     "h-1 transition-all duration-500",
-                    activeIndex === index ? "w-16 bg-white" : "w-6 bg-white/30"
+                    activeIndex === index ? "w-10 bg-white md:w-16" : "w-4 bg-white/30 md:w-6"
                   )}
                   aria-label={`Go to slide ${index + 1}`}
                 />
