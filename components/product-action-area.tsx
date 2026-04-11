@@ -24,44 +24,44 @@ export function ProductActionArea({ product, hasDiscount }: { product: any; hasD
   const dynamicStock = selectedVariant?.stock ?? 0
 
   return (
-    <div className="flex flex-col space-y-10">
-      <div className="group border-y border-border px-2 py-10 transition-all duration-500 hover:bg-secondary/50">
-        <div className="flex items-baseline gap-4">
-          <span className="text-4xl font-serif text-foreground">Rs.{dynamicPrice.toLocaleString('en-IN')}</span>
+    <div className="flex flex-col space-y-5 md:space-y-10">
+      <div className="group border-y border-border px-0 py-5 transition-all duration-500 hover:bg-secondary/50 sm:px-2 md:py-10">
+        <div className="flex items-baseline gap-2.5 md:gap-4">
+          <span className="text-2xl font-serif text-foreground sm:text-3xl md:text-4xl">Rs.{dynamicPrice.toLocaleString('en-IN')}</span>
           {hasDiscount && product.compareAtPrice && dynamicPrice === product.price && (
-            <span className="text-xl font-light text-foreground/30 line-through">
+            <span className="text-sm font-light text-foreground/30 line-through sm:text-base md:text-xl">
               Rs.{product.compareAtPrice.toLocaleString('en-IN')}
             </span>
           )}
         </div>
-        <p className="mt-2 text-[11px] uppercase tracking-[0.18em] text-foreground/55">
+        <p className="mt-1.5 text-[9px] uppercase tracking-[0.16em] text-foreground/55 sm:text-[10px] md:mt-2 md:text-[11px]">
           {dynamicStock > 0 ? `${dynamicStock} left for this size` : "Out of stock"}
         </p>
-        <p className="mt-2 text-[10px] uppercase leading-none tracking-widest text-foreground/40">
+        <p className="mt-1.5 text-[8px] uppercase leading-snug tracking-widest text-foreground/40 sm:text-[9px] md:mt-2 md:text-[10px]">
           Complimentary artisan shipping within India
         </p>
       </div>
 
       {product.shortDescription && (
-        <p className="text-lg leading-relaxed text-foreground/70 font-light italic">
+        <p className="text-sm leading-relaxed text-foreground/70 font-light italic sm:text-base md:text-lg">
           &ldquo;{product.shortDescription}&rdquo;
         </p>
       )}
 
-      <div className="space-y-8 pt-4">
+      <div className="space-y-4 pt-1 md:space-y-8 md:pt-4">
         <ProductSizeSelector
           sizes={sizeOptions}
           selectedVariantId={selectedVariantId}
           onSizeChange={setSelectedVariantId}
         />
 
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-2.5 md:gap-4">
           <AddToCartButton
             product={product}
             variantId={selectedVariantId || undefined}
             stockOverride={dynamicStock}
           />
-          <p className="text-[10px] text-center text-foreground/40 uppercase tracking-[0.2em] font-medium">
+          <p className="text-center text-[8px] font-medium uppercase tracking-[0.18em] text-foreground/40 sm:text-[9px] md:text-[10px]">
             Secure checkout with artisanal handling
           </p>
         </div>

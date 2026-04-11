@@ -68,7 +68,7 @@ export function FloatingAIButton() {
     <>
       {/* Chat Window */}
       {isChatOpen && (
-        <div className="fixed bottom-24 right-6 z-50 w-80 h-96">
+        <div className="fixed bottom-24 right-6 z-50 hidden h-96 w-80 md:block">
           <Card className="h-full flex flex-col shadow-2xl border-2 border-primary/20">
             <CardHeader className="bg-primary text-primary-foreground rounded-t-lg p-4 flex-shrink-0">
               <div className="flex items-center justify-between">
@@ -141,7 +141,7 @@ export function FloatingAIButton() {
       )}
 
       {/* Floating Button */}
-      <div className="fixed bottom-6 right-6 z-50 group">
+      <div className="fixed bottom-6 right-6 z-50 hidden group md:block">
         {/* Tooltip - only show when chat is closed */}
         {!isChatOpen && (
           <div className="absolute bottom-full right-0 mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">

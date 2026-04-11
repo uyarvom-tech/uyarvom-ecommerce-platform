@@ -29,18 +29,18 @@ export default function ProductSizeSelector({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-primary">
+        <span className="text-[9px] font-bold uppercase tracking-[0.22em] text-primary sm:text-[10px] sm:tracking-[0.3em]">
           Size
         </span>
-        <span className="text-[10px] text-foreground/40 uppercase tracking-widest font-medium">
+        <span className="text-[9px] uppercase tracking-widest font-medium text-foreground/40 sm:text-[10px]">
           Select a size
         </span>
       </div>
 
       <Select value={selectedVariantId || undefined} onValueChange={onSizeChange}>
-        <SelectTrigger className="h-12 rounded-none border-border">
+        <SelectTrigger className="h-11 rounded-none border-border">
           <SelectValue placeholder="Choose a size" />
         </SelectTrigger>
         <SelectContent>

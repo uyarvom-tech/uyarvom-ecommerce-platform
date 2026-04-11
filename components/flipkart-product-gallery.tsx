@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
 import { PRODUCT_FALLBACK_IMAGE } from '@/lib/image-fallbacks'
@@ -61,6 +61,10 @@ export default function FlipkartProductGallery({ colors, legacyImages, productNa
     return images.length > 0 ? images : [{ imageUrl: PRODUCT_FALLBACK_IMAGE, altText: productName }]
   }, [activeColors, legacyImages, productName, selectedColorId])
 
+  useEffect(() => {
+    setSelectedImage(0)
+  }, [selectedColorId, displayImages.length])
+
   const getColorCode = (colorName: string, colorCode?: string | null) => {
     if (colorCode) return colorCode
     const normalized = colorName.toLowerCase().trim()
@@ -76,7 +80,7 @@ export default function FlipkartProductGallery({ colors, legacyImages, productNa
   }
 
   return (
-    <div className="flex flex-col gap-8 items-start">
+    <div className="flex flex-col items-start gap-8">
       {displayImages.length > 1 && (
         <div className="hidden md:flex flex-col gap-4 w-20 flex-shrink-0">
           {displayImages.map((image, index) => (
@@ -100,8 +104,32 @@ export default function FlipkartProductGallery({ colors, legacyImages, productNa
         </div>
       )}
 
-      <div className="flex-1 space-y-8 w-full">
-        <div className="relative aspect-[4/5] overflow-hidden bg-secondary">
+      <div className="w-full flex-1 space-y-8">
+        <div className="md:hidden mb-5 overflow-hidden rounded-[28px] border border-border/40 bg-gradient-to-b from-[#faf7f1] to-white shadow-[0_18px_50px_rgba(0,0,0,0.06)]">
+          <div className="relative aspect-square p-3">
+            <div className="absolute left-4 top-4 z-10 rounded-full bg-white/90 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.18em] text-foreground shadow-sm">
+              {selectedImage + 1}/{displayImages.length}
+            </div>
+
+            <div className="relative h-full w-full overflow-hidden rounded-[22px] bg-white">
+              {displayImages[selectedImage]?.imageUrl ? (
+                <Image
+                  src={displayImages[selectedImage].imageUrl}
+                  alt={displayImages[selectedImage].altText || productName}
+                  fill
+                  className="object-contain object-center"
+                  priority
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-foreground/40">Provenance Unavailable</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="relative hidden aspect-[4/5] overflow-hidden bg-secondary md:block">
           {displayImages[selectedImage]?.imageUrl ? (
             <Image
               src={displayImages[selectedImage].imageUrl}
@@ -117,31 +145,8 @@ export default function FlipkartProductGallery({ colors, legacyImages, productNa
           )}
         </div>
 
-        {displayImages.length > 1 && (
-          <div className="flex md:hidden gap-3 overflow-x-auto pb-4 scrollbar-hide">
-            {displayImages.map((image, index) => (
-              <button
-                key={`${image.imageUrl}-${index}`}
-                onClick={() => setSelectedImage(index)}
-                className={cn(
-                  'w-20 aspect-[4/5] overflow-hidden flex-shrink-0 transition-all',
-                  selectedImage === index ? 'border border-primary' : 'border border-transparent'
-                )}
-              >
-                <Image
-                  src={image.imageUrl}
-                  alt={image.altText || productName}
-                  width={80}
-                  height={100}
-                  className="h-full w-full object-cover"
-                />
-              </button>
-            ))}
-          </div>
-        )}
-
         {activeColors.length > 0 && (
-          <div className="space-y-6 pt-6 border-t border-border">
+          <div className="space-y-5 border-t border-border pt-5 md:space-y-6 md:pt-6">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-primary">Color</span>
               <span className="text-[10px] text-foreground/60 uppercase tracking-widest">

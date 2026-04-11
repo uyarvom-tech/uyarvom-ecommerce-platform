@@ -2,6 +2,9 @@
 const isDev = process.env.NODE_ENV === 'development'
 
 const nextConfig = {
+  devIndicators: {
+    buildActivity: false,
+  },
   typescript: {
     ignoreBuildErrors: false,
   },
