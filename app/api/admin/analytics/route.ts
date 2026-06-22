@@ -48,12 +48,19 @@ export async function GET(request: NextRequest) {
     }
 
     if (type === 'customers') {
-      const [totalCustomers, newCustomers, repeatCustomers, ratings] = await Promise.all([
+      const [totalCustomers, newCustomers, ratings] = await Promise.all([
         prisma.user.count(),
         prisma.user.count({ where: { createdAt: { gte: startDate } } }),
-        prisma.user.count({ where: { orders: { some: { createdAt: { gte: startDate } } }, _count: { orders: { gt: 1 } } } }),
         prisma.review.findMany({ where: { createdAt: { gte: startDate } }, select: { rating: true } }),
       ])
+
+      // Count repeat customers (users with more than 1 order)
+      const usersWithOrders = await prisma.order.groupBy({
+        by: ['userId'],
+        where: { createdAt: { gte: startDate }, status: { notIn: ['cancelled'] } },
+        _count: true,
+      })
+      const repeatCustomers = usersWithOrders.filter(u => u._count > 1).length
 
       // Churned = customers with orders before period but not during
       const activeInPeriod = await prisma.order.findMany({
@@ -105,7 +112,7 @@ export async function GET(request: NextRequest) {
         select: { id: true, name: true, _count: { select: { purchaseOrders: true } } },
       })
 
-      const scorecards = vendors.map(v => ({
+      const scorecards = vendors.map((v: any) => ({
         vendorId: v.id,
         vendorName: v.name,
         totalOrders: v._count.purchaseOrders,

@@ -40,7 +40,7 @@ export async function POST(
 
     // Validate receipt items
     const receiptItems = items.map((item: any) => {
-      const poLine = po.lineItems.find((li) => li.id === item.poLineId || li.variantId === item.variantId)
+      const poLine = po.lineItems.find((li: any) => li.id === item.poLineId || li.variantId === item.variantId)
       return {
         poLineId: item.poLineId || poLine?.id || 'unknown',
         orderedQty: poLine?.quantity || 0,
@@ -108,7 +108,7 @@ export async function POST(
 
       // Update PO line items receivedQty
       for (const item of items) {
-        const poLine = po.lineItems.find((li) => li.variantId === item.variantId)
+        const poLine = po.lineItems.find((li: any) => li.variantId === item.variantId)
         if (poLine) {
           const newReceivedQty = poLine.receivedQty + (item.receivedQty || 0)
           await tx.purchaseOrderItem.update({
@@ -120,8 +120,8 @@ export async function POST(
 
       // Update PO status
       const updatedLines = await tx.purchaseOrderItem.findMany({ where: { purchaseOrderId: id } })
-      const allReceived = updatedLines.every((line) => line.receivedQty >= line.quantity)
-      const someReceived = updatedLines.some((line) => line.receivedQty > 0)
+      const allReceived = updatedLines.every((line: any) => line.receivedQty >= line.quantity)
+      const someReceived = updatedLines.some((line: any) => line.receivedQty > 0)
 
       const newPOStatus = allReceived ? 'received' : someReceived ? 'partially_received' : po.status
       await tx.purchaseOrder.update({ where: { id }, data: { status: newPOStatus, receivedAt: allReceived ? new Date() : undefined } })

@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
   try {
     const campaigns = await prisma.campaign.findMany({ orderBy: { startDate: 'desc' } })
     // Enrich with computed status
-    const enriched = campaigns.map((c) => ({
+    const enriched = campaigns.map((c: any) => ({
       ...c,
       computedStatus: getCampaignStatus(c.startDate, c.endDate),
     }))

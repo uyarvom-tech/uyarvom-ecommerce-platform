@@ -39,10 +39,10 @@ export async function GET(
       select: { status: true, total: true, expectedDeliveryDate: true, receivedAt: true, createdAt: true },
     })
 
-    const totalSpent = allPOs.filter((po) => ['received', 'invoiced'].includes(po.status)).reduce((sum, po) => sum + po.total, 0)
+    const totalSpent = allPOs.filter((po: any) => ['received', 'invoiced'].includes(po.status)).reduce((sum: number, po: any) => sum + po.total, 0)
     const totalOrders = allPOs.length
-    const receivedPOs = allPOs.filter((po) => po.receivedAt)
-    const onTimePOs = receivedPOs.filter((po) => po.expectedDeliveryDate && po.receivedAt && new Date(po.receivedAt) <= new Date(po.expectedDeliveryDate))
+    const receivedPOs = allPOs.filter((po: any) => po.receivedAt)
+    const onTimePOs = receivedPOs.filter((po: any) => po.expectedDeliveryDate && po.receivedAt && new Date(po.receivedAt) <= new Date(po.expectedDeliveryDate))
     const onTimeRate = receivedPOs.length > 0 ? Math.round((onTimePOs.length / receivedPOs.length) * 100) : 0
 
     const performance = {
