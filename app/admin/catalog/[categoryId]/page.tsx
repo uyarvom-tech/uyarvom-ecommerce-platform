@@ -36,31 +36,30 @@ export default async function CategoryDetailPage({
     orderBy: { displayOrder: 'asc' }
   })
 
-  const transformedSubCategories = await Promise.all(
-    subCategories.map(async (sc) => {
-      const productCount = await prisma.product.count({
-        where: {
-          isActive: true,
-          productCategories: {
-            some: {
-              categoryId: {
-                in: [sc.id, categoryId],
-              },
-            },
-          },
-        },
-      })
-
-      return {
-        ...sc,
-        productCount,
-      }
+  const subCategoryIds = subCategories.map((subCategory) => subCategory.id)
+  const productCategoryCounts = subCategoryIds.length
+    ? await prisma.productCategory.groupBy({
+      by: ['categoryId'],
+      where: {
+        categoryId: { in: subCategoryIds },
+        product: { isActive: true },
+      },
+      _count: { productId: true },
     })
+    : []
+
+  const countByCategoryId = new Map(
+    productCategoryCounts.map((item) => [item.categoryId, item._count.productId])
   )
+
+  const transformedSubCategories = subCategories.map((subCategory) => ({
+    ...subCategory,
+    productCount: countByCategoryId.get(subCategory.id) || 0,
+  }))
 
   return (
     <div className="flex min-h-screen flex-col bg-muted/10">
-      <AdminHeader />
+      <AdminHeader userRole={admin.role} />
       <main className="flex-1 px-8 py-10">
         <div className="container mx-auto max-w-7xl">
           <CategoryDetailView

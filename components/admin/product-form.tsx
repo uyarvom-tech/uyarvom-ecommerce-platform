@@ -5,13 +5,18 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
 import { ArrowLeft, Plus, Trash2, Upload, X } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
+import dynamic from 'next/dynamic'
+
+const RichTextEditor = dynamic(
+  () => import('@/components/admin/rich-text-editor').then((mod) => mod.RichTextEditor),
+  { ssr: false, loading: () => <div className="h-[160px] rounded-md border bg-muted/10 animate-pulse" /> }
+)
 
 interface Category {
   id: string
@@ -403,7 +408,11 @@ export function ProductForm({ categories, product, defaultCategoryId, redirectPa
 
               <div>
                 <Label htmlFor="description">Full Description</Label>
-                <Textarea id="description" value={formData.description} onChange={(e) => handleInputChange('description', e.target.value)} placeholder="Detailed product description" rows={4} />
+                <RichTextEditor
+                  content={formData.description}
+                  onChange={(html) => handleInputChange('description', html)}
+                  placeholder="Detailed product description with formatting..."
+                />
               </div>
             </CardContent>
           </Card>

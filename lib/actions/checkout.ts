@@ -1,5 +1,6 @@
 "use server"
 
+import crypto from "crypto"
 import { prisma } from "@/lib/prisma"
 import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
@@ -59,9 +60,9 @@ export async function createOrder(data: {
       subtotal += price * item.quantity
     }
 
-    const shippingThreshold = Number(await getSystemSetting("shipping_threshold", "999"))
-    const shippingFee = Number(await getSystemSetting("shipping_fee", "50"))
-    const taxRate = Number(await getSystemSetting("tax_rate", "18")) / 100
+    const shippingThreshold = Number(await getSystemSetting("shipping_threshold", "999")) || 999
+    const shippingFee = Number(await getSystemSetting("shipping_fee", "50")) || 50
+    const taxRate = (Number(await getSystemSetting("tax_rate", "18")) || 18) / 100
 
     const shipping = subtotal >= shippingThreshold ? 0 : shippingFee
     const tax = Math.round(subtotal * taxRate)
@@ -78,15 +79,15 @@ export async function createOrder(data: {
       return { error: "Delivery address not found." }
     }
 
-    const orderNumber = `ORD-${Date.now()}-${Math.floor(Math.random() * 1000)}`
+    const orderNumber = `ORD-${Date.now()}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`
 
     const order = await prisma.$transaction(async (tx) => {
       const newOrder = await tx.order.create({
         data: {
           orderNumber,
           userId: user.id,
-          status: "pending",
-          paymentStatus: "pending",
+          status: paymentMethod === "cod" ? "confirmed" : "pending",
+          paymentStatus: paymentMethod === "cod" ? "pending" : "pending",
           paymentMethod,
           subtotal,
           shipping,
@@ -133,10 +134,18 @@ export async function createOrder(data: {
           throw new Error(`Cart item "${item.product.name}" is missing a selected variant.`)
         }
 
-        await tx.productVariant.update({
-          where: { id: item.productVariantId },
+        // Atomic stock check + decrement (prevents race condition / overselling)
+        const updated = await tx.productVariant.updateMany({
+          where: {
+            id: item.productVariantId,
+            stock: { gte: item.quantity }, // Only decrement if enough stock
+          },
           data: { stock: { decrement: item.quantity } },
         })
+
+        if (updated.count === 0) {
+          throw new Error(`Insufficient stock for "${item.product.name}". Please refresh and try again.`)
+        }
       }
 
       await tx.orderEvent.create({
@@ -148,6 +157,19 @@ export async function createOrder(data: {
           actorId: user.id,
         },
       })
+
+      // Sync product-level stockQuantity with variant sum
+      const productIds = [...new Set(cartItems.map(item => item.productId))]
+      for (const pid of productIds) {
+        const agg = await tx.productVariant.aggregate({
+          where: { productId: pid },
+          _sum: { stock: true },
+        })
+        await tx.product.update({
+          where: { id: pid },
+          data: { stockQuantity: agg._sum.stock ?? 0 },
+        })
+      }
 
       await tx.cartItem.deleteMany({
         where: { userId: user.id },

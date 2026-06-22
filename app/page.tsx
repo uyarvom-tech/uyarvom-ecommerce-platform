@@ -115,6 +115,7 @@ export default async function HomePage({
     !isAITab
       ? prisma.product.findMany({
         where,
+        take: 24, // Limit to 24 products per page for performance
         include: {
           productCategories: {
             include: { category: true },
@@ -122,12 +123,14 @@ export default async function HomePage({
           },
           images: {
             orderBy: { sortOrder: "asc" },
+            take: 2, // Only need primary image + 1 for card
           },
           colors: {
             orderBy: { sortOrder: "asc" },
             include: {
               images: {
                 orderBy: { sortOrder: "asc" },
+                take: 1, // Only primary image per color
               },
               variants: {
                 where: { isActive: true },

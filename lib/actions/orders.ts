@@ -51,12 +51,25 @@ export async function requestCancellation(orderId: string, reason: string) {
             // 3. Restore stock
             for (const item of order.orderItems) {
                 if (!item.productVariantId) {
-                    throw new Error(`Order item ${item.id} is missing a variant reference.`)
+                    continue // Skip items without variant (graceful, don't abort)
                 }
 
                 await tx.productVariant.update({
                     where: { id: item.productVariantId },
                     data: { stock: { increment: item.quantity } },
+                })
+            }
+
+            // 4. Sync product-level stockQuantity
+            const productIds = [...new Set(order.orderItems.map(i => i.productId))]
+            for (const pid of productIds) {
+                const agg = await tx.productVariant.aggregate({
+                    where: { productId: pid },
+                    _sum: { stock: true },
+                })
+                await tx.product.update({
+                    where: { id: pid },
+                    data: { stockQuantity: agg._sum.stock ?? 0 },
                 })
             }
         })
@@ -90,7 +103,10 @@ export async function requestReturn(orderId: string, reason: string) {
         }
 
         // Check if within return window (e.g., 7 days)
-        const deliveredAt = order.deliveredAt || order.updatedAt
+        const deliveredAt = order.deliveredAt
+        if (!deliveredAt) {
+            return { error: "Delivery date not recorded. Please contact support." }
+        }
         const daysSinceDelivery = (Date.now() - new Date(deliveredAt).getTime()) / (1000 * 60 * 60 * 24)
         if (daysSinceDelivery > 7) {
             return { error: "Return window (7 days) has expired." }

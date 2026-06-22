@@ -43,9 +43,7 @@ export default async function SubCategoryProductsPage({
       isActive: true,
       productCategories: {
         some: {
-          categoryId: {
-            in: [subCategoryId, categoryId],
-          },
+          categoryId: subCategoryId,
         },
       },
     },
@@ -57,8 +55,31 @@ export default async function SubCategoryProductsPage({
         orderBy: { isPrimary: 'desc' },
       },
       images: {
-        where: { isPrimary: true },
-        take: 1,
+        orderBy: { sortOrder: 'asc' },
+      },
+      colors: {
+        select: {
+          id: true,
+          variants: {
+            select: {
+              id: true,
+              stock: true,
+              isActive: true,
+              sortOrder: true,
+            },
+            orderBy: { sortOrder: 'asc' },
+          },
+        },
+        orderBy: { sortOrder: 'asc' },
+      },
+      variants: {
+        select: {
+          id: true,
+          stock: true,
+          isActive: true,
+          sortOrder: true,
+        },
+        orderBy: { sortOrder: 'asc' },
       },
     },
     orderBy: {
@@ -66,14 +87,17 @@ export default async function SubCategoryProductsPage({
     }
   })
 
+  console.log(`[DEBUG] SubCategory: ${subCategory.name} (${subCategoryId})`)
+  console.log(`[DEBUG] Found ${products.length} products`)
+
   const transformedProducts = products.map((product: any) => ({
     ...product,
-    primaryImage: product.images[0]?.imageUrl
+    primaryImage: product.images.find((img: any) => img.isPrimary)?.imageUrl ?? product.images[0]?.imageUrl
   }))
 
   return (
     <div className="flex min-h-screen flex-col bg-muted/10">
-      <AdminHeader />
+      <AdminHeader userRole={admin.role} />
       <main className="flex-1 px-8 py-10">
         <div className="container mx-auto max-w-7xl">
           <SubCategoryProductsView

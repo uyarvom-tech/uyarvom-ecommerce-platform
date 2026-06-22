@@ -9,7 +9,8 @@ import Link from "next/link"
 import { notFound, redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 
-export default async function AdminTicketDetailPage({ params }: { params: { id: string } }) {
+export default async function AdminTicketDetailPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = await params
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -21,7 +22,7 @@ export default async function AdminTicketDetailPage({ params }: { params: { id: 
     if (!admin) redirect("/")
 
     const ticket = await prisma.supportTicket.findUnique({
-        where: { id: params.id },
+        where: { id },
         include: {
             messages: {
                 include: {

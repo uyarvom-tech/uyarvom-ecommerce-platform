@@ -27,8 +27,8 @@ export async function createTicket(data: {
                 subject: data.subject,
                 category: data.category,
                 priority: data.priority || "medium",
-                orderId: data.orderId,
-                productId: data.productId,
+                orderId: data.orderId || null,
+                productId: data.productId || null,
                 status: "open",
                 messages: {
                     create: {

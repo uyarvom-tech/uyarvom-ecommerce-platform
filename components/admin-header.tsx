@@ -1,27 +1,32 @@
 import { createClient } from "@/lib/supabase/server"
 import { prisma } from "@/lib/prisma"
 import Link from "next/link"
-import Image from "next/image"
 import { AdminCustomerToggle } from "@/components/admin-customer-toggle"
 import { AuthButton } from "@/components/auth-button"
 
-export async function AdminHeader() {
-  const supabase = await createClient()
+interface AdminHeaderProps {
+  userRole?: string | null
+}
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+export async function AdminHeader({ userRole }: AdminHeaderProps = {}) {
+  let role = userRole || null
 
-  let isAdmin = false
-  let isSuperAdmin = false
-  if (user) {
-    const adminUser = await prisma.adminUser.findUnique({
-      where: { userId: user.id },
-      select: { role: true }
-    })
-    isAdmin = ['admin', 'super_admin'].includes(adminUser?.role || '')
-    isSuperAdmin = adminUser?.role === 'super_admin'
+  if (!role) {
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (user) {
+      const adminUser = await prisma.adminUser.findUnique({
+        where: { userId: user.id },
+        select: { role: true }
+      })
+      role = adminUser?.role || null
+    }
   }
+
+  const isSuperAdmin = role === 'super_admin'
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-black text-white px-6 h-16 flex items-center shadow-xl">

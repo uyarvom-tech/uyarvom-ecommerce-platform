@@ -35,6 +35,9 @@ export default async function AdminInventoryPage() {
           },
         },
       },
+      variants: {
+        orderBy: { sortOrder: 'asc' },
+      },
     },
     orderBy: [{ isActive: 'desc' }, { createdAt: 'desc' }],
   })
@@ -48,7 +51,8 @@ export default async function AdminInventoryPage() {
 
   const inventoryRows = products
     .map((product) => {
-      const variants = product.colors.flatMap((color) =>
+      // Get variants from colors
+      const colorVariants = product.colors.flatMap((color) =>
         color.variants.map((variant) => ({
           id: variant.id,
           colorName: color.colorName,
@@ -57,6 +61,20 @@ export default async function AdminInventoryPage() {
           threshold: product.lowStockThreshold,
         }))
       )
+
+      // Also get direct variants (colorId=null, not linked through colors)
+      const directVariants = (product.variants || [])
+        .filter((v: any) => !v.colorId) // Only orphaned ones not already in colorVariants
+        .map((variant: any) => ({
+          id: variant.id,
+          colorName: 'Default',
+          size: variant.size || variant.value || variant.name || 'Size',
+          stock: Number(variant.stock || 0),
+          threshold: product.lowStockThreshold,
+        }))
+
+      // Use color variants if available, otherwise fall back to direct variants
+      const variants = colorVariants.length > 0 ? colorVariants : directVariants
 
       const totalStock = variants.reduce((sum, variant) => sum + variant.stock, 0)
       const lowVariants = variants.filter((variant) => variant.stock > 0 && variant.stock <= variant.threshold)

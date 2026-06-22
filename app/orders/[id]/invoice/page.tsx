@@ -3,13 +3,14 @@ import { notFound, redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { OrderInvoicePrintButton } from "@/components/order-invoice-print-button"
 
-export default async function OrderInvoicePage({ params }: { params: { id: string } }) {
+export default async function OrderInvoicePage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = await params
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) redirect("/auth/login")
 
     const order = await (prisma as any).order.findUnique({
-        where: { id: params.id },
+        where: { id },
         include: {
             orderItems: true
         }

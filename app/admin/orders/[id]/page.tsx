@@ -22,7 +22,8 @@ const statusColors: Record<string, string> = {
 
 export const dynamic = 'force-dynamic'
 
-export default async function AdminOrderDetailPage({ params }: { params: { id: string } }) {
+export default async function AdminOrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -34,7 +35,7 @@ export default async function AdminOrderDetailPage({ params }: { params: { id: s
   if (!admin) redirect("/")
 
   const order = await prisma.order.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: {
       orderItems: {
         include: {

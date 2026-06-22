@@ -109,3 +109,39 @@ export async function DELETE(
     )
   }
 }
+
+// PUT /api/admin/categories/[id] - Update category
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const authResult = await requireStaffAccess(request)
+  if (authResult instanceof NextResponse) return authResult
+
+  try {
+    const { id } = await params
+    const body = await request.json()
+    const { name, description, imageUrl, displayOrder, isActive } = body
+
+    const category = await prisma.category.findUnique({ where: { id } })
+    if (!category) {
+      return NextResponse.json({ error: 'Category not found' }, { status: 404 })
+    }
+
+    const updated = await prisma.category.update({
+      where: { id },
+      data: {
+        name: name ?? category.name,
+        description: description !== undefined ? description : category.description,
+        imageUrl: imageUrl !== undefined ? imageUrl : category.imageUrl,
+        displayOrder: displayOrder !== undefined ? displayOrder : category.displayOrder,
+        isActive: isActive !== undefined ? isActive : category.isActive,
+      },
+    })
+
+    return NextResponse.json(updated)
+  } catch (error) {
+    console.error('Error updating category:', error)
+    return NextResponse.json({ error: 'Failed to update category' }, { status: 500 })
+  }
+}

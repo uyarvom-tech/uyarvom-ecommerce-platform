@@ -5,8 +5,8 @@ import { prisma } from '@/lib/prisma'
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const query = searchParams.get('q') || ''
-    const limit = parseInt(searchParams.get('limit') || '20')
+    const query = (searchParams.get('q') || '').slice(0, 200) // Cap query length
+    const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 50) // Cap at 50
 
     if (!query.trim()) {
       return NextResponse.json({ products: [] })

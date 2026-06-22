@@ -63,6 +63,22 @@ function slugify(value) {
     .replace(/-{2,}/g, "-")
 }
 
+function inferSubCategoryName(productName) {
+  const name = cleanText(productName)
+  if (!name) return null
+
+  if (/\bgift\s+(set|box)\b/i.test(name)) {
+    return "Gift Sets"
+  }
+
+  return name
+    .split(/[–—]/)[0]
+    .replace(/\([^)]*\)/g, "")
+    .replace(/\b\d+(\.\d+)?\s*(ml|l|ltr|litre|liter|cm|mm|inch|in|pcs?|piece|cavity)\b/gi, "")
+    .replace(/\s+/g, " ")
+    .trim() || name
+}
+
 function cleanText(value) {
   const text = String(value ?? "").trim()
   return text || null
@@ -219,7 +235,7 @@ async function main() {
 
   for (const [index, row] of rows.entries()) {
     const topCategoryName = cleanText(row.category)?.toUpperCase()
-    const subCategoryName = cleanText(row["Sub Category"])
+    const subCategoryName = cleanText(row["Sub Category"]) || inferSubCategoryName(row.product_name)
     const name = cleanText(row.product_name)
     const sku = cleanText(row.sku)
 
@@ -379,7 +395,22 @@ async function main() {
           },
         })
       })
+    } else if (existingVariantCount === 1) {
+      // Re-import: product has a single (default) variant — sync its stock to the
+      // latest Excel value so the admin catalog (which reads variant stock) is correct.
+      const defaultVariant = await prisma.productVariant.findFirst({
+        where: { productId: product.id },
+      })
+      if (defaultVariant) {
+        await prisma.productVariant.update({
+          where: { id: defaultVariant.id },
+          data: { stock: stockQuantity },
+        })
+        summary.variantStockSynced = (summary.variantStockSynced || 0) + 1
+      }
     }
+    // Note: products with multiple variants are managed manually in admin and
+    // are not overwritten by the Excel import.
   }
 
   console.log(JSON.stringify(summary, null, 2))

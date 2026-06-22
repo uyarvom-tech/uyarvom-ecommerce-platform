@@ -13,7 +13,8 @@ import { getCurrentUserContext } from "@/lib/auth-middleware"
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
-export default async function AdminProductDetailPage({ params }: { params: { id: string } }) {
+export default async function AdminProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   const context = await getCurrentUserContext()
 
   if (!context) {
@@ -25,7 +26,7 @@ export default async function AdminProductDetailPage({ params }: { params: { id:
   }
 
   const product = await prisma.product.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: {
       productCategories: {
         include: { category: true },
@@ -63,7 +64,7 @@ export default async function AdminProductDetailPage({ params }: { params: { id:
 
   return (
     <div className="flex min-h-screen flex-col bg-muted/30">
-      <AdminHeader />
+      <AdminHeader userRole={context.role} />
       <main className="flex-1 px-6 py-8">
         <div className="container mx-auto max-w-7xl">
           <div className="mb-6">

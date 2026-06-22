@@ -14,8 +14,23 @@ import { NextRequest, NextResponse } from 'next/server'
  */
 export async function middleware(request: NextRequest) {
     try {
+        const pathname = request.nextUrl.pathname
+
+        // FAST-PATH: Skip auth for public API routes that don't need it
+        const publicPaths = ['/api/products', '/api/coupons', '/api/ping']
+        if (publicPaths.some(p => pathname.startsWith(p))) {
+            return NextResponse.next()
+        }
+
         // FAST-PATH: If we already know Auth or DB is down, skip and save 1.5s per request
         if (isSupabaseAuthDisconnected() || isDatabaseDisconnected()) {
+            // Still protect admin routes even when disconnected
+            if (pathname.startsWith('/admin')) {
+                return NextResponse.redirect(new URL('/auth/admin-login', request.url))
+            }
+            if (pathname.startsWith('/api/admin')) {
+                return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+            }
             return NextResponse.next()
         }
 
@@ -35,8 +50,6 @@ export async function middleware(request: NextRequest) {
           clearTimeout(timeoutId)
         } catch (err: any) {
             clearTimeout(timeoutId)
-
-            // SILENT RECOVERY: AbortError is handled gracefully
             if (err.name === 'AbortError') {
                 console.warn('⚠️ Supabase Auth Timeout (Higher load or slow network)')
             } else if (!isSupabaseAuthDisconnected()) {
@@ -45,62 +58,24 @@ export async function middleware(request: NextRequest) {
             user = null
         }
 
-        const pathname = request.nextUrl.pathname
-
-        // Protect admin routes
+        // Protect admin PAGES — middleware only verifies the user is logged in.
+        // The fine-grained role check is delegated to the admin layout (Prisma-based,
+        // more reliable). This avoids a slow/duplicate Supabase query in the proxy
+        // that was falsely redirecting authenticated admins to the homepage.
         if (pathname.startsWith('/admin')) {
             if (!user) {
                 return NextResponse.redirect(new URL('/auth/admin-login', request.url))
             }
-
-            // FAST-PATH: If network is down, we cannot check roles
-            if (isDatabaseDisconnected()) {
-                return NextResponse.redirect(new URL('/', request.url))
-            }
-
-            // Check if user has admin role
-            const { data: adminUser, error: adminError } = await supabase
-                .from('admin_users')
-                .select('role')
-                .eq('user_id', user.id)
-                .single()
-
-            if (adminError) {
-                markDatabaseDisconnected()
-                return NextResponse.redirect(new URL('/', request.url))
-            }
-
-            if (!adminUser || !['admin', 'staff', 'super_admin'].includes(adminUser.role)) {
-                return NextResponse.redirect(new URL('/', request.url))
-            }
+            // Role verification happens in app/admin/layout.tsx
         }
 
-        // Protect API admin routes
+        // Protect API admin routes — only check if user is logged in.
+        // The fine-grained role check is done by requireStaffAccess() in each route handler.
         if (pathname.startsWith('/api/admin')) {
             if (!user) {
                 return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
             }
-
-            // FAST-PATH: If network is down, we cannot check roles
-            if (isDatabaseDisconnected()) {
-                return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-            }
-
-            // Check if user has admin role
-            const { data: adminUser, error: adminError } = await supabase
-                .from('admin_users')
-                .select('role')
-                .eq('user_id', user.id)
-                .single()
-
-            if (adminError) {
-                markDatabaseDisconnected()
-                return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-            }
-
-            if (!adminUser || !['admin', 'staff', 'super_admin'].includes(adminUser.role)) {
-                return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-            }
+            // Role verification delegated to route-level requireStaffAccess()
         }
 
         // Protect user-specific routes
@@ -114,6 +89,14 @@ export async function middleware(request: NextRequest) {
         return response
     } catch (error) {
         console.error('Proxy internal error:', error)
+        // On auth system failure, block admin routes instead of passing through
+        const pathname = request.nextUrl.pathname
+        if (pathname.startsWith('/admin')) {
+            return NextResponse.redirect(new URL('/auth/admin-login', request.url))
+        }
+        if (pathname.startsWith('/api/admin')) {
+            return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+        }
         return NextResponse.next()
     }
 }

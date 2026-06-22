@@ -30,7 +30,8 @@ const paymentStatusColors: Record<string, string> = {
   refunded: "bg-gray-500/10 text-gray-700 border-gray-200",
 }
 
-export default async function OrderDetailPage({ params }: { params: { id: string } }) {
+export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -40,7 +41,7 @@ export default async function OrderDetailPage({ params }: { params: { id: string
 
   const order = await prisma.order.findUnique({
     where: {
-      id: params.id,
+      id,
       userId: user.id
     },
     include: {

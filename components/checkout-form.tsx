@@ -15,6 +15,7 @@ import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { createOrder } from "@/lib/actions/checkout"
+import { addAddress } from "@/lib/actions/address"
 import {
   Dialog,
   DialogContent,
@@ -23,6 +24,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { GoogleMapsAddressPicker } from "@/components/google-maps-address-picker"
 
 export function CheckoutForm({
   userId,
@@ -42,6 +44,7 @@ export function CheckoutForm({
   const [notes, setNotes] = useState("")
   const [isPlacingOrder, setIsPlacingOrder] = useState(false)
   const [showAddressDialog, setShowAddressDialog] = useState(false)
+  const [mapAddress, setMapAddress] = useState<any>(null)
 
   const router = useRouter()
   const supabase = createClient()
@@ -50,25 +53,29 @@ export function CheckoutForm({
     e.preventDefault()
     const formData = new FormData(e.currentTarget)
 
-    const { error } = await supabase.from("addresses").insert({
-      user_id: userId,
-      full_name: formData.get("fullName"),
-      phone: formData.get("phone"),
-      address_line1: formData.get("addressLine1"),
-      address_line2: formData.get("addressLine2"),
-      city: formData.get("city"),
-      state: formData.get("state"),
-      postal_code: formData.get("postalCode"),
-      is_default: addresses.length === 0,
-    })
+    const fullName = (formData.get("fullName") as string)?.trim()
+    const phone = (formData.get("phone") as string)?.trim()
+    const addressLine1 = (formData.get("addressLine1") as string)?.trim() || mapAddress?.addressLine1 || ''
+    const addressLine2 = (formData.get("addressLine2") as string)?.trim() || mapAddress?.addressLine2 || ''
+    const city = (formData.get("city") as string)?.trim() || mapAddress?.city || ''
+    const state = (formData.get("state") as string)?.trim() || mapAddress?.state || ''
+    const postalCode = (formData.get("postalCode") as string)?.trim() || mapAddress?.postalCode || ''
 
-    if (error) {
-      toast.error("Failed to add address")
+    if (!fullName || !phone || !addressLine1 || !city || !state || !postalCode) {
+      toast.error("Please fill in all required fields")
+      return
+    }
+
+    const result = await addAddress({ fullName, phone, addressLine1, addressLine2, city, state, postalCode })
+
+    if (result.error) {
+      toast.error(result.error)
       return
     }
 
     toast.success("Address added successfully")
     setShowAddressDialog(false)
+    setMapAddress(null)
     router.refresh()
   }
 
@@ -180,41 +187,47 @@ export function CheckoutForm({
                     Add Address
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-lg">
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>Add New Address</DialogTitle>
-                    <DialogDescription>Enter your delivery address details</DialogDescription>
+                    <DialogDescription>Search or drop a pin on the map to set your delivery location</DialogDescription>
                   </DialogHeader>
+
+                  {/* Google Maps Address Picker */}
+                  <GoogleMapsAddressPicker onAddressSelect={(addr) => setMapAddress(addr)} />
+
                   <form onSubmit={handleAddAddress} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="fullName">Full Name</Label>
-                      <Input id="fullName" name="fullName" required />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Phone Number</Label>
-                      <Input id="phone" name="phone" type="tel" required />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="addressLine1">Address Line 1</Label>
-                      <Input id="addressLine1" name="addressLine1" required />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="addressLine2">Address Line 2 (Optional)</Label>
-                      <Input id="addressLine2" name="addressLine2" />
-                    </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="city">City</Label>
-                        <Input id="city" name="city" required />
+                        <Label htmlFor="fullName">Full Name *</Label>
+                        <Input id="fullName" name="fullName" required />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="state">State</Label>
-                        <Input id="state" name="state" required />
+                        <Label htmlFor="phone">Phone *</Label>
+                        <Input id="phone" name="phone" type="tel" required />
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="postalCode">Postal Code</Label>
-                      <Input id="postalCode" name="postalCode" required />
+                      <Label htmlFor="addressLine1">Address Line 1 *</Label>
+                      <Input id="addressLine1" name="addressLine1" defaultValue={mapAddress?.addressLine1 || ''} required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="addressLine2">Address Line 2 / Landmark</Label>
+                      <Input id="addressLine2" name="addressLine2" defaultValue={mapAddress?.addressLine2 || ''} />
+                    </div>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="city">City *</Label>
+                        <Input id="city" name="city" defaultValue={mapAddress?.city || ''} required />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="state">State *</Label>
+                        <Input id="state" name="state" defaultValue={mapAddress?.state || ''} required />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="postalCode">Pincode *</Label>
+                        <Input id="postalCode" name="postalCode" defaultValue={mapAddress?.postalCode || ''} required />
+                      </div>
                     </div>
                     <Button type="submit" className="w-full">
                       Save Address
@@ -251,41 +264,47 @@ export function CheckoutForm({
                     Add New Address
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-lg">
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>Add New Address</DialogTitle>
-                    <DialogDescription>Enter your delivery address details</DialogDescription>
+                    <DialogDescription>Search or drop a pin on the map to set your delivery location</DialogDescription>
                   </DialogHeader>
+
+                  {/* Google Maps Address Picker */}
+                  <GoogleMapsAddressPicker onAddressSelect={(addr) => setMapAddress(addr)} />
+
                   <form onSubmit={handleAddAddress} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="fullName">Full Name</Label>
-                      <Input id="fullName" name="fullName" defaultValue={profile?.full_name || ""} required />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Phone Number</Label>
-                      <Input id="phone" name="phone" type="tel" defaultValue={profile?.phone || ""} required />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="addressLine1">Address Line 1</Label>
-                      <Input id="addressLine1" name="addressLine1" required />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="addressLine2">Address Line 2 (Optional)</Label>
-                      <Input id="addressLine2" name="addressLine2" />
-                    </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="city">City</Label>
-                        <Input id="city" name="city" required />
+                        <Label htmlFor="fullName">Full Name *</Label>
+                        <Input id="fullName" name="fullName" defaultValue={profile?.full_name || ""} required />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="state">State</Label>
-                        <Input id="state" name="state" required />
+                        <Label htmlFor="phone">Phone *</Label>
+                        <Input id="phone" name="phone" type="tel" defaultValue={profile?.phone || ""} required />
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="postalCode">Postal Code</Label>
-                      <Input id="postalCode" name="postalCode" required />
+                      <Label htmlFor="addressLine1">Address Line 1 *</Label>
+                      <Input id="addressLine1" name="addressLine1" key={mapAddress?.addressLine1} defaultValue={mapAddress?.addressLine1 || ''} required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="addressLine2">Address Line 2 / Landmark</Label>
+                      <Input id="addressLine2" name="addressLine2" key={mapAddress?.addressLine2} defaultValue={mapAddress?.addressLine2 || ''} />
+                    </div>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="city">City *</Label>
+                        <Input id="city" name="city" key={mapAddress?.city} defaultValue={mapAddress?.city || ''} required />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="state">State *</Label>
+                        <Input id="state" name="state" key={mapAddress?.state} defaultValue={mapAddress?.state || ''} required />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="postalCode">Pincode *</Label>
+                        <Input id="postalCode" name="postalCode" key={mapAddress?.postalCode} defaultValue={mapAddress?.postalCode || ''} required />
+                      </div>
                     </div>
                     <Button type="submit" className="w-full">
                       Save Address

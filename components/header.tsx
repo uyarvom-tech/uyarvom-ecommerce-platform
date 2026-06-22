@@ -70,6 +70,10 @@ export async function Header() {
               </div>
 
               <div className="flex items-center justify-end gap-2 md:gap-4 xl:min-w-[260px]">
+                <Link href="/orders" className="group relative flex h-11 w-11 items-center justify-center rounded-full border border-transparent transition-all duration-300 hover:border-primary/20 hover:bg-white">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-foreground transition-all duration-300 group-hover:text-primary"><path d="M16 16h6"/><path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14"/><path d="m7.5 4.27 9 5.15"/><polyline points="3.29 7 12 12 20.71 7"/><line x1="12" x2="12" y1="22" y2="12"/><circle cx="19" cy="16" r="3"/></svg>
+                  <span className="sr-only">My Orders</span>
+                </Link>
                 <HeaderWishlistButton />
                 <HeaderCartButton />
                 <div className="hidden h-8 w-px bg-border/30 md:block" />

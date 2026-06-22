@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { getVariantStockTotal } from "@/lib/variant-stock"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { GenerateSubcategoryImagesButton } from "@/components/admin/generate-subcategory-images-button"
 import {
   Search,
   Plus,
@@ -27,6 +28,7 @@ interface Product {
   stockQuantity: number
   isActive: boolean
   primaryImage?: string
+  images?: any[]
 }
 
 interface SubCategory {
@@ -82,6 +84,12 @@ export function SubCategoryProductsView({ mainCategory, subCategory, products, u
         </div>
 
         <div className="flex gap-4">
+          <GenerateSubcategoryImagesButton
+            categoryId={mainCategory.id}
+            subCategoryId={subCategory.id}
+            products={products}
+            onSuccess={() => router.refresh()}
+          />
           <Button
             variant="outline"
             onClick={() => router.push(`/admin/catalog/${mainCategory.id}/${subCategory.id}/edit`)}

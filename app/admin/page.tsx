@@ -32,14 +32,46 @@ export default async function AdminDashboard() {
   const admin = await prisma.adminUser.findUnique({ where: { userId: user.id } })
   if (!admin) redirect("/")
 
-  const [totalProducts, activeProducts, totalOrders, pendingOrders, totalRevenue] = await Promise.all([
-    prisma.product.count(),
-    prisma.product.count({ where: { isActive: true } }),
-    prisma.order.count(),
-    prisma.order.count({ where: { status: "pending" } }),
-    prisma.order.aggregate({ _sum: { total: true } }),
+  const [stats, recentOrders, topProductSales] = await Promise.all([
+    // Batch all stats queries together
+    Promise.all([
+      prisma.product.count(),
+      prisma.product.count({ where: { isActive: true } }),
+      prisma.order.count(),
+      prisma.order.count({ where: { status: "pending" } }),
+      prisma.order.aggregate({ _sum: { total: true } }),
+    ]),
+    // Recent orders
+    prisma.order.findMany({
+      take: 6,
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        orderNumber: true,
+        total: true,
+        status: true,
+        createdAt: true,
+        shippingName: true,
+      },
+    }),
+    // Top products by sales
+    prisma.orderItem.groupBy({
+      by: ["productId"],
+      _sum: {
+        quantity: true,
+      },
+      orderBy: {
+        _sum: {
+          quantity: "desc",
+        },
+      },
+      take: 4,
+    }),
   ])
 
+  const [totalProducts, activeProducts, totalOrders, pendingOrders, totalRevenue] = stats
+
+  // Calculate low stock count (moved after top products to batch queries)
   const inventoryProducts = await prisma.product.findMany({
     where: { isActive: true },
     select: {
@@ -64,32 +96,6 @@ export default async function AdminDashboard() {
     const threshold = Number(product.lowStockThreshold ?? 10)
     return summary.total > 0 && summary.total <= threshold
   }).length
-
-  const recentOrders = await prisma.order.findMany({
-    take: 6,
-    orderBy: { createdAt: "desc" },
-    select: {
-      id: true,
-      orderNumber: true,
-      total: true,
-      status: true,
-      createdAt: true,
-      shippingName: true,
-    },
-  })
-
-  const topProductSales = await prisma.orderItem.groupBy({
-    by: ["productId"],
-    _sum: {
-      quantity: true,
-    },
-    orderBy: {
-      _sum: {
-        quantity: "desc",
-      },
-    },
-    take: 4,
-  })
 
   const topProductIds = topProductSales.map((item) => item.productId)
   const topProducts = topProductIds.length
@@ -204,7 +210,7 @@ export default async function AdminDashboard() {
                               #{order.orderNumber} - {order.shippingName}
                             </p>
                             <p className="text-[9px] font-bold text-muted-foreground uppercase mt-1 tracking-widest">
-                              {new Date(order.createdAt).toLocaleDateString("en-IN", { dateStyle: "medium", timeStyle: "short" })}
+                              {new Date(order.createdAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}
                             </p>
                           </div>
                         </div>
@@ -274,7 +280,12 @@ export default async function AdminDashboard() {
                   <div className="space-y-6">
                     {topProductsBySales.length > 0 ? (
                       topProductsBySales.map((product: any) => (
-                        <Link key={product.id} href={`/admin/products/${product.id}/edit`} className="flex items-center gap-4 group">
+                        <Link 
+                          key={product.id} 
+                          href={`/admin/products/${product.id}/edit`} 
+                          prefetch={false}
+                          className="flex items-center gap-4 group"
+                        >
                           <div className="h-12 w-12 bg-muted p-1 overflow-hidden shrink-0">
                             {product.images[0] && (
                               <img
