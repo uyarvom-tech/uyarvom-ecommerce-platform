@@ -6,12 +6,12 @@ import { generateMultipleProductImages } from '@/lib/gemini-client'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ categoryId: string; subCategoryId: string }> }
+  { params }: { params: Promise<{ id: string; subCategoryId: string }> }
 ) {
   const authCheck = await requireStaffAccess(request)
   if (authCheck instanceof NextResponse) return authCheck
 
-  const { categoryId, subCategoryId } = await params
+  const { id: categoryId, subCategoryId } = await params
 
   const subCategory = await prisma.category.findUnique({
     where: { id: subCategoryId, parentId: categoryId },
