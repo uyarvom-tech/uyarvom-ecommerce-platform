@@ -23,7 +23,7 @@ interface MediaImage {
   altText: string | null
   isPrimary: boolean
   sortOrder: number
-  createdAt: string
+  createdAt: string | Date
   productId: string
   productName: string
   productSlug: string
