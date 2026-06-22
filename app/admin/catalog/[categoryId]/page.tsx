@@ -1,12 +1,10 @@
-import { prisma } from "@/lib/prisma-safe"
+import { prisma } from "@/lib/prisma"
 import { AdminHeader } from "@/components/admin-header"
 import { CategoryDetailView } from "@/components/admin/category-detail-view"
-import { getCurrentUserRole } from "@/lib/auth-middleware"
-import { notFound } from "next/navigation"
+import { createClient } from "@/lib/supabase/server"
+import { notFound, redirect } from "next/navigation"
 
-// Force dynamic rendering
 export const dynamic = 'force-dynamic'
-export const revalidate = 0
 
 export default async function CategoryDetailPage({
   params,
@@ -14,56 +12,60 @@ export default async function CategoryDetailPage({
   params: Promise<{ categoryId: string }>
 }) {
   const { categoryId } = await params
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
 
-  // Get current user role
-  const userRole = await getCurrentUserRole()
+  if (!user) redirect("/auth/login?redirect=/admin/catalog")
 
-  // Get the main category
+  const admin = await prisma.adminUser.findUnique({ where: { userId: user.id } })
+  if (!admin) redirect("/")
+
   const mainCategory = await prisma.category.findUnique({
-    where: { 
+    where: {
       id: categoryId,
-      parentId: null // Ensure it's a main category
+      parentId: null
     }
   })
 
-  if (!mainCategory) {
-    notFound()
-  }
+  if (!mainCategory) notFound()
 
-  // Get sub-categories for this main category
   const subCategories = await prisma.category.findMany({
-    where: { 
+    where: {
       parentId: categoryId,
-      isActive: true 
     },
-    include: {
-      _count: {
-        select: {
-          productCategories: true
-        }
-      }
-    },
-    orderBy: [
-      { displayOrder: 'asc' },
-      { name: 'asc' }
-    ]
+    orderBy: { displayOrder: 'asc' }
   })
 
-  // Transform sub-categories to include product count
-  const subCategoriesWithCount = subCategories.map((subCategory: any) => ({
+  const subCategoryIds = subCategories.map((subCategory) => subCategory.id)
+  const productCategoryCounts = subCategoryIds.length
+    ? await prisma.productCategory.groupBy({
+      by: ['categoryId'],
+      where: {
+        categoryId: { in: subCategoryIds },
+        product: { isActive: true },
+      },
+      _count: { productId: true },
+    })
+    : []
+
+  const countByCategoryId = new Map(
+    productCategoryCounts.map((item) => [item.categoryId, item._count.productId])
+  )
+
+  const transformedSubCategories = subCategories.map((subCategory) => ({
     ...subCategory,
-    productCount: subCategory._count.productCategories
+    productCount: countByCategoryId.get(subCategory.id) || 0,
   }))
 
   return (
-    <div className="flex min-h-screen flex-col bg-muted/30">
-      <AdminHeader />
-      <main className="flex-1 px-6 py-8">
-        <div className="container mx-auto max-w-6xl">
-          <CategoryDetailView 
+    <div className="flex min-h-screen flex-col bg-muted/10">
+      <AdminHeader userRole={admin.role} />
+      <main className="flex-1 px-8 py-10">
+        <div className="container mx-auto max-w-7xl">
+          <CategoryDetailView
             mainCategory={mainCategory}
-            subCategories={subCategoriesWithCount}
-            userRole={userRole || 'staff'}
+            subCategories={transformedSubCategories}
+            userRole={admin.role}
           />
         </div>
       </main>

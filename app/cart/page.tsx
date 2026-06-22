@@ -1,16 +1,16 @@
+import Link from "next/link"
+import { redirect } from "next/navigation"
+import { ShoppingBag } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
+import { prisma } from "@/lib/prisma"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { CartItemsList } from "@/components/cart-items-list"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ShoppingBag } from "lucide-react"
-import Link from "next/link"
-import { redirect } from "next/navigation"
 
 export default async function CartPage() {
   const supabase = await createClient()
-
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -19,23 +19,28 @@ export default async function CartPage() {
     redirect("/auth/login?redirect=/cart")
   }
 
-  const { data: cartItems } = await supabase
-    .from("cart_items")
-    .select(
-      `
-      *,
-      product:products(
-        *,
-        category:categories(name),
-        images:product_images(image_url, alt_text, is_primary)
-      )
-    `,
-    )
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false })
+  const cartItems = await prisma.cartItem.findMany({
+    where: { userId: user.id },
+    include: {
+      product: {
+        include: {
+          images: {
+            orderBy: { sortOrder: "asc" },
+          },
+          productCategories: {
+            include: {
+              category: true,
+            },
+            orderBy: { isPrimary: "desc" },
+          },
+        },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  })
 
-  const subtotal = cartItems?.reduce((sum: number, item: any) => sum + item.product.price * item.quantity, 0) || 0
-
+  const subtotal =
+    cartItems.reduce((sum, item) => sum + Number(item.product.price || 0) * item.quantity, 0) || 0
   const shippingCost = subtotal >= 999 ? 0 : 50
   const total = subtotal + shippingCost
 
@@ -46,14 +51,14 @@ export default async function CartPage() {
         <div className="container mx-auto max-w-7xl">
           <div className="mb-8">
             <h1 className="font-serif mb-3 text-4xl font-bold tracking-tight">Shopping Cart</h1>
-            {cartItems && cartItems.length > 0 && (
+            {cartItems.length > 0 && (
               <p className="text-muted-foreground">
                 {cartItems.length} item{cartItems.length !== 1 ? "s" : ""} in your cart
               </p>
             )}
           </div>
 
-          {!cartItems || cartItems.length === 0 ? (
+          {cartItems.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed bg-background py-24">
               <ShoppingBag className="mb-6 h-24 w-24 text-muted-foreground/50" />
               <h2 className="font-serif mb-3 text-2xl font-semibold">Your cart is empty</h2>
@@ -122,7 +127,7 @@ export default async function CartPage() {
                   <CardContent className="space-y-4">
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Subtotal ({cartItems.length} items)</span>
-                      <span className="font-medium">₹{subtotal.toLocaleString("en-IN")}</span>
+                      <span className="font-medium">Rs. {subtotal.toLocaleString("en-IN")}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Shipping</span>
@@ -130,14 +135,14 @@ export default async function CartPage() {
                         {shippingCost === 0 ? (
                           <span className="text-green-600">FREE</span>
                         ) : (
-                          `₹${shippingCost.toLocaleString("en-IN")}`
+                          `Rs. ${shippingCost.toLocaleString("en-IN")}`
                         )}
                       </span>
                     </div>
                     {subtotal < 999 && (
                       <div className="rounded-lg bg-amber-50 p-3 dark:bg-amber-950/20">
                         <p className="text-xs font-medium text-amber-900 dark:text-amber-100">
-                          Add ₹{(999 - subtotal).toLocaleString("en-IN")} more for FREE shipping! 🎉
+                          Add Rs. {(999 - subtotal).toLocaleString("en-IN")} more for free shipping.
                         </p>
                         <div className="mt-2 h-2 overflow-hidden rounded-full bg-amber-200 dark:bg-amber-900">
                           <div
@@ -150,7 +155,7 @@ export default async function CartPage() {
                     <div className="border-t pt-4">
                       <div className="flex justify-between">
                         <span className="text-lg font-semibold">Total</span>
-                        <span className="font-serif text-lg font-bold">₹{total.toLocaleString("en-IN")}</span>
+                        <span className="font-serif text-lg font-bold">Rs. {total.toLocaleString("en-IN")}</span>
                       </div>
                     </div>
                     <Button asChild className="w-full" size="lg">
@@ -167,7 +172,7 @@ export default async function CartPage() {
                           clipRule="evenodd"
                         />
                       </svg>
-                      <span>Secure SSL Encrypted Checkout</span>
+                      <span>Secure SSL encrypted checkout</span>
                     </div>
                   </CardContent>
                 </Card>

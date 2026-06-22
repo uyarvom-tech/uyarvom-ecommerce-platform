@@ -1,75 +1,103 @@
 import Link from "next/link"
 import Image from "next/image"
-import { Heart, ShoppingBag } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { AuthButton } from "@/components/auth-button"
+import { HeaderCartButton } from "@/components/header-cart-button"
+import { HeaderWishlistButton } from "@/components/header-wishlist-button"
 import { ProductsSearch } from "@/components/products-search"
+import { MobileHeaderChrome } from "@/components/mobile-header-chrome"
 
 export async function Header() {
   return (
-    <header className="premium-global-nav">
-      <div className="max-w-[1400px] mx-auto px-4">
-        <div className="grid grid-cols-3 h-16 items-center gap-2 md:gap-4">
-          {/* Left Partition - Logo + Brand Name */}
-          <div className="flex items-center justify-start">
-            <Link href="/" className="flex items-center gap-2 md:gap-3 hover:opacity-80 transition-opacity duration-300">
-              <Image
-                src="/logos/logo.png"
-                alt="Uyarvom"
-                width={40}
-                height={40}
-                className="h-8 w-auto md:h-16"
-              />
-              <Image
-                src="/uyarvom-title.png"
-                alt="Uyarvom"
-                width={120}
-                height={32}
-                className="h-6 w-auto md:h-9 hidden sm:block"
-              />
-              <span className="text-lg md:text-xl font-bold text-amber-800 tracking-wide sm:hidden">
-                Uyarvom
-              </span>
-            </Link>
-          </div>
-          
-          {/* Center Partition - Search Bar */}
-          <div className="flex justify-center">
-            <div className="w-full max-w-lg">
-              <ProductsSearch />
+    <div className="m-0 flex w-full flex-col gap-0">
+      <div className="m-0 w-full border-0 bg-[#111111] px-4 py-1.5 text-white sm:px-6 md:py-2">
+        <div className="mx-auto flex max-w-[1400px] items-center justify-between text-[8px] font-bold uppercase leading-none tracking-[0.18em] md:text-[9px] md:tracking-[0.2em]">
+          <div className="flex items-center gap-3 md:gap-8">
+            <div className="flex items-center gap-2">
+              <span className="text-primary">{"\u2022"}</span>
+              <span>Free Shipping Over {"\u20B9"}4,999</span>
+            </div>
+            <div className="hidden items-center gap-2 md:flex">
+              <span className="text-primary">{"\u2022"}</span>
+              <span>0% EMI Options Available</span>
             </div>
           </div>
-
-          {/* Right Partition - User Actions */}
-          <div className="flex items-center justify-end gap-1 md:gap-2">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-9 w-9 md:h-10 md:w-10 hover:bg-black/10 text-amber-800 hover:text-amber-900 transition-all duration-300" 
-              asChild
-            >
-              <Link href="/wishlist">
-                <Heart className="h-4 w-4 md:h-5 md:w-5" />
-                <span className="sr-only">Favorites</span>
-              </Link>
-            </Button>
-            
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-9 w-9 md:h-10 md:w-10 hover:bg-black/10 text-amber-800 hover:text-amber-900 transition-all duration-300" 
-              asChild
-            >
-              <Link href="/cart">
-                <ShoppingBag className="h-4 w-4 md:h-5 md:w-5" />
-                <span className="sr-only">Cart</span>
-              </Link>
-            </Button>
-            
-            <AuthButton />
+          <div className="flex items-center gap-4 text-white/50 md:gap-6">
+            <Link href="/delivery" className="transition-colors hover:text-primary">
+              Delivery Info
+            </Link>
+            <Link href="/track" className="hidden transition-colors hover:text-primary sm:block">
+              Track Order
+            </Link>
+            <Link href="/support" className="transition-colors hover:text-primary">
+              Help
+            </Link>
           </div>
         </div>
       </div>
-    </header>
+
+      <MobileHeaderChrome />
+
+      <div className="hidden lg:block">
+        <header className="m-0 w-full border-0 bg-[#faf8f2]/95 shadow-none backdrop-blur-md">
+          <div className="mx-auto max-w-[1400px] px-4 py-2 sm:px-6 md:py-2.5">
+            <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+              <div className="flex items-center justify-between gap-3 xl:min-w-[300px]">
+                <Link href="/" className="group flex items-center gap-3">
+                  <div className="relative h-10 w-10 overflow-hidden rounded-full border border-primary/10 bg-white shadow-sm transition-all duration-500 group-hover:border-primary/30 md:h-12 md:w-12">
+                    <Image
+                      src="/logos/logo.png"
+                      alt="Uyarvom"
+                      fill
+                      className="object-contain p-1 transition-transform duration-500 group-hover:scale-105"
+                      priority
+                    />
+                  </div>
+                  <div className="min-w-0 leading-none">
+                    <span className="block font-serif text-[1.45rem] tracking-[0.08em] text-[#6b140f] md:text-[2rem]">
+                      Uyarvom
+                    </span>
+                    <span className="mt-0.5 block font-serif text-[0.82rem] tracking-[0.2em] text-[#b48a2b] md:text-[1.05rem]">
+                      Homestyles
+                    </span>
+                  </div>
+                </Link>
+              </div>
+
+              <div className="min-w-0 flex-1 xl:px-4">
+                <div className="mx-auto max-w-[760px]">
+                  <ProductsSearch />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 md:gap-4 xl:min-w-[260px]">
+                <Link href="/orders" className="group relative flex h-11 w-11 items-center justify-center rounded-full border border-transparent transition-all duration-300 hover:border-primary/20 hover:bg-white">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-foreground transition-all duration-300 group-hover:text-primary"><path d="M16 16h6"/><path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14"/><path d="m7.5 4.27 9 5.15"/><polyline points="3.29 7 12 12 20.71 7"/><line x1="12" x2="12" y1="22" y2="12"/><circle cx="19" cy="16" r="3"/></svg>
+                  <span className="sr-only">My Orders</span>
+                </Link>
+                <HeaderWishlistButton />
+                <HeaderCartButton />
+                <div className="hidden h-8 w-px bg-border/30 md:block" />
+                <AuthButton />
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <div className="m-0 w-full border-0 bg-[#FAF9F6] py-2">
+          <div className="mx-auto flex max-w-[1400px] items-center justify-center gap-3 px-4 text-[9px] font-bold uppercase leading-none tracking-[0.28em] sm:px-6 md:text-[10px]">
+            <Link href="/offers" className="group flex items-center gap-3">
+              <span className="text-foreground/40">First Order Offer:</span>
+              <span className="text-foreground transition-colors group-hover:text-primary">
+                Save <span className="italic text-primary">{"\u20B9"}500</span> on your first purchase
+              </span>
+              <span className="animate-pulse text-primary">{"\u2192"}</span>
+              <span className="bg-primary/10 px-3 py-1 font-mono text-[8px] tracking-normal text-primary">
+                CODE: ARTVOM500
+              </span>
+            </Link>
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }

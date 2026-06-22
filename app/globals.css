@@ -9,104 +9,101 @@
 }
 
 /* Apple Design System - Inspired by apple.com with Gold Theme */
+/* Luxury Gold Theme - Sophisticated & Artisanal */
 :root {
-  /* Warm background with subtle gold tint */
-  --background: 254 252 247;
-  --foreground: 69 26 3;
+  /* Crisp High Contrast Foundation */
+  --background: 255 255 255;
+  --foreground: 17 17 17;
 
-  /* Cards with warm gold undertones */
+  /* Elevated Card System */
   --card: 255 255 255;
-  --card-foreground: 69 26 3;
+  --card-foreground: 17 17 17;
 
   --popover: 255 255 255;
-  --popover-foreground: 69 26 3;
+  --popover-foreground: 17 17 17;
 
-  /* Rich metallic gold primary color */
-  --primary: 201 135 29;
+  /* Regal Gold (#9C7C38) - Denser and more visible */
+  --primary: 156 124 56;
   --primary-foreground: 255 255 255;
 
-  /* Warm secondary colors with metallic gold */
-  --secondary: 245 215 142;
-  --secondary-foreground: 107 74 15;
+  /* Deep Slate secondary for better weight */
+  --secondary: 242 242 242;
+  --secondary-foreground: 17 17 17;
 
-  /* Muted gold tones */
-  --muted: 245 215 142;
-  --muted-foreground: 139 94 20;
+  /* Muted tones with higher visibility */
+  --muted: 245 245 245;
+  --muted-foreground: 85 85 85;
 
-  --accent: 201 135 29;
+  --accent: 156 124 56;
   --accent-foreground: 255 255 255;
 
-  --destructive: 239 68 68;
+  --destructive: 200 30 30;
   --destructive-foreground: 255 255 255;
 
-  /* Warm borders with metallic gold */
-  --border: 201 135 29;
-  --input: 201 135 29;
-  --ring: 201 135 29;
+  /* Technical Borders */
+  --border: 220 220 220;
+  --input: 220 220 220;
+  --ring: 156 124 56;
 
-  --chart-1: 201 135 29;
-  --chart-2: 230 184 92;
-  --chart-3: 245 215 142;
-  --chart-4: 166 114 22;
-  --chart-5: 139 94 20;
+  /* Chart Colors */
+  --chart-1: 156 124 56;
+  --chart-2: 43 43 43;
+  --chart-3: 85 85 85;
+  --chart-4: 180 150 90;
+  --chart-5: 220 200 150;
 
-  /* Square corners */
+  /* Architectural Radius */
   --radius: 0px;
+  /* Switching to cleaner sharp/minimal corners for extreme luxury feel */
   --radius-sm: 0px;
-  --radius-md: 0px;
-  --radius-lg: 0px;
-  --radius-xl: 0px;
+  --radius-md: 2px;
+  --radius-lg: 4px;
+  --radius-xl: 8px;
 }
 
 .dark {
-  /* Rich dark mode with gold accents */
-  --background: 15 10 3;
-  --foreground: 254 243 199;
+  /* Luxury Dark - Not requested to be primary but keeping it elegant */
+  --background: 26 26 26;
+  --foreground: 250 249 246;
 
-  /* Elevated surfaces in dark mode with gold warmth */
-  --card: 28 20 8;
-  --card-foreground: 254 243 199;
+  --card: 38 38 38;
+  --card-foreground: 250 249 246;
 
-  --popover: 28 20 8;
-  --popover-foreground: 254 243 199;
+  --popover: 38 38 38;
+  --popover-foreground: 250 249 246;
 
-  /* Bright metallic gold for dark mode */
-  --primary: 230 184 92;
-  --primary-foreground: 15 10 3;
+  --primary: 191 161 84;
+  --primary-foreground: 26 26 26;
 
-  /* Subtle elevated surfaces with gold tint */
-  --secondary: 69 26 3;
-  --secondary-foreground: 245 215 142;
+  --secondary: 64 64 64;
+  --secondary-foreground: 250 249 246;
 
-  /* Muted backgrounds and text with gold warmth */
-  --muted: 120 53 15;
-  --muted-foreground: 201 135 29;
+  --muted: 50 50 50;
+  --muted-foreground: 160 160 160;
 
-  --accent: 201 135 29;
-  --accent-foreground: 254 243 199;
+  --accent: 191 161 84;
+  --accent-foreground: 26 26 26;
 
-  /* Warm red for dark mode */
-  --destructive: 248 113 113;
-  --destructive-foreground: 15 10 3;
+  --destructive: 180 35 24;
+  --destructive-foreground: 255 255 255;
 
-  /* Subtle borders in dark mode with gold tint */
-  --border: 139 94 20;
-  --input: 139 94 20;
-  --ring: 230 184 92;
+  --border: 64 64 64;
+  --input: 64 64 64;
+  --ring: 191 161 84;
 
-  --chart-1: 230 184 92;
-  --chart-2: 201 135 29;
+  --chart-1: 191 161 84;
+  --chart-2: 217 197 151;
   --chart-3: 166 114 22;
-  --chart-4: 245 215 142;
-  --chart-5: 254 243 199;
+  --chart-4: 242 229 201;
+  --chart-5: 250 249 246;
 }
 
-/* Apple Typography System */
+/* Luxury Typography System */
 @theme inline {
-  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", "Roboto", "Helvetica Neue", sans-serif;
+  --font-sans: var(--font-lato), -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", "Roboto", "Helvetica Neue", sans-serif;
   --font-mono: "SF Mono", "Monaco", "Menlo", "Consolas", monospace;
-  --font-serif: "New York", "Georgia", "Times New Roman", serif;
-  
+  --font-serif: var(--font-playfair), "New York", "Georgia", "Times New Roman", serif;
+
   --color-background: rgb(var(--background));
   --color-foreground: rgb(var(--foreground));
   --color-card: rgb(var(--card));
@@ -131,18 +128,16 @@
   --color-chart-3: rgb(var(--chart-3));
   --color-chart-4: rgb(var(--chart-4));
   --color-chart-5: rgb(var(--chart-5));
-  
-  --radius-sm: 12px;
-  --radius-md: 16px;
-  --radius-lg: 18px;
-  --radius-xl: 24px;
+  --color-ebony: #111111;
+
+  --animate-luxury: luxury 4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
 }
 
 @layer base {
   * {
     @apply border-border;
   }
-  
+
   body {
     @apply bg-background text-foreground font-sans;
     font-feature-settings: "rlig" 1, "calt" 1;
@@ -151,78 +146,86 @@
     text-rendering: optimizeLegibility;
     letter-spacing: -0.022em;
   }
-  
+
   html {
     scroll-behavior: smooth;
   }
-  
+
   ::selection {
     background: rgb(var(--primary) / 0.15);
     color: rgb(var(--foreground));
   }
-  
+
   /* Apple-style minimal scrollbar */
   ::-webkit-scrollbar {
     width: 10px;
     height: 10px;
   }
-  
+
   ::-webkit-scrollbar-track {
     background: transparent;
   }
-  
+
   ::-webkit-scrollbar-thumb {
     background: rgb(var(--muted-foreground) / 0.2);
     border-radius: 10px;
     border: 2px solid transparent;
     background-clip: padding-box;
   }
-  
+
   ::-webkit-scrollbar-thumb:hover {
     background: rgb(var(--muted-foreground) / 0.3);
     background-clip: padding-box;
   }
-  
-  /* Apple typography scale */
-  h1, h2, h3, h4, h5, h6 {
-    font-weight: 600;
-    letter-spacing: -0.022em;
+
+  /* Luxury typography scale */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-playfair), serif;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    color: rgb(var(--foreground));
   }
-  
+
   h1 {
-    font-size: clamp(2.5rem, 5vw, 5rem);
-    line-height: 1.05;
-    font-weight: 700;
-  }
-  
-  h2 {
-    font-size: clamp(2rem, 4vw, 3.5rem);
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
     line-height: 1.1;
   }
-  
-  h3 {
-    font-size: clamp(1.5rem, 3vw, 2.5rem);
+
+  h2 {
+    font-size: clamp(2rem, 5vw, 3.5rem);
     line-height: 1.2;
+    margin-bottom: 1.5rem;
+  }
+
+  h3 {
+    font-size: clamp(1.5rem, 4vw, 2.25rem);
+    line-height: 1.3;
   }
 }
 
 @layer components {
+
   /* Apple hover effects */
   .apple-hover {
     @apply transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl;
     transition-timing-function: cubic-bezier(0.28, 0.11, 0.32, 1);
   }
-  
+
   .apple-hover-lift {
     @apply transition-all duration-400 hover:-translate-y-1 hover:shadow-2xl;
     transition-timing-function: cubic-bezier(0.28, 0.11, 0.32, 1);
   }
-  
+
   /* Apple press effect */
   .apple-press {
     @apply active:scale-[0.97] transition-transform duration-150;
   }
-  
+
   /* Apple glassmorphism */
   .apple-glass {
     backdrop-filter: saturate(180%) blur(20px);
@@ -230,29 +233,29 @@
     background: rgba(255, 255, 255, 0.72);
     border: 0.5px solid rgba(255, 255, 255, 0.18);
   }
-  
+
   .dark .apple-glass {
     background: rgba(28, 28, 30, 0.72);
     border: 0.5px solid rgba(255, 255, 255, 0.08);
   }
-  
+
   /* Apple shadows - subtle and refined */
   .apple-shadow-sm {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
   }
-  
+
   .apple-shadow {
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 2px 4px rgba(0, 0, 0, 0.03);
   }
-  
+
   .apple-shadow-lg {
     box-shadow: 0 10px 15px rgba(0, 0, 0, 0.08), 0 4px 6px rgba(0, 0, 0, 0.04);
   }
-  
+
   .apple-shadow-xl {
     box-shadow: 0 20px 25px rgba(0, 0, 0, 0.1), 0 10px 10px rgba(0, 0, 0, 0.04);
   }
-  
+
   /* Apple button styles with gold theme */
   .apple-button {
     @apply inline-flex items-center justify-center rounded-full px-6 py-3;
@@ -270,7 +273,7 @@
     box-shadow: 0 6px 20px rgba(201, 135, 29, 0.4);
     transform: translateY(-2px);
   }
-  
+
   .apple-button-secondary {
     @apply inline-flex items-center justify-center rounded-full px-6 py-3;
     @apply text-[17px] font-normal leading-tight tracking-tight;
@@ -288,7 +291,7 @@
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(201, 135, 29, 0.3);
   }
-  
+
   /* Apple card with gold accents */
   .apple-card {
     @apply rounded-[28px] bg-card overflow-hidden;
@@ -313,47 +316,47 @@
     box-shadow: 0 20px 25px rgba(230, 184, 92, 0.2), 0 10px 10px rgba(230, 184, 92, 0.1);
     border-color: #e6b85c;
   }
-  
+
   /* Apple hero section */
   .apple-hero {
     @apply relative overflow-hidden py-20 md:py-32 lg:py-40;
   }
-  
+
   /* Apple section spacing */
   .apple-section {
     @apply py-16 md:py-24 lg:py-32;
   }
-  
+
   /* Apple container */
   .apple-container {
     @apply max-w-[980px] mx-auto px-6 md:px-8;
   }
-  
+
   .apple-container-wide {
     @apply max-w-[1400px] mx-auto px-6 md:px-8;
   }
-  
+
   /* Apple text styles */
   .apple-headline {
     @apply text-5xl md:text-6xl lg:text-7xl font-semibold tracking-tight;
     @apply bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent;
   }
-  
+
   .apple-subheadline {
     @apply text-xl md:text-2xl lg:text-3xl font-normal text-muted-foreground;
     @apply tracking-tight leading-snug;
   }
-  
+
   .apple-body {
     @apply text-[17px] leading-relaxed text-muted-foreground;
   }
-  
+
   /* Apple link */
   .apple-link {
     @apply text-primary hover:underline transition-all duration-200;
     @apply font-normal text-[17px];
   }
-  
+
   /* Apple nav */
   .apple-nav {
     @apply sticky top-0 z-50 border-b border-border/50;
@@ -362,56 +365,83 @@
     background: rgba(255, 255, 255, 0.72);
     border: 0.5px solid rgba(255, 255, 255, 0.18);
   }
-  
+
   .dark .apple-nav {
     background: rgba(28, 28, 30, 0.72);
     border: 0.5px solid rgba(255, 255, 255, 0.08);
   }
 
-  /* Premium Gold Navigation - Single light gold background */
+  /* Premium Navigation */
   .premium-global-nav {
     @apply sticky top-0 z-50;
-    background: #f5d78e;
+    background: rgb(var(--background) / 0.8);
     backdrop-filter: saturate(180%) blur(20px);
     -webkit-backdrop-filter: saturate(180%) blur(20px);
-    border-bottom: 1px solid rgba(245, 215, 142, 0.5);
-    box-shadow: 
-      0 4px 20px rgba(201, 135, 29, 0.3), 
-      0 1px 3px rgba(0, 0, 0, 0.15),
-      inset 0 1px 0 rgba(255, 255, 255, 0.4),
-      inset 0 -1px 0 rgba(0, 0, 0, 0.3);
+    border-bottom: 1px solid rgb(var(--primary) / 0.1);
   }
 
-  .dark .premium-global-nav {
-    background: #f5d78e;
-    border-bottom: 1px solid rgba(230, 184, 92, 0.4);
-    box-shadow: 
-      0 4px 20px rgba(201, 135, 29, 0.35), 
-      0 1px 3px rgba(0, 0, 0, 0.2),
-      inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  /* Luxury Gold Buttons */
+  .apple-button,
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-none px-12 py-5;
+    @apply text-[11px] font-bold uppercase tracking-[0.4em];
+    @apply text-white bg-primary;
+    @apply transition-all duration-700 active:scale-[0.98] cursor-pointer;
+    box-shadow: 0 15px 45px -15px rgb(156 124 56 / 0.4);
+    border: 1px solid transparent;
   }
 
-  @keyframes shimmer {
-    0%, 100% {
-      background-position: 0% 50%;
+  .apple-button:hover,
+  .btn-primary:hover {
+    @apply shadow-2xl bg-foreground;
+    color: white;
+    transform: translateY(-2px);
+    border-color: rgb(156 124 56 / 0.2);
+  }
+
+  /* Luxury Entrance Animation */
+  @keyframes luxuryEntrance {
+    0% {
+      opacity: 0;
+      transform: translateY(40px) scale(1.02);
+      filter: blur(10px);
     }
-    50% {
-      background-position: 100% 50%;
+
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      filter: blur(0);
     }
   }
 
-  /* Premium Navigation Links */
+  .animate-luxury {
+    animation: luxuryEntrance 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  /* Sophisticated Hover Glow */
+  .category-icon-hover {
+    transition: all 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .category-icon-hover:hover {
+    box-shadow: 0 30px 60px -12px rgba(156, 124, 56, 0.15);
+    border-color: rgba(156, 124, 56, 0.3);
+  }
+
+  /* Premium Gallery Grid */
+  .premium-grid {
+    display: grid;
+    gap: 2rem;
+  }
+
+  /* Refined Link */
   .premium-nav-link {
-    @apply text-xs font-medium transition-all duration-300;
-    color: #8b5e12;
-    font-size: 12px;
-    letter-spacing: 0.025em;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    @apply text-[11px] font-bold uppercase tracking-[0.2em] transition-all duration-300;
+    color: rgb(var(--foreground) / 0.4);
   }
 
   .premium-nav-link:hover {
-    color: #6b4a0f;
-    text-shadow: 0 0 8px rgba(139, 94, 18, 0.4);
+    color: rgb(var(--primary));
     transform: translateY(-1px);
   }
 
@@ -443,7 +473,8 @@
   /* Apple's Local Navigation */
   .apple-local-nav {
     @apply sticky z-40 bg-background/95;
-    top: 44px; /* Height of global nav */
+    top: 44px;
+    /* Height of global nav */
     backdrop-filter: saturate(180%) blur(20px);
     -webkit-backdrop-filter: saturate(180%) blur(20px);
     border-bottom: 1px solid rgba(0, 0, 0, 0.1);
@@ -474,6 +505,7 @@
     from {
       transform: translateY(0);
     }
+
     to {
       transform: translateY(-50px);
     }
@@ -593,47 +625,50 @@
     scroll-snap-type: y mandatory;
   }
 
-  .apple-scroll-snap > * {
+  .apple-scroll-snap>* {
     scroll-snap-align: start;
   }
-  
+
   /* Apple product grid */
   .apple-grid {
     @apply grid gap-6 md:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3;
   }
-  
+
   /* Apple fade in animation */
   @keyframes apple-fade-in {
     from {
       opacity: 0;
       transform: translateY(20px);
     }
+
     to {
       opacity: 1;
       transform: translateY(0);
     }
   }
-  
+
   .apple-fade-in {
     animation: apple-fade-in 0.6s cubic-bezier(0.28, 0.11, 0.32, 1) forwards;
   }
-  
+
   /* Apple scale animation */
   @keyframes apple-scale-in {
     from {
       opacity: 0;
       transform: scale(0.95);
     }
+
     to {
       opacity: 1;
       transform: scale(1);
     }
   }
-  
+
   .apple-scale-in {
     animation: apple-scale-in 0.5s cubic-bezier(0.28, 0.11, 0.32, 1) forwards;
   }
 }
+
 /* Category Carousel Styles */
 .category-carousel-container {
   position: relative;
@@ -641,7 +676,8 @@
   margin-left: calc(-50vw + 50%);
   height: 60vh;
   overflow: hidden;
-  border-radius: 0; /* Square corners */
+  border-radius: 0;
+  /* Square corners */
 }
 
 .category-carousel-wrapper {
@@ -665,7 +701,8 @@
   align-items: center;
   justify-content: center;
   position: relative;
-  border-radius: 0; /* Square corners */
+  border-radius: 0;
+  /* Square corners */
 }
 
 .category-carousel-content {
@@ -730,7 +767,8 @@
 .category-carousel-indicator {
   width: 12px;
   height: 12px;
-  border-radius: 0; /* Square corners */
+  border-radius: 0;
+  /* Square corners */
   background: rgba(255, 255, 255, 0.4);
   border: none;
   cursor: pointer;
@@ -750,277 +788,85 @@
   .category-carousel-container {
     height: 50vh;
   }
-  
+
   .category-carousel-title {
     font-size: 2.5rem;
     margin-bottom: 1rem;
   }
-  
+
   .category-carousel-description {
     font-size: 1.1rem;
     margin-bottom: 1.5rem;
   }
-  
+
   .category-carousel-cta {
     font-size: 1rem;
   }
-  
+
   .category-carousel-text {
     padding: 2rem;
   }
 }
 
-/* Square Corner Global Styles */
-/* Square Corner Global Styles */
-* {
-  border-radius: 0 !important;
+/* Luxury Component Overrides */
+.apple-card {
+  @apply rounded-xl bg-card overflow-hidden border border-border/40 transition-all duration-500;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
 }
 
-/* Override specific rounded elements */
-.rounded, .rounded-sm, .rounded-md, .rounded-lg, .rounded-xl, .rounded-2xl, .rounded-3xl,
-.rounded-full, .rounded-t, .rounded-r, .rounded-b, .rounded-l,
-.rounded-tl, .rounded-tr, .rounded-br, .rounded-bl {
-  border-radius: 0 !important;
+.apple-card:hover {
+  @apply -translate-y-1 shadow-2xl;
+  border-color: rgb(var(--primary) / 0.5);
 }
 
-/* Exception: Keep category images rounded */
-.category-icon-hover,
-.category-icon-hover img,
-.category-icon-hover .rounded-full {
-  border-radius: 50% !important;
-}
-
-/* Exception: Keep active indicators rounded */
-.category-icon-hover .animate-pulse {
-  border-radius: 50% !important;
-}
-
-/* Exception: Keep category dropdown menus rounded */
-.animate-slide-down,
-.animate-slide-up-from-bottom {
-  border-radius: 0 0 1rem 1rem !important;
-}
-
-.animate-slide-up-from-bottom {
-  border-radius: 1rem 1rem 0 0 !important;
-}
-
-/* Exception: Keep dropdown buttons and links rounded */
-.animate-slide-down .rounded-xl,
-.animate-slide-up-from-bottom .rounded-xl,
-.animate-slide-down .rounded-lg,
-.animate-slide-up-from-bottom .rounded-lg {
-  border-radius: 0.75rem !important;
-}
-
-.animate-slide-down .rounded-lg,
-.animate-slide-up-from-bottom .rounded-lg {
-  border-radius: 0.5rem !important;
-}
-
-/* Button styles with square corners */
-button, .btn, [role="button"] {
-  border-radius: 0 !important;
-}
-
-/* Input styles with square corners */
-input, textarea, select {
-  border-radius: 0 !important;
-}
-
-/* Card styles with square corners */
-.card, .apple-card {
-  border-radius: 0 !important;
-}
-
-/* Search box and form elements */
-.search-box, .form-control, .input-group {
-  border-radius: 0 !important;
-}
-
-/* Product cards */
 .product-card {
-  border-radius: 0 !important;
+  @apply rounded-lg overflow-hidden transition-all duration-500;
 }
 
-/* Dropdown menus */
-.dropdown-menu, .popover, .tooltip {
-  border-radius: 0 !important;
+button,
+.btn,
+[role="button"] {
+  @apply rounded-md transition-all duration-300;
 }
 
-/* AI Sparkle Animations */
-@keyframes sparkle {
-  0%, 100% { 
-    opacity: 1; 
-    transform: scale(1) rotate(0deg);
-    filter: brightness(1) hue-rotate(0deg);
-  }
-  25% { 
-    opacity: 0.7; 
-    transform: scale(1.1) rotate(90deg);
-    filter: brightness(1.3) hue-rotate(45deg);
-  }
-  50% { 
-    opacity: 1; 
-    transform: scale(1.2) rotate(180deg);
-    filter: brightness(1.5) hue-rotate(90deg);
-  }
-  75% { 
-    opacity: 0.8; 
-    transform: scale(1.1) rotate(270deg);
-    filter: brightness(1.2) hue-rotate(135deg);
-  }
+input,
+textarea,
+select {
+  @apply rounded-md border-border/40 focus:border-primary/50 focus:ring-primary/20 transition-all;
 }
 
-@keyframes glow-pulse {
-  0%, 100% { 
-    text-shadow: 
-      0 0 5px #ffd700,
-      0 0 10px #ffd700,
-      0 0 15px #ffd700,
-      0 0 20px #ff6b35;
-  }
-  50% { 
-    text-shadow: 
-      0 0 10px #ffd700,
-      0 0 20px #ffd700,
-      0 0 30px #ffd700,
-      0 0 40px #ff6b35,
-      0 0 50px #ff6b35;
-  }
+/* Refined Category Styles */
+.category-icon-hover {
+  @apply rounded-full transition-all duration-500 overflow-hidden;
+  border: 1px solid transparent;
 }
 
-@keyframes shimmer-ai {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+.category-icon-hover:hover {
+  @apply scale-105;
+  border-color: rgb(var(--primary) / 0.3);
+  box-shadow: 0 10px 30px rgb(var(--primary) / 0.1);
 }
 
-@keyframes twinkle {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.3; }
+/* Sophisticated Shimmer */
+.shimmer-premium {
+  background: linear-gradient(90deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(191, 161, 84, 0.05) 50%,
+      rgba(255, 255, 255, 0) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 3s infinite linear;
 }
 
-.ai-sparkle {
-  display: inline-block;
-  animation: sparkle 2s ease-in-out infinite, glow-pulse 3s ease-in-out infinite;
-  background: linear-gradient(
-    45deg,
-    #ffd700 0%,
-    #ffed4e 25%,
-    #ff6b35 50%,
-    #ffd700 75%,
-    #ffed4e 100%
-  );
-  background-size: 200% 200%;
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: sparkle 2s ease-in-out infinite, 
-             glow-pulse 3s ease-in-out infinite,
-             shimmer-ai 2.5s linear infinite;
-  filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.6));
-  transition: all 0.3s ease;
-  position: relative;
-}
-
-.ai-sparkle::before {
-  content: '';
-  position: absolute;
-  top: -2px;
-  left: -2px;
-  right: -2px;
-  bottom: -2px;
-  background: linear-gradient(45deg, #ffd700, #ff6b35, #ffd700);
-  border-radius: 50%;
-  opacity: 0.3;
-  animation: twinkle 1.5s ease-in-out infinite;
-  z-index: -1;
-}
-
-.ai-sparkle:hover {
-  animation-duration: 0.5s, 0.8s, 0.6s;
-  filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.9));
-  transform: scale(1.1);
-}
-
-/* Enhanced AI Match Link */
-.ai-match-link {
-  position: relative;
-  overflow: hidden;
-  border-radius: 8px;
-  padding: 4px 8px;
-  transition: all 0.3s ease;
-}
-
-.ai-match-link::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 215, 0, 0.2),
-    transparent
-  );
-  transition: left 0.5s;
-}
-
-.ai-match-link:hover::before {
-  left: 100%;
-}
-
-.ai-match-link:hover {
-  background: rgba(255, 215, 0, 0.1);
-  box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
-}
-
-.ai-match-link:hover .ai-sparkle {
-  animation-duration: 0.3s, 0.5s, 0.4s;
-}
-
-/* Additional sparkle effects for extra eye-catching appeal */
-@keyframes sparkle-burst {
-  0% { 
-    transform: scale(1) rotate(0deg);
-    opacity: 1;
-  }
-  50% { 
-    transform: scale(1.3) rotate(180deg);
-    opacity: 0.8;
-  }
-  100% { 
-    transform: scale(1) rotate(360deg);
-    opacity: 1;
-  }
-}
-
-.ai-sparkle-burst {
-  animation: sparkle-burst 1s ease-in-out infinite;
-}
-
-/* Floating sparkles around the AI symbol */
-.ai-sparkle::after {
-  content: '✨';
-  position: absolute;
-  top: -10px;
-  right: -10px;
-  font-size: 8px;
-  opacity: 0.7;
-  animation: twinkle 2s ease-in-out infinite reverse;
-  pointer-events: none;
-}
-/* Flipkart-style Color Dots */
+/* Color Selector Refinement */
 .color-dot {
-  position: relative;
-  transition: all 0.2s ease-in-out;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  /* Prevent layout shifts by using fixed dimensions */
-  width: 32px !important;
-  height: 32px !important;
-  flex-shrink: 0;
+  @apply rounded-full cursor-pointer transition-all duration-300 border-2 border-transparent;
+  width: 24px !important;
+  height: 24px !important;
+}
+
+.color-dot.selected {
+  @apply ring-2 ring-primary ring-offset-2;
+  border-color: white;
 }
 
 .color-dot:hover {
@@ -1068,9 +914,11 @@ input, textarea, select {
 
 /* Fixed layout container */
 .color-selector-container {
-  width: 48px; /* Fixed width to prevent layout shifts */
+  width: 48px;
+  /* Fixed width to prevent layout shifts */
   flex-shrink: 0;
 }
+
 /* Image Thumbnail Styles */
 .image-thumbnail {
   transition: all 0.2s ease;
@@ -1084,6 +932,7 @@ input, textarea, select {
   border-color: #c9871d;
   transform: scale(1.05);
 }
+
 /* Default Color Button Styles */
 .color-selector-container button:not(.color-dot) {
   font-size: 0.75rem;
@@ -1152,6 +1001,7 @@ input, textarea, select {
   border-color: #c9871d !important;
   box-shadow: 0 0 0 2px rgba(201, 135, 29, 0.3);
 }
+
 /* Scrollbar utilities */
 .scrollbar-hide {
   -ms-overflow-style: none;
@@ -1168,6 +1018,7 @@ input, textarea, select {
     opacity: 0;
     transform: translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -1179,6 +1030,7 @@ input, textarea, select {
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -1208,11 +1060,54 @@ input, textarea, select {
   from {
     transform: translateY(100%);
   }
+
   to {
     transform: translateY(0);
   }
 }
 
-.animate-slide-up-from-bottom {
-  animation: slideUpFromBottom 0.3s ease-out;
+@keyframes luxury {
+  from {
+    opacity: 0;
+    transform: scale(1.1) translateY(20px);
+    filter: blur(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    filter: blur(0);
+  }
+}
+
+.animate-luxury {
+  animation: var(--animate-luxury);
+}
+
+.apple-button {
+  @apply bg-primary text-white font-bold uppercase tracking-[0.2em] rounded-sm transition-all duration-500 shadow-xl;
+  box-shadow: 0 10px 40px rgba(156, 124, 56, 0.2);
+}
+
+.apple-button:hover {
+  @apply bg-foreground -translate-y-1 shadow-2xl;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+@keyframes heroProgress {
+  from {
+    width: 0%;
+  }
+
+  to {
+    width: 100%;
+  }
+}
+
+.animate-hero-progress {
+  animation: heroProgress 6000ms linear forwards;
+}
+
+.btn-primary {
+  @apply bg-primary text-white font-bold py-4 px-10 rounded-sm transition-all duration-500 hover:bg-foreground hover:shadow-2xl hover:-translate-y-1 active:scale-95 uppercase tracking-widest text-xs;
 }

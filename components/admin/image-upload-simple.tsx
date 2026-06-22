@@ -1,13 +1,13 @@
 'use client'
 
 import { useState } from 'react'
+import Image from "next/image"
+import { Upload, X, Image as ImageIcon, Loader2 } from "lucide-react"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Upload, X, Image as ImageIcon, Loader2 } from "lucide-react"
-import Image from "next/image"
-import { toast } from "sonner"
 
 interface ProductImage {
   id?: string
@@ -20,7 +20,7 @@ interface ProductImage {
 interface ImageUploadProps {
   images: ProductImage[]
   onImagesChange: (images: ProductImage[]) => void
-  productId?: string // If editing existing product
+  productId?: string
 }
 
 export function ImageUpload({ images, onImagesChange, productId }: ImageUploadProps) {
@@ -29,13 +29,11 @@ export function ImageUpload({ images, onImagesChange, productId }: ImageUploadPr
   const handleFileUpload = async (file: File) => {
     if (!file) return
 
-    // Validate file type
     if (!file.type.startsWith('image/')) {
       toast.error('Please select an image file')
       return
     }
 
-    // Validate file size (max 25MB)
     if (file.size > 25 * 1024 * 1024) {
       toast.error('Image size must be less than 25MB')
       return
@@ -44,7 +42,6 @@ export function ImageUpload({ images, onImagesChange, productId }: ImageUploadPr
     setUploading(true)
 
     try {
-      // Upload the file
       const formData = new FormData()
       formData.append('file', file)
 
@@ -58,16 +55,16 @@ export function ImageUpload({ images, onImagesChange, productId }: ImageUploadPr
       }
 
       const uploadResult = await uploadResponse.json()
-      
-      // If editing existing product, save directly to database
+      const altText = file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, ' ')
+
       if (productId) {
-        const saveResponse = await fetch('/api/fix-images', {
+        const saveResponse = await fetch(`/api/admin/products/${productId}/images`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            productId,
             imageUrl: uploadResult.url,
-            altText: file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, ' ')
+            altText,
+            isPrimary: images.length === 0
           })
         })
 
@@ -75,28 +72,21 @@ export function ImageUpload({ images, onImagesChange, productId }: ImageUploadPr
           throw new Error('Failed to save image to product')
         }
 
-        // Refresh the images from database
         const refreshResponse = await fetch(`/api/admin/products/${productId}`)
         if (refreshResponse.ok) {
           const productData = await refreshResponse.json()
           onImagesChange(productData.images || [])
         }
       } else {
-        // For new products, add to local state
-        const newImage: ProductImage = {
-          imageUrl: uploadResult.url,
-          altText: file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, ' '),
-          isPrimary: images.length === 0,
-          sortOrder: images.length
-        }
-        
-        console.log('🖼️ Adding image to local state:', newImage)
-        console.log('🖼️ Current images before add:', images)
-        
-        const updatedImages = [...images, newImage]
-        console.log('🖼️ Updated images after add:', updatedImages)
-        
-        onImagesChange(updatedImages)
+        onImagesChange([
+          ...images,
+          {
+            imageUrl: uploadResult.url,
+            altText,
+            isPrimary: images.length === 0,
+            sortOrder: images.length
+          }
+        ])
       }
 
       toast.success('Image uploaded successfully!')
@@ -125,7 +115,7 @@ export function ImageUpload({ images, onImagesChange, productId }: ImageUploadPr
   }
 
   const updateAltText = (index: number, altText: string) => {
-    const newImages = images.map((img, i) => 
+    const newImages = images.map((img, i) =>
       i === index ? { ...img, altText } : img
     )
     onImagesChange(newImages)
@@ -133,7 +123,6 @@ export function ImageUpload({ images, onImagesChange, productId }: ImageUploadPr
 
   return (
     <div className="space-y-4">
-      {/* Upload Button */}
       <div className="border-2 border-dashed rounded-lg p-6 text-center">
         <input
           type="file"
@@ -163,11 +152,9 @@ export function ImageUpload({ images, onImagesChange, productId }: ImageUploadPr
         </label>
       </div>
 
-      {/* Existing Images */}
       {images.map((image, index) => (
         <div key={index} className="border rounded-lg p-4">
           <div className="flex gap-4">
-            {/* Image Preview */}
             <div className="w-24 h-24 border rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center flex-shrink-0">
               {image.imageUrl ? (
                 <Image
@@ -182,7 +169,6 @@ export function ImageUpload({ images, onImagesChange, productId }: ImageUploadPr
               )}
             </div>
 
-            {/* Image Details */}
             <div className="flex-1 space-y-3">
               <div>
                 <Label>Alt Text</Label>

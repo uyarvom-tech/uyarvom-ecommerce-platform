@@ -1,325 +1,185 @@
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { AppleReveal } from "@/components/apple-scroll-animations"
-import { 
-  MessageCircle, 
-  Mail, 
-  Phone, 
-  Clock, 
-  HelpCircle, 
-  Truck, 
-  RefreshCw, 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { SupportForm } from "@/components/support-form"
+import { createClient } from "@/lib/supabase/server"
+import { prisma } from "@/lib/prisma"
+import {
+  MessageCircle,
+  Mail,
+  Phone,
+  Clock,
+  HelpCircle,
+  Truck,
+  RefreshCw,
   Shield,
   Search,
   ChevronRight,
   Star
 } from "lucide-react"
+import Link from "next/link"
 
-// Force dynamic rendering
 export const dynamic = 'force-dynamic'
-export const revalidate = 0
 
 const faqs = [
   {
     question: "What is your return policy?",
-    answer: "We offer a 30-day return policy for all unused items in original packaging. Simply contact our support team to initiate a return."
+    answer: "We offer a 7-day return policy for most handcrafted items. Must be in original condition with packaging."
   },
   {
     question: "How long does shipping take?",
-    answer: "Standard shipping takes 3-5 business days within India. Express shipping is available for 1-2 day delivery in major cities."
+    answer: "Standard shipping takes 3-7 business days across India. Handcrafted items may take longer as noted in product descriptions."
   },
   {
     question: "Are your products dishwasher safe?",
-    answer: "Most of our ceramic and stainless steel products are dishwasher safe. Check individual product descriptions for specific care instructions."
+    answer: "Our ceramic stoneware is dishwasher and microwave safe. However, items with gold/silver leaf details should be hand-washed."
   },
-  {
-    question: "Do you offer international shipping?",
-    answer: "Currently, we only ship within India. We're working on expanding to international markets soon."
-  },
-  {
-    question: "How can I track my order?",
-    answer: "Once your order ships, you'll receive a tracking number via email and SMS. You can also track orders in your account dashboard."
-  },
-  {
-    question: "What payment methods do you accept?",
-    answer: "We accept all major credit/debit cards, UPI, net banking, and cash on delivery for eligible orders."
-  }
 ]
 
-const supportChannels = [
-  {
-    icon: MessageCircle,
-    title: "Live Chat",
-    description: "Get instant help from our support team",
-    availability: "24/7 Available",
-    action: "Start Chat",
-    primary: true
-  },
-  {
-    icon: Mail,
-    title: "Email Support",
-    description: "Send us detailed questions or concerns",
-    availability: "Response within 2 hours",
-    action: "Send Email",
-    contact: "support@uyarvom.com"
-  },
-  {
-    icon: Phone,
-    title: "Phone Support",
-    description: "Speak directly with our experts",
-    availability: "Mon-Sat, 9 AM - 8 PM",
-    action: "Call Now",
-    contact: "+91 98765 43210"
-  }
-]
+export default async function SupportPage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
 
-const helpCategories = [
-  {
-    icon: Truck,
-    title: "Shipping & Delivery",
-    description: "Track orders, shipping info, delivery updates",
-    articles: 12
-  },
-  {
-    icon: RefreshCw,
-    title: "Returns & Exchanges",
-    description: "Return policy, exchange process, refunds",
-    articles: 8
-  },
-  {
-    icon: Shield,
-    title: "Product Care",
-    description: "Maintenance tips, warranty, care instructions",
-    articles: 15
-  },
-  {
-    icon: HelpCircle,
-    title: "Account & Orders",
-    description: "Account management, order history, payments",
-    articles: 10
+  let orders: any[] = []
+  if (user) {
+    orders = await prisma.order.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: 'desc' },
+      take: 10,
+      select: { id: true, orderNumber: true }
+    })
   }
-]
 
-export default function SupportPage() {
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="flex min-h-screen flex-col bg-[#FDFCFB]">
       <Header />
-      
+
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="py-16 md:py-24 bg-gradient-to-b from-secondary/20 to-background">
-          <div className="max-w-[980px] mx-auto px-6 text-center">
-            <AppleReveal>
-              <Badge className="mb-4 bg-primary/10 text-primary border-primary/20">
-                24/7 Support Available
-              </Badge>
-              <h1 className="apple-headline mb-6">
-                How can we help you?
-              </h1>
-              <p className="apple-subheadline mb-8 max-w-2xl mx-auto">
-                Get the support you need, when you need it. Our team is here to help with any questions about your Uyarvom products.
-              </p>
-              
-              {/* Search Bar */}
-              <div className="relative max-w-md mx-auto">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                <Input 
-                  placeholder="Search for help articles..." 
-                  className="pl-10 h-12 rounded-full border-2 border-primary/20 focus:border-primary"
-                />
-              </div>
-            </AppleReveal>
+        <section className="py-20 bg-black text-white overflow-hidden relative">
+          <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
+            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-primary blur-[120px]" />
+            <div className="absolute bottom-[-10%] right-[-10%] w-[30%] h-[30%] rounded-full bg-primary blur-[100px]" />
+          </div>
+
+          <div className="container mx-auto max-w-4xl px-6 relative z-10 text-center">
+            <Badge variant="outline" className="mb-6 border-primary/50 text-primary-foreground px-4 py-1 rounded-none text-[10px] font-bold uppercase tracking-widest">
+              Uyarvom Concierge
+            </Badge>
+            <h1 className="font-playfair text-6xl md:text-7xl font-black mb-6 tracking-tight leading-none">
+              How can we <br /><span className="text-muted-foreground italic">help you</span> today?
+            </h1>
+            <p className="text-gray-400 max-w-xl mx-auto text-sm uppercase tracking-[0.2em] font-medium leading-loose">
+              Our dedicated support team is here to ensure your journey with Uyarvom is as seamless as our glazes.
+            </p>
           </div>
         </section>
 
-        {/* Support Channels */}
-        <section className="py-16">
-          <div className="max-w-[980px] mx-auto px-6">
-            <AppleReveal>
-              <h2 className="text-3xl font-bold text-center mb-12">Get in Touch</h2>
-            </AppleReveal>
-            
-            <div className="grid gap-6 md:grid-cols-3">
-              {supportChannels.map((channel, index) => (
-                <AppleReveal key={channel.title} delay={index * 100}>
-                  <Card className={`apple-card h-full ${channel.primary ? 'ring-2 ring-primary/20' : ''}`}>
-                    <CardHeader className="text-center pb-4">
-                      <div className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-4 ${
-                        channel.primary ? 'bg-primary text-primary-foreground' : 'bg-secondary'
-                      }`}>
-                        <channel.icon className="h-8 w-8" />
-                      </div>
-                      <CardTitle className="text-xl">{channel.title}</CardTitle>
-                      <CardDescription className="text-sm">
-                        {channel.description}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="text-center">
-                      <div className="mb-4">
-                        <div className="flex items-center justify-center gap-1 text-sm text-muted-foreground mb-2">
-                          <Clock className="h-4 w-4" />
-                          {channel.availability}
-                        </div>
-                        {channel.contact && (
-                          <p className="font-medium text-primary">{channel.contact}</p>
-                        )}
-                      </div>
-                      <Button 
-                        className={`w-full ${channel.primary ? 'apple-button' : 'apple-button-secondary'}`}
-                      >
-                        {channel.action}
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </AppleReveal>
-              ))}
-            </div>
-          </div>
-        </section>
+        {/* Support Channels & Form */}
+        <section className="py-24 px-6">
+          <div className="container mx-auto max-w-6xl">
+            <div className="grid gap-16 lg:grid-cols-2">
+              {/* Left Side: Info & Channels */}
+              <div className="space-y-12">
+                <div>
+                  <h2 className="font-playfair text-4xl font-bold mb-6">Connect with us</h2>
+                  <p className="text-muted-foreground leading-relaxed max-w-md">
+                    Choose the channel that works best for you. We typically respond within 2 hours during business hours.
+                  </p>
+                </div>
 
-        {/* Help Categories */}
-        <section className="py-16 bg-secondary/10">
-          <div className="max-w-[980px] mx-auto px-6">
-            <AppleReveal>
-              <h2 className="text-3xl font-bold text-center mb-12">Browse Help Topics</h2>
-            </AppleReveal>
-            
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-              {helpCategories.map((category, index) => (
-                <AppleReveal key={category.title} delay={index * 100}>
-                  <Card className="apple-card group cursor-pointer apple-hover-lift">
-                    <CardHeader className="text-center">
-                      <div className="w-12 h-12 mx-auto rounded-full bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
-                        <category.icon className="h-6 w-6 text-primary" />
-                      </div>
-                      <CardTitle className="text-lg group-hover:text-primary transition-colors">
-                        {category.title}
-                      </CardTitle>
-                      <CardDescription className="text-sm">
-                        {category.description}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="text-center">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">
-                          {category.articles} articles
-                        </span>
-                        <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                </AppleReveal>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* FAQ Section */}
-        <section className="py-16">
-          <div className="max-w-[980px] mx-auto px-6">
-            <AppleReveal>
-              <h2 className="text-3xl font-bold text-center mb-12">Frequently Asked Questions</h2>
-            </AppleReveal>
-            
-            <div className="grid gap-6 md:grid-cols-2">
-              {faqs.map((faq, index) => (
-                <AppleReveal key={index} delay={index * 100}>
-                  <Card className="apple-card">
-                    <CardHeader>
-                      <CardTitle className="text-lg flex items-start gap-3">
-                        <HelpCircle className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                        {faq.question}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="apple-body text-muted-foreground">
-                        {faq.answer}
-                      </p>
-                    </CardContent>
-                  </Card>
-                </AppleReveal>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Contact Form */}
-        <section className="py-16 bg-secondary/10">
-          <div className="max-w-[600px] mx-auto px-6">
-            <AppleReveal>
-              <div className="text-center mb-12">
-                <h2 className="text-3xl font-bold mb-4">Still Need Help?</h2>
-                <p className="apple-body text-muted-foreground">
-                  Can't find what you're looking for? Send us a message and we'll get back to you within 2 hours.
-                </p>
-              </div>
-            </AppleReveal>
-            
-            <AppleReveal delay={200}>
-              <Card className="apple-card">
-                <CardHeader>
-                  <CardTitle>Send us a Message</CardTitle>
-                  <CardDescription>
-                    Fill out the form below and our support team will respond quickly.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div>
-                      <label className="text-sm font-medium mb-2 block">Name</label>
-                      <Input placeholder="Your full name" />
+                <div className="space-y-6">
+                  <div className="flex items-start gap-4">
+                    <div className="h-12 w-12 bg-black text-white flex items-center justify-center shrink-0">
+                      <Mail className="h-5 w-5" />
                     </div>
                     <div>
-                      <label className="text-sm font-medium mb-2 block">Email</label>
-                      <Input type="email" placeholder="your@email.com" />
+                      <p className="font-bold uppercase tracking-widest text-[10px] mb-1">Email Support</p>
+                      <p className="text-xl font-bold">concierge@uyarvom.com</p>
+                      <p className="text-sm text-muted-foreground mt-1">Best for tracking issues & detailed queries</p>
                     </div>
                   </div>
-                  
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Subject</label>
-                    <Input placeholder="What can we help you with?" />
+
+                  <div className="flex items-start gap-4">
+                    <div className="h-12 w-12 bg-black text-white flex items-center justify-center shrink-0">
+                      <Phone className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className="font-bold uppercase tracking-widest text-[10px] mb-1">Phone Inquiry</p>
+                      <p className="text-xl font-bold">+91 98765 43210</p>
+                      <p className="text-sm text-muted-foreground mt-1">Available 9 AM - 8 PM, Mon - Sat</p>
+                    </div>
                   </div>
-                  
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Message</label>
-                    <Textarea 
-                      placeholder="Please describe your question or issue in detail..."
-                      rows={5}
-                    />
+
+                  <div className="flex items-start gap-4">
+                    <div className="h-12 w-12 bg-black text-white flex items-center justify-center shrink-0">
+                      <Clock className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className="font-bold uppercase tracking-widest text-[10px] mb-1">Instant Response</p>
+                      <p className="text-xl font-bold italic">Live Concierge</p>
+                      <p className="text-sm text-muted-foreground mt-1 underline cursor-pointer hover:text-black">Open 24/7 via WhatsApp</p>
+                    </div>
                   </div>
-                  
-                  <Button className="w-full apple-button">
-                    Send Message
-                  </Button>
-                </CardContent>
-              </Card>
-            </AppleReveal>
+                </div>
+
+                <div className="pt-8">
+                  <div className="p-8 bg-[#F9F7F5] border-l-4 border-black">
+                    <div className="flex gap-1 mb-4">
+                      {[...Array(5)].map((_, i) => <Star key={i} className="h-4 w-4 fill-black text-black" />)}
+                    </div>
+                    <p className="font-playfair text-xl italic font-bold">
+                      "The support at Uyarvom is just as premium as their products. Truly India's finest."
+                    </p>
+                    <p className="text-xs font-bold uppercase tracking-widest mt-4">— Aditi R., Mumbai</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Side: Support Ticket Form */}
+              <div id="support-form-container">
+                <Card className="rounded-none border-none shadow-2xl p-8 md:p-12">
+                  <div className="mb-10">
+                    <h3 className="font-playfair text-3xl font-bold mb-2">Raise a Ticket</h3>
+                    <p className="text-sm text-muted-foreground">The most efficient way to resolve account and order issues.</p>
+                  </div>
+
+                  {!user ? (
+                    <div className="text-center py-12 border-2 border-dashed border-muted">
+                      <p className="mb-6 font-medium">Please login to submit a support ticket.</p>
+                      <Link href="/auth/login?redirect=/support" className="bg-black text-white px-8 py-3 text-xs font-bold uppercase tracking-widest hover:bg-black/80">
+                        Login to Continue
+                      </Link>
+                    </div>
+                  ) : (
+                    <SupportForm orders={orders} />
+                  )}
+                </Card>
+              </div>
+            </div>
           </div>
         </section>
 
-        {/* Customer Satisfaction */}
-        <section className="py-16">
-          <div className="max-w-[980px] mx-auto px-6 text-center">
-            <AppleReveal>
-              <div className="flex items-center justify-center gap-2 mb-4">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="h-6 w-6 fill-amber-400 text-amber-400" />
-                ))}
-              </div>
-              <h3 className="text-2xl font-bold mb-2">98% Customer Satisfaction</h3>
-              <p className="apple-body text-muted-foreground max-w-2xl mx-auto">
-                Our support team is rated 4.9/5 stars by customers. We're committed to providing exceptional service and resolving your questions quickly.
-              </p>
-            </AppleReveal>
+        {/* FAQs */}
+        <section className="py-24 bg-[#111111] text-white">
+          <div className="container mx-auto max-w-5xl px-6">
+            <h2 className="font-playfair text-4xl font-bold mb-16 text-center">Frequently asked questions</h2>
+            <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-3">
+              {faqs.map((faq, i) => (
+                <div key={i} className="space-y-4">
+                  <h4 className="font-bold text-lg border-b border-white/10 pb-4 flex items-start gap-3">
+                    <HelpCircle className="h-5 w-5 text-primary shrink-0 transition-transform hover:rotate-12" />
+                    {faq.question}
+                  </h4>
+                  <p className="text-gray-400 text-sm leading-relaxed">{faq.answer}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
       </main>
-      
+
       <Footer />
     </div>
   )

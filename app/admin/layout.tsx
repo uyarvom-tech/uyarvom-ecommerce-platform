@@ -1,17 +1,17 @@
 import { redirect } from 'next/navigation'
-import { checkAdminAccess } from '@/lib/auth-middleware'
+import { getCurrentUserContext } from '@/lib/auth-middleware'
 
 export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  // Check if user has admin access
-  const hasAdminAccess = await checkAdminAccess()
+  // Check if user has admin/staff access
+  const context = await getCurrentUserContext()
 
-  if (!hasAdminAccess) {
-    // Redirect to login page if no admin access
-    redirect('/auth/signin?message=Admin access required')
+  if (!context || !['admin', 'staff', 'super_admin'].includes(context.role)) {
+    // Redirect to the correct admin login page
+    redirect('/auth/admin-login?message=Admin access required')
   }
 
   return (

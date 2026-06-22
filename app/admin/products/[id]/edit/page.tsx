@@ -1,7 +1,8 @@
 import { prisma } from "@/lib/prisma-safe"
 import { AdminHeader } from "@/components/admin-header"
-import { ProductForm } from "@/components/admin/product-form"
+import { ProductEditPageClient } from "@/components/admin/product-edit-page-client"
 import { notFound } from "next/navigation"
+import { redirect } from 'next/navigation'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -25,14 +26,16 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
         include: { category: true },
         orderBy: { isPrimary: 'desc' }
       },
-      variants: {
-        where: { name: 'Color' },
+      colors: {
+        orderBy: { sortOrder: 'asc' },
         include: {
           images: {
             orderBy: { sortOrder: 'asc' }
+          },
+          variants: {
+            orderBy: { sortOrder: 'asc' }
           }
-        },
-        orderBy: { sortOrder: 'asc' }
+        }
       }
     }
   })
@@ -41,23 +44,40 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
     notFound()
   }
 
+  const selectedCategories = product.productCategories.map((pc: any) => pc.category)
+  const selectedMainCategory =
+    selectedCategories.find((category: any) => category.parentId === null) ||
+    selectedCategories.find((category: any) => !category.parentId)
+  const selectedSubCategory =
+    selectedCategories.find((category: any) => category.parentId === selectedMainCategory?.id) ||
+    selectedCategories.find((category: any) => category.parentId)
+
   // Transform product to include categoryIds and color variants for form compatibility
   const productWithCategoryIds = {
     ...product,
     categoryIds: product.productCategories.map((pc: any) => pc.categoryId),
-    categories: product.productCategories.map((pc: any) => pc.category),
+    categories: selectedCategories,
     primaryCategory: product.productCategories.find((pc: any) => pc.isPrimary)?.category,
-    // Transform variants to color variants format with proper images
-    hasColorVariants: product.variants.length > 0,
-    colorVariants: product.variants.map((variant: any, index: number) => ({
-      id: `existing-color-${variant.id}`,
-      colorName: variant.value,
-      colorCode: variant.colorCode || '#000000',
-      images: variant.images.map((img: any, imgIndex: number) => ({
-        id: `existing-img-${img.id}`,
+    mainCategoryId: selectedMainCategory?.id || '',
+    subCategoryId: selectedSubCategory?.id || '',
+    colors: (product.colors || []).map((color: any) => ({
+      id: color.id,
+      colorName: color.colorName,
+      colorCode: color.colorCode || '#000000',
+      images: color.images.map((img: any, imgIndex: number) => ({
+        id: img.id,
         imageUrl: img.imageUrl,
-        altText: img.altText || `${variant.value} - View ${imgIndex + 1}`,
+        altText: img.altText || `${color.colorName} - View ${imgIndex + 1}`,
         sortOrder: img.sortOrder
+      })),
+      sizes: color.variants.map((variant: any) => ({
+        id: variant.id,
+        size: variant.size,
+        price: variant.price?.toString() || '',
+        stock: variant.stock.toString(),
+        sku: variant.sku || '',
+        isActive: variant.isActive,
+        sortOrder: variant.sortOrder
       }))
     }))
   }
@@ -74,17 +94,12 @@ export default async function EditProductPage({ params }: EditProductPageProps) 
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <AdminHeader />
-      
-      <main className="flex-1 container mx-auto px-6 py-8 max-w-7xl">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight">Edit Product</h1>
-          <p className="text-muted-foreground">
-            Update product information, images, and settings
-          </p>
-        </div>
-
-        <ProductForm categories={categories} product={productWithCategoryIds} />
-      </main>
+      <ProductEditPageClient 
+        productId={id}
+        product={productWithCategoryIds}
+        categories={categories}
+        existingImageCount={product.images.length}
+      />
     </div>
   )
 }

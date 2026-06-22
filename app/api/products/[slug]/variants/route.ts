@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '@/lib/prisma'
 
-const prisma = new PrismaClient()
-
-// GET /api/products/[slug]/variants - Get all active variants for a product (public endpoint)
+// GET /api/products/[slug]/variants - Get colors, images, and active size variants for a product
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
@@ -11,44 +9,52 @@ export async function GET(
   try {
     const { slug } = await params
 
-    // First find the product by slug
     const product = await prisma.product.findUnique({
       where: { slug },
-      select: { id: true }
+      select: {
+        id: true,
+        colors: {
+          orderBy: { sortOrder: 'asc' },
+          include: {
+            images: {
+              orderBy: { sortOrder: 'asc' },
+            },
+            variants: {
+              where: {
+                isActive: true,
+                stock: { gt: 0 },
+              },
+              orderBy: { sortOrder: 'asc' },
+            },
+          },
+        },
+      },
     })
 
     if (!product) {
-      return NextResponse.json(
-        { error: 'Product not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Product not found' }, { status: 404 })
     }
 
-    const variants = await prisma.productVariant.findMany({
-      where: {
-        productId: product.id,
-        isActive: true,
-        stock: {
-          gt: 0 // Only show variants with stock
-        }
-      },
-      include: {
-        images: {
-          orderBy: { sortOrder: 'asc' }
-        }
-      },
-      orderBy: [
-        { name: 'asc' },
-        { sortOrder: 'asc' }
-      ]
+    return NextResponse.json({
+      productId: product.id,
+      colors: product.colors.map((color) => ({
+        id: color.id,
+        colorName: color.colorName,
+        colorCode: color.colorCode,
+        images: color.images,
+        variants: color.variants.map((variant) => ({
+          id: variant.id,
+          size: variant.size,
+          price: variant.price,
+          stock: variant.stock,
+          sku: variant.sku,
+          isActive: variant.isActive,
+          sortOrder: variant.sortOrder,
+        })),
+      })),
     })
-
-    return NextResponse.json(variants)
   } catch (error) {
     console.error('Error fetching variants:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch variants' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to fetch variants' }, { status: 500 })
   }
 }

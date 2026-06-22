@@ -1,11 +1,10 @@
-import { prisma } from "@/lib/prisma-safe"
+import { prisma } from "@/lib/prisma"
 import { AdminHeader } from "@/components/admin-header"
 import { SubCategoryProductsView } from "@/components/admin/subcategory-products-view"
-import { notFound } from "next/navigation"
+import { createClient } from "@/lib/supabase/server"
+import { notFound, redirect } from "next/navigation"
 
-// Force dynamic rendering
 export const dynamic = 'force-dynamic'
-export const revalidate = 0
 
 export default async function SubCategoryProductsPage({
   params,
@@ -13,71 +12,99 @@ export default async function SubCategoryProductsPage({
   params: Promise<{ categoryId: string; subCategoryId: string }>
 }) {
   const { categoryId, subCategoryId } = await params
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
 
-  // Get the main category
+  if (!user) redirect("/auth/login?redirect=/admin/catalog")
+
+  const admin = await prisma.adminUser.findUnique({ where: { userId: user.id } })
+  if (!admin) redirect("/")
+
   const mainCategory = await prisma.category.findUnique({
-    where: { 
+    where: {
       id: categoryId,
-      parentId: null // Ensure it's a main category
+      parentId: null
     }
   })
 
-  if (!mainCategory) {
-    notFound()
-  }
+  if (!mainCategory) notFound()
 
-  // Get the sub-category
   const subCategory = await prisma.category.findUnique({
-    where: { 
+    where: {
       id: subCategoryId,
-      parentId: categoryId // Ensure it belongs to the main category
+      parentId: categoryId
     }
   })
 
-  if (!subCategory) {
-    notFound()
-  }
+  if (!subCategory) notFound()
 
-  // Get products in this sub-category
-  const productCategories = await prisma.productCategory.findMany({
-    where: { 
-      categoryId: subCategoryId,
-      product: {
-        isActive: true
-      }
+  const products = await prisma.product.findMany({
+    where: {
+      isActive: true,
+      productCategories: {
+        some: {
+          categoryId: subCategoryId,
+        },
+      },
     },
     include: {
-      product: true
+      productCategories: {
+        include: {
+          category: true,
+        },
+        orderBy: { isPrimary: 'desc' },
+      },
+      images: {
+        orderBy: { sortOrder: 'asc' },
+      },
+      colors: {
+        select: {
+          id: true,
+          variants: {
+            select: {
+              id: true,
+              stock: true,
+              isActive: true,
+              sortOrder: true,
+            },
+            orderBy: { sortOrder: 'asc' },
+          },
+        },
+        orderBy: { sortOrder: 'asc' },
+      },
+      variants: {
+        select: {
+          id: true,
+          stock: true,
+          isActive: true,
+          sortOrder: true,
+        },
+        orderBy: { sortOrder: 'asc' },
+      },
     },
     orderBy: {
-      product: {
-        name: 'asc'
-      }
+      createdAt: 'desc'
     }
   })
 
-  // Transform products data
-  const products = productCategories
-    .filter((pc: any) => pc.product) // Ensure product exists
-    .map((pc: any) => ({
-      id: pc.product.id,
-      name: pc.product.name,
-      slug: pc.product.slug,
-      sku: pc.product.sku || '',
-      price: pc.product.price,
-      stockQuantity: pc.product.stockQuantity,
-      isActive: pc.product.isActive
-    }))
+  console.log(`[DEBUG] SubCategory: ${subCategory.name} (${subCategoryId})`)
+  console.log(`[DEBUG] Found ${products.length} products`)
+
+  const transformedProducts = products.map((product: any) => ({
+    ...product,
+    primaryImage: product.images.find((img: any) => img.isPrimary)?.imageUrl ?? product.images[0]?.imageUrl
+  }))
 
   return (
-    <div className="flex min-h-screen flex-col bg-muted/30">
-      <AdminHeader />
-      <main className="flex-1 px-6 py-8">
-        <div className="container mx-auto max-w-6xl">
-          <SubCategoryProductsView 
+    <div className="flex min-h-screen flex-col bg-muted/10">
+      <AdminHeader userRole={admin.role} />
+      <main className="flex-1 px-8 py-10">
+        <div className="container mx-auto max-w-7xl">
+          <SubCategoryProductsView
             mainCategory={mainCategory}
             subCategory={subCategory}
-            products={products}
+            products={transformedProducts}
+            userRole={admin.role}
           />
         </div>
       </main>

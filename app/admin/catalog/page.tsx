@@ -1,71 +1,92 @@
-import { prisma } from "@/lib/prisma-safe"
+import { prisma } from "@/lib/prisma"
 import { AdminHeader } from "@/components/admin-header"
 import { CatalogView } from "@/components/admin/catalog-view"
-import { getCurrentUserRole } from "@/lib/auth-middleware"
+import { createClient } from "@/lib/supabase/server"
+import { redirect } from "next/navigation"
 
-// Force dynamic rendering
 export const dynamic = 'force-dynamic'
-export const revalidate = 0
 
 export default async function CatalogPage() {
-  try {
-    // Get current user role
-    const userRole = await getCurrentUserRole()
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
 
-    // Fetch main categories with product and sub-category counts
-    const categories = await prisma.category.findMany({
-      where: { 
-        isActive: true,
-        parentId: null // Only main categories
-      },
-      include: {
-        _count: {
-          select: {
-            productCategories: true,
-            children: true
-          }
-        }
-      },
-      orderBy: [
-        { displayOrder: 'asc' },
-        { name: 'asc' }
-      ]
-    })
-
-    // Transform categories to include counts
-    const categoriesWithCount = categories.map((category: any) => ({
-      ...category,
-      productCount: category._count.productCategories,
-      subCategoryCount: category._count.children
-    }))
-
-    return (
-      <div className="flex min-h-screen flex-col bg-muted/30">
-        <AdminHeader />
-        
-        <main className="flex-1 px-6 py-8">
-          <div className="container mx-auto max-w-6xl">
-            <CatalogView categories={categoriesWithCount} userRole={userRole || 'staff'} />
-          </div>
-        </main>
-      </div>
-    )
-  } catch (error) {
-    console.error('Error loading catalog page:', error)
-    
-    return (
-      <div className="flex min-h-screen flex-col bg-muted/30">
-        <AdminHeader />
-        
-        <main className="flex-1 px-6 py-8">
-          <div className="container mx-auto max-w-6xl">
-            <div className="text-center py-12">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Catalog Management</h2>
-              <p className="text-gray-600">Database connection not available. Please configure your database settings.</p>
-            </div>
-          </div>
-        </main>
-      </div>
-    )
+  if (!user) {
+    redirect("/auth/login?redirect=/admin/catalog")
   }
+
+  const admin = await prisma.adminUser.findUnique({ where: { userId: user.id } })
+  if (!admin) redirect("/")
+
+  const categories = await prisma.category.findMany({
+    where: {
+      parentId: null
+    },
+    include: {
+      children: {
+        select: {
+          id: true,
+        },
+      },
+      _count: {
+        select: {
+          productCategories: true,
+          children: true
+        }
+      }
+    },
+    orderBy: { displayOrder: 'asc' }
+  })
+
+  const categoryIds = categories.flatMap((category: any) => [
+    category.id,
+    ...(category.children || []).map((child: any) => child.id),
+  ])
+
+  const productCategoryLinks = categoryIds.length
+    ? await prisma.productCategory.findMany({
+      where: {
+        categoryId: { in: categoryIds },
+        product: { isActive: true },
+      },
+      select: {
+        categoryId: true,
+        productId: true,
+      },
+    })
+    : []
+
+  const productIdsByCategoryId = new Map<string, Set<string>>()
+  for (const link of productCategoryLinks) {
+    if (!productIdsByCategoryId.has(link.categoryId)) {
+      productIdsByCategoryId.set(link.categoryId, new Set())
+    }
+    productIdsByCategoryId.get(link.categoryId)!.add(link.productId)
+  }
+
+  const transformedCategories = categories.map((category: any) => {
+    const descendantIds = (category.children || []).map((child: any) => child.id)
+    const productIds = new Set<string>()
+    for (const categoryId of [category.id, ...descendantIds]) {
+      for (const productId of productIdsByCategoryId.get(categoryId) || []) {
+        productIds.add(productId)
+      }
+    }
+
+    return {
+      ...category,
+      productCount: productIds.size,
+      subCategoryCount: category._count.children,
+    }
+  })
+
+  return (
+    <div className="flex min-h-screen flex-col bg-muted/10">
+      <AdminHeader userRole={admin.role} />
+      <main className="flex-1 px-8 py-10">
+        <div className="container mx-auto max-w-7xl">
+          <CatalogView categories={transformedCategories} userRole={admin.role} />
+        </div>
+      </main>
+    </div>
+  )
 }

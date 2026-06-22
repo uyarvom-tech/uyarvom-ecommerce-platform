@@ -1,11 +1,11 @@
 "use client"
 
 import { useState } from "react"
+import { updateOrderStatus } from "@/lib/actions/admin"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 
@@ -22,63 +22,49 @@ export function OrderStatusUpdater({
   orderId,
   currentStatus,
   currentTrackingNumber,
+  currentCourierName,
 }: {
   orderId: string
   currentStatus: string
-  currentTrackingNumber: string | null
+  currentTrackingNumber?: string | null
+  currentCourierName?: string | null
 }) {
   const [status, setStatus] = useState(currentStatus)
   const [trackingNumber, setTrackingNumber] = useState(currentTrackingNumber || "")
+  const [courierName, setCourierName] = useState(currentCourierName || "")
   const [isUpdating, setIsUpdating] = useState(false)
   const router = useRouter()
-  const supabase = createClient()
 
   const handleUpdate = async () => {
     setIsUpdating(true)
-
-    const updateData: any = { status }
-
-    if (trackingNumber) {
-      updateData.tracking_number = trackingNumber
-    }
-
-    if (status === "shipped" && !currentStatus.includes("shipped")) {
-      updateData.shipped_at = new Date().toISOString()
-    }
-
-    if (status === "delivered" && !currentStatus.includes("delivered")) {
-      updateData.delivered_at = new Date().toISOString()
-      updateData.payment_status = "paid"
-    }
-
-    if (status === "cancelled" && !currentStatus.includes("cancelled")) {
-      updateData.cancelled_at = new Date().toISOString()
-    }
-
-    const { error } = await supabase.from("orders").update(updateData).eq("id", orderId)
-
-    if (error) {
-      toast.error("Failed to update order")
-      setIsUpdating(false)
-      return
-    }
-
-    toast.success("Order updated successfully")
+    const res = await updateOrderStatus(orderId, {
+      status,
+      trackingNumber: (status === "shipped" || status === "delivered") ? trackingNumber : undefined,
+      courierName: (status === "shipped" || status === "delivered") ? courierName : undefined,
+    })
     setIsUpdating(false)
-    router.refresh()
+
+    if (res.error) {
+      toast.error(res.error)
+    } else {
+      toast.success("Order status updated")
+      router.refresh()
+    }
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="space-y-2">
-        <Label>Order Status</Label>
+        <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground block">
+          Update Fulfillment Status
+        </label>
         <Select value={status} onValueChange={setStatus}>
-          <SelectTrigger>
+          <SelectTrigger className="rounded-none border-muted h-10">
             <SelectValue />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="rounded-none">
             {statuses.map((s) => (
-              <SelectItem key={s.value} value={s.value}>
+              <SelectItem key={s.value} value={s.value} className="text-xs">
                 {s.label}
               </SelectItem>
             ))}
@@ -87,18 +73,38 @@ export function OrderStatusUpdater({
       </div>
 
       {(status === "shipped" || status === "delivered") && (
-        <div className="space-y-2">
-          <Label>Tracking Number</Label>
-          <Input
-            value={trackingNumber}
-            onChange={(e) => setTrackingNumber(e.target.value)}
-            placeholder="Enter tracking number"
-          />
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground block">
+              Tracking Number
+            </label>
+            <Input
+              value={trackingNumber}
+              onChange={(e) => setTrackingNumber(e.target.value)}
+              placeholder="e.g. DELIV12345"
+              className="rounded-none border-muted h-10 text-xs"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground block">
+              Courier Name
+            </label>
+            <Input
+              value={courierName}
+              onChange={(e) => setCourierName(e.target.value)}
+              placeholder="e.g. Delhivery, Bluedart"
+              className="rounded-none border-muted h-10 text-xs"
+            />
+          </div>
         </div>
       )}
 
-      <Button onClick={handleUpdate} disabled={isUpdating || status === currentStatus}>
-        {isUpdating ? "Updating..." : "Update Order"}
+      <Button
+        onClick={handleUpdate}
+        disabled={isUpdating || (status === currentStatus && trackingNumber === (currentTrackingNumber || "") && courierName === (currentCourierName || ""))}
+        className="w-full bg-black text-white hover:bg-black/90 rounded-none h-11 text-[10px] font-bold uppercase tracking-widest"
+      >
+        {isUpdating ? "Processing..." : "Commit Update"}
       </Button>
     </div>
   )

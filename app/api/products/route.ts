@@ -48,7 +48,9 @@ export async function GET(request: NextRequest) {
     }
 
     if (search) {
-      query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%,short_description.ilike.%${search}%`)
+      // Escape SQL wildcards in user input
+      const safeSearch = search.replace(/%/g, '\\%').replace(/_/g, '\\_')
+      query = query.or(`name.ilike.%${safeSearch}%,description.ilike.%${safeSearch}%,short_description.ilike.%${safeSearch}%`)
     }
 
     if (min) {

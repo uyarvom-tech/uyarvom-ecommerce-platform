@@ -25,6 +25,7 @@ import {
 import Link from "next/link"
 import Image from "next/image"
 import { toast } from "sonner"
+import { getVariantStockTotal } from "@/lib/variant-stock"
 
 interface Product {
   id: string
@@ -149,7 +150,7 @@ export function ProductManagement({ initialProducts, categories, pagination, use
   // Stats based on filtered products
   const totalProducts = filteredProducts.length
   const activeProducts = filteredProducts.filter(p => p.isActive).length
-  const lowStockProducts = filteredProducts.filter(p => p.stockQuantity <= 10).length
+  const lowStockProducts = filteredProducts.filter(p => getVariantStockTotal(p as any) <= 10).length
   const featuredProducts = filteredProducts.filter(p => p.isFeatured).length
 
   // Handle search input with debouncing for better performance
@@ -633,9 +634,9 @@ export function ProductManagement({ initialProducts, categories, pagination, use
                         )}
                       </td>
                       <td className="p-3">
-                        <div className={`font-medium ${product.stockQuantity <= 10 ? 'text-orange-600' : ''}`}>
-                          {product.stockQuantity}
-                        </div>
+                          <div className={`font-medium ${getVariantStockTotal(product as any) <= 10 ? 'text-orange-600' : ''}`}>
+                            {getVariantStockTotal(product as any)}
+                          </div>
                       </td>
                       <td className="p-3">
                         <div className="flex gap-1">

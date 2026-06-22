@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { requireAdmin } from '@/lib/auth-middleware'
+import { requireStaffAccess } from '@/lib/auth-middleware'
 
 // DELETE /api/admin/products/[id]/images/[imageId] - Delete specific image
 export async function DELETE(
@@ -8,7 +8,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string; imageId: string }> }
 ) {
   // Check admin access
-  const authResult = await requireAdmin(request)
+  const authResult = await requireStaffAccess(request)
   if (authResult instanceof NextResponse) {
     return authResult
   }
@@ -91,7 +91,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string; imageId: string }> }
 ) {
   // Check admin access
-  const authResult = await requireAdmin(request)
+  const authResult = await requireStaffAccess(request)
   if (authResult instanceof NextResponse) {
     return authResult
   }

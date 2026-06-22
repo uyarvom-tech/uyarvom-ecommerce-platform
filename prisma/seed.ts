@@ -1,34 +1,9 @@
 import { PrismaClient } from '@prisma/client'
-import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
 
 async function main() {
   console.log('🌱 Seeding database...')
-
-  // Create admin user
-  const hashedPassword = await bcrypt.hash('admin123', 10)
-
-  const adminUser = await prisma.user.upsert({
-    where: { email: 'admin@uyarvom.com' },
-    update: {},
-    create: {
-      email: 'admin@uyarvom.com',
-      password: hashedPassword,
-      fullName: 'Admin User'
-    }
-  })
-
-  // Create regular user
-  const regularUser = await prisma.user.upsert({
-    where: { email: 'user@example.com' },
-    update: {},
-    create: {
-      email: 'user@example.com',
-      password: await bcrypt.hash('user123', 10),
-      fullName: 'John Doe'
-    }
-  })
 
   // Create categories
   const cookware = await prisma.category.upsert({
@@ -212,8 +187,7 @@ async function main() {
   }
 
   console.log('✅ Database seeded successfully!')
-  console.log('👤 Admin user: admin@uyarvom.com / admin123')
-  console.log('👤 Regular user: user@example.com / user123')
+  console.log('💡 Note: Users are now managed via Supabase Auth. To make yourself an admin, sign up on the site and then use the Supabase SQL editor to add your user ID to the admin_users table.')
 }
 
 main()

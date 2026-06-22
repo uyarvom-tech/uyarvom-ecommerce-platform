@@ -67,7 +67,8 @@ export async function DELETE(
       include: {
         _count: {
           select: {
-            productCategories: true
+            productCategories: true,
+            children: true
           }
         }
       }
@@ -77,17 +78,27 @@ export async function DELETE(
       return NextResponse.json({ error: 'Category not found' }, { status: 404 })
     }
 
-    if (category._count.productCategories > 0) {
+    if (category._count.children > 0) {
       return NextResponse.json(
-        { error: 'Cannot delete category with products. Please move products to other categories first.' },
+        { error: 'Cannot delete category with subcategories. Please move or delete child categories first.' },
         { status: 400 }
       )
     }
 
-    // Delete the category
-    await prisma.category.delete({
-      where: { id }
-    })
+    await prisma.$transaction([
+      prisma.productCategory.deleteMany({
+        where: { categoryId: id }
+      }),
+      prisma.category.delete({
+        where: { id }
+      })
+    ])
+
+    if (category._count.productCategories > 0) {
+      return NextResponse.json(
+        { message: 'Category deleted successfully. Product links were removed.' }
+      )
+    }
 
     return NextResponse.json({ message: 'Category deleted successfully' })
   } catch (error) {
@@ -96,5 +107,41 @@ export async function DELETE(
       { error: 'Failed to delete category' },
       { status: 500 }
     )
+  }
+}
+
+// PUT /api/admin/categories/[id] - Update category
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const authResult = await requireStaffAccess(request)
+  if (authResult instanceof NextResponse) return authResult
+
+  try {
+    const { id } = await params
+    const body = await request.json()
+    const { name, description, imageUrl, displayOrder, isActive } = body
+
+    const category = await prisma.category.findUnique({ where: { id } })
+    if (!category) {
+      return NextResponse.json({ error: 'Category not found' }, { status: 404 })
+    }
+
+    const updated = await prisma.category.update({
+      where: { id },
+      data: {
+        name: name ?? category.name,
+        description: description !== undefined ? description : category.description,
+        imageUrl: imageUrl !== undefined ? imageUrl : category.imageUrl,
+        displayOrder: displayOrder !== undefined ? displayOrder : category.displayOrder,
+        isActive: isActive !== undefined ? isActive : category.isActive,
+      },
+    })
+
+    return NextResponse.json(updated)
+  } catch (error) {
+    console.error('Error updating category:', error)
+    return NextResponse.json({ error: 'Failed to update category' }, { status: 500 })
   }
 }

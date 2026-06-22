@@ -1,28 +1,24 @@
 "use client"
 
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
+import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { User, LogOut, Package, Settings, Shield, Crown } from "lucide-react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
-import { supabase } from "@/lib/supabase"
-import type { User as SupabaseUser } from "@supabase/supabase-js"
+import { LogOut, Package, Settings, Shield, User } from "lucide-react"
 
 interface UserProfile {
   id: string
   email: string
   full_name: string
-  role: 'admin' | 'customer' | 'staff'
-  phone?: string
+  role: "admin" | "customer" | "staff" | "super_admin"
 }
 
 export function AuthButton() {
@@ -32,126 +28,76 @@ export function AuthButton() {
   const router = useRouter()
 
   useEffect(() => {
+    const supabase = createClient()
     setMounted(true)
-    
+
     const getUser = async () => {
       try {
-        // Check if we're using placeholder Supabase credentials (demo mode)
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
-        const isDemo = supabaseUrl.includes('placeholder')
-        
-        if (isDemo) {
-          // Demo mode - use localStorage
-          const savedUser = localStorage.getItem('demo-user')
-          if (savedUser) {
-            try {
-              const demoUser = JSON.parse(savedUser)
-              setUser(demoUser)
-            } catch (e) {
-              localStorage.removeItem('demo-user')
-              setUser(null)
-            }
-          } else {
-            setUser(null)
-          }
-        } else {
-          // Production mode - use Supabase
-          const { data: { user: supabaseUser } } = await supabase.auth.getUser()
-          
-          if (supabaseUser) {
-            // Check if user is admin
-            const { data: adminUser } = await supabase
-              .from('admin_users')
-              .select('role')
-              .eq('user_id', supabaseUser.id)
-              .single()
-            
-            setUser({
-              id: supabaseUser.id,
-              email: supabaseUser.email || '',
-              full_name: supabaseUser.user_metadata?.full_name || supabaseUser.email?.split('@')[0] || 'User',
-              role: adminUser?.role || 'customer'
-            })
-          } else {
-            setUser(null)
-          }
+        const {
+          data: { user: authUser },
+        } = await supabase.auth.getUser()
+
+        if (!authUser) {
+          setUser(null)
+          return
         }
+
+        const { data: adminUser } = await supabase
+          .from("admin_users")
+          .select("role")
+          .eq("userId", authUser.id)
+          .maybeSingle()
+
+        setUser({
+          id: authUser.id,
+          email: authUser.email || "",
+          full_name:
+            authUser.user_metadata?.full_name ||
+            authUser.user_metadata?.name ||
+            authUser.email?.split("@")[0] ||
+            "User",
+          role: adminUser?.role || "customer",
+        })
       } catch (error) {
-        console.error('Error getting user:', error)
+        console.error("Error getting user:", error)
         setUser(null)
       } finally {
         setLoading(false)
       }
     }
 
-    getUser()
+    void getUser()
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_OUT' || !session) {
-        setUser(null)
-        localStorage.removeItem('demo-user')
-      } else if (event === 'SIGNED_IN' && session) {
-        getUser()
-      }
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(() => {
+      void getUser()
     })
 
-    // Listen for storage changes (demo mode)
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'demo-user') {
-        getUser()
-      }
-    }
-
-    window.addEventListener('storage', handleStorageChange)
-    
-    return () => {
-      subscription.unsubscribe()
-      window.removeEventListener('storage', handleStorageChange)
-    }
+    return () => subscription.unsubscribe()
   }, [])
 
   const handleSignOut = async () => {
     setLoading(true)
-    
+
     try {
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
-      const isDemo = supabaseUrl.includes('placeholder')
-      
-      if (isDemo) {
-        // Demo mode logout
-        await fetch('/api/auth/logout', {
-          method: 'POST',
-        })
-        localStorage.removeItem('demo-user')
-      } else {
-        // Supabase logout
-        await supabase.auth.signOut()
-      }
-      
+      const supabase = createClient()
+      await supabase.auth.signOut()
+      await fetch("/api/auth/logout", { method: "POST" })
       setUser(null)
       router.push("/")
       router.refresh()
     } catch (error) {
-      console.error('Logout error:', error)
+      console.error("Logout error:", error)
     } finally {
       setLoading(false)
     }
   }
 
-  // Prevent hydration mismatch by not rendering until mounted
-  if (!mounted) {
+  if (!mounted || loading) {
     return (
-      <Button variant="ghost" size="sm" disabled>
-        Loading...
-      </Button>
-    )
-  }
-
-  if (loading) {
-    return (
-      <Button variant="ghost" size="sm" disabled>
-        Loading...
+      <Button variant="ghost" size="sm" disabled className="h-11 rounded-xl px-4 text-sm">
+        Loading
       </Button>
     )
   }
@@ -159,99 +105,78 @@ export function AuthButton() {
   if (!user) {
     return (
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="sm" asChild>
-          <Link href="/auth/admin-login">Admin Login</Link>
+        <Button variant="ghost" size="sm" asChild className="h-11 rounded-xl px-4 text-sm">
+          <Link href="/auth/admin-login">Admin</Link>
         </Button>
-        <Button size="sm" asChild>
-          <Link href="/auth/login">Customer Login</Link>
+        <Button size="sm" asChild className="h-11 rounded-xl px-4 text-sm">
+          <Link href="/auth/login">Sign In</Link>
         </Button>
       </div>
     )
   }
 
-  const userRole = user.role || 'customer'
-  const userName = user.full_name || user.email?.split('@')[0] || 'User'
-  const isAdmin = userRole === 'admin'
-  const isStaff = userRole === 'staff'
-  const canAccessAdmin = isAdmin || isStaff
-
-  const getRoleIcon = () => {
-    switch (userRole) {
-      case 'admin':
-        return <Crown className="h-3 w-3" />
-      case 'staff':
-        return <Shield className="h-3 w-3" />
-      default:
-        return <User className="h-3 w-3" />
-    }
-  }
-
-  const getRoleBadgeColor = () => {
-    switch (userRole) {
-      case 'admin':
-        return 'bg-red-100 text-red-800 border-red-200'
-      case 'staff':
-        return 'bg-orange-100 text-orange-800 border-orange-200'
-      default:
-        return 'bg-blue-100 text-blue-800 border-blue-200'
-    }
-  }
+  const userRole = user.role || "customer"
+  const userName = user.full_name || user.email?.split("@")[0] || "User"
+  const initials = userName
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("") || "U"
+  const canAccessAdmin = ["admin", "staff", "super_admin"].includes(userRole)
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" className="gap-2 max-w-[200px]">
-          {getRoleIcon()}
-          <span className="hidden sm:inline truncate">{userName}</span>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-12 max-w-[210px] gap-3 rounded-xl border border-primary/20 bg-white px-3 shadow-sm transition-all hover:border-primary/30 hover:bg-white"
+        >
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-[11px] font-bold uppercase text-primary">
+            {initials}
+          </span>
+          <span className="hidden truncate text-sm font-medium text-foreground sm:inline">{userName}</span>
           <span className="sm:hidden">
             <User className="h-4 w-4" />
           </span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-64">
-        <DropdownMenuLabel>
-          <div className="flex flex-col space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">{userName}</span>
-              <Badge className={`text-xs ${getRoleBadgeColor()}`}>
-                {getRoleIcon()}
-                <span className="ml-1 capitalize">{userRole}</span>
-              </Badge>
-            </div>
-            <span className="text-xs text-muted-foreground">{user.email}</span>
-          </div>
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        
-        {/* Admin/Staff Menu Items */}
+      <DropdownMenuContent
+        align="end"
+        className="w-64 rounded-2xl border border-border/60 bg-white p-2 shadow-[0_18px_60px_rgba(17,17,17,0.12)]"
+      >
+        <div className="rounded-xl bg-secondary/35 px-3 py-3">
+          <p className="text-sm font-semibold text-foreground">{userName}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{user.email}</p>
+        </div>
+
+        <DropdownMenuSeparator className="my-2" />
+
         {canAccessAdmin && (
-          <>
-            <DropdownMenuItem asChild>
-              <Link href="/admin" className="cursor-pointer">
-                <Shield className="mr-2 h-4 w-4" />
-                Admin Dashboard
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-          </>
+          <DropdownMenuItem asChild className="rounded-xl px-3 py-3">
+            <Link href="/admin" className="cursor-pointer">
+              <Shield className="mr-2 h-4 w-4" />
+              Admin Dashboard
+            </Link>
+          </DropdownMenuItem>
         )}
-        
-        {/* Customer Menu Items */}
-        <DropdownMenuItem asChild>
+
+        <DropdownMenuItem asChild className="rounded-xl px-3 py-3">
           <Link href="/account" className="cursor-pointer">
             <Settings className="mr-2 h-4 w-4" />
-            Account Settings
+            Account
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem asChild>
+        <DropdownMenuItem asChild className="rounded-xl px-3 py-3">
           <Link href="/orders" className="cursor-pointer">
             <Package className="mr-2 h-4 w-4" />
-            My Orders
+            Orders
           </Link>
         </DropdownMenuItem>
-        
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-destructive">
+
+        <DropdownMenuSeparator className="my-2" />
+        <DropdownMenuItem onClick={handleSignOut} className="rounded-xl px-3 py-3 text-destructive">
           <LogOut className="mr-2 h-4 w-4" />
           Sign Out
         </DropdownMenuItem>

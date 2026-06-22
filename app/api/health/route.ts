@@ -1,5 +1,6 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
+import { requireAdminAccess } from '@/lib/auth-middleware'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -7,42 +8,28 @@ export const revalidate = 0
 // Use a local client to avoid top-level failures from the shared lib if it's corrupted
 const prisma = new PrismaClient()
 
-export async function GET() {
-  const dbUrl = process.env.DATABASE_URL || ''
-  const maskedUrl = dbUrl.replace(/:([^:@]+)@/, ':****@')
-
-  const diagnostics: any = {
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    connection_details: maskedUrl,
-    env: {
-      hasDbUrl: !!process.env.DATABASE_URL,
-      hasSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
-      hasSupabaseAnonKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-      nodeEnv: process.env.NODE_ENV,
-      vercelRegion: process.env.VERCEL_REGION,
-    }
+export async function GET(request: NextRequest) {
+  const authResult = await requireAdminAccess(request)
+  if (authResult instanceof NextResponse) {
+    return authResult
   }
 
   try {
-    // Test database connection with a timeout
-    const dbCheck = await Promise.race([
-      prisma.$queryRaw`SELECT 1`.then(() => 'connected').catch((e) => `error: ${e.message}`),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('Database connection timeout (5s)')), 5000))
+    await Promise.race([
+      prisma.$queryRaw`SELECT 1`,
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Database connection timeout')), 5000)),
     ])
 
-    diagnostics.database = dbCheck
-    if (dbCheck !== 'connected') {
-      diagnostics.status = 'degraded'
-    }
-
-    return NextResponse.json(diagnostics)
+    return NextResponse.json({
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+    })
   } catch (error: any) {
-    diagnostics.status = 'error'
-    diagnostics.database = 'disconnected'
-    diagnostics.error = error.message
-
-    return NextResponse.json(diagnostics, { status: 500 })
+    console.error('Health check failed:', error)
+    return NextResponse.json(
+      { status: 'error', message: 'Service unavailable' },
+      { status: 503 }
+    )
   } finally {
     await prisma.$disconnect()
   }

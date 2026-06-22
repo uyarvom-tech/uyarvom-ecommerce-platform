@@ -6,11 +6,22 @@ export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient()
     
-    // Check if user is authenticated
+    // Check if user is authenticated AND has staff/admin role
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Only staff/admin can generate upload URLs
+    const { data: adminUser } = await supabase
+      .from('admin_users')
+      .select('role')
+      .eq('user_id', user.id)
+      .single()
+
+    if (!adminUser || !['admin', 'staff', 'super_admin'].includes(adminUser.role)) {
+      return NextResponse.json({ error: 'Staff access required' }, { status: 403 })
     }
 
     const { filename, contentType, prefix = 'uploads' } = await request.json()

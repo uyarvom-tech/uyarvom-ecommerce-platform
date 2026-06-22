@@ -4,6 +4,7 @@ import { Footer } from "@/components/footer"
 import { SearchResults } from "@/components/search-results"
 import { SearchBar } from "@/components/search-bar"
 import { Suspense } from "react"
+import { getVariantStockTotal } from "@/lib/variant-stock"
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -53,6 +54,17 @@ export default async function SearchPage({
         },
         images: {
           orderBy: { sortOrder: 'asc' }
+        },
+        colors: {
+          orderBy: { sortOrder: 'asc' },
+          include: {
+            images: { orderBy: { sortOrder: 'asc' } },
+            variants: { where: { isActive: true }, orderBy: { sortOrder: 'asc' } }
+          }
+        },
+        variants: {
+          where: { isActive: true },
+          orderBy: { sortOrder: 'asc' }
         }
       },
       orderBy: { createdAt: 'desc' },
@@ -75,12 +87,32 @@ export default async function SearchPage({
     price: product.price,
     compare_at_price: product.compareAtPrice || undefined,
     short_description: product.shortDescription,
-    stock_quantity: product.stockQuantity,
+    stock_quantity: getVariantStockTotal(product as any),
     category: product.productCategories.find((pc: any) => pc.isPrimary)?.category || product.productCategories[0]?.category,
     images: product.images.map((img: any) => ({
       image_url: img.imageUrl,
       alt_text: img.altText || undefined,
       is_primary: img.isPrimary
+    })),
+    colors: product.colors.map((color: any) => ({
+      id: color.id,
+      colorName: color.colorName,
+      colorCode: color.colorCode,
+      images: color.images.map((img: any) => ({
+        id: img.id,
+        imageUrl: img.imageUrl,
+        altText: img.altText || undefined,
+        sortOrder: img.sortOrder,
+      })),
+      variants: color.variants.map((variant: any) => ({
+        id: variant.id,
+        size: variant.size,
+        price: variant.price,
+        stock: variant.stock,
+        isActive: variant.isActive,
+        sku: variant.sku,
+        sortOrder: variant.sortOrder,
+      })),
     }))
   }))
 

@@ -1,0 +1,46 @@
+﻿
+Running 1 test using 1 worker
+
+Navigating to homepage...
+Verifying Uyarvom text in header...
+Waiting for product cards...
+Found 162 products.
+Testing with product: Tempered Glass Bathroom Tray
+Verifying product detail page (waiting for URL change)...
+Current URL: http://127.0.0.1:3002/products/tempered-glass-bathroom-tray
+Clicking Add to Cart...
+Waiting for redirect to login...
+Redirected to: http://127.0.0.1:3002/auth/login?redirect=/products/tempered-glass-bathroom-tray
+Verifying login page content...
+  Γ£ÿ  1 [chromium] ΓÇ║ e2e\customer-checkout.spec.ts:4:9 ΓÇ║ Customer Checkout Flow ΓÇ║ navigates to product, adds to cart, and reaches checkout (12.2s)
+
+
+  1) [chromium] ΓÇ║ e2e\customer-checkout.spec.ts:4:9 ΓÇ║ Customer Checkout Flow ΓÇ║ navigates to product, adds to cart, and reaches checkout 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByText(/Welcome Back/i).or(getByText(/Sign In/i))
+    Expected: visible
+    Error: strict mode violation: getByText(/Welcome Back/i).or(getByText(/Sign In/i)) resolved to 2 elements:
+        1) <div data-slot="card-title" class="text-2xl font-semibold text-foreground tracking-tight">Welcome Back</div> aka getByText('Welcome Back')
+        2) <button type="submit" data-slot="button" class="inline-flex items-center justify-center gap-2 whitespace-nowrap disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 active:scale-[0.97] px-6 py-3 w-full h-12 bg-[#9C7C38] hover:bg-[#8b6b2e] text-white font-bold text-[14px] uppercase tracking-widest rounded-lg shadow-[0_4px_14pxΓÇª>Sign In</button> aka getByRole('button', { name: 'Sign In' })
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 15000ms[22m
+    [2m  - waiting for getByText(/Welcome Back/i).or(getByText(/Sign In/i))[22m
+
+
+      51 |         // Final verify for login page
+      52 |         console.log('Verifying login page content...');
+    > 53 |         await expect(page.getByText(/Welcome Back/i).or(page.getByText(/Sign In/i))).toBeVisible({ timeout: 15000 });
+         |                                                                                      ^
+      54 |         console.log('Test completed successfully!');
+      55 |     });
+      56 | });
+        at D:\HP_FILES\Uyarvom\uyarvom-ecommerce-platform\e2e\customer-checkout.spec.ts:53:86
+
+    Error Context: test-results\customer-checkout-Customer-405f0-o-cart-and-reaches-checkout-chromium\error-context.md
+
+  1 failed
+    [chromium] ΓÇ║ e2e\customer-checkout.spec.ts:4:9 ΓÇ║ Customer Checkout Flow ΓÇ║ navigates to product, adds to cart, and reaches checkout 
+

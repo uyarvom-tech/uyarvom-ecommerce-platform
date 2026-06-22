@@ -1,171 +1,254 @@
-'use client'
+"use client"
 
-import { useState } from 'react'
+import { useEffect, useMemo, useState, useTransition } from "react"
+import { useRouter } from "next/navigation"
+import Image from "next/image"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { 
+import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
-  DropdownMenuSeparator 
 } from "@/components/ui/dropdown-menu"
-import { 
-  Plus, 
-  MoreHorizontal, 
-  Edit, 
-  Trash2, 
+import {
+  Plus,
+  MoreHorizontal,
+  Edit,
+  Trash2,
   GripVertical,
   Package,
   ArrowUp,
-  ArrowDown
+  ArrowDown,
 } from "lucide-react"
-import Image from "next/image"
 
 interface Category {
   id: string
   name: string
   slug: string
-  description: string
-  image_url?: string
-  display_order: number
-  parent_id?: string
-  created_at: string
-  products?: { count: number }[]
+  description: string | null
+  imageUrl?: string | null
+  displayOrder: number
+  parentId?: string | null
+  createdAt?: string
+  productCount?: number
+  subCategoryCount?: number
 }
 
 interface CategoryManagementProps {
   categories: Category[]
 }
 
+interface CategoryFormState {
+  id?: string
+  name: string
+  slug: string
+  description: string
+  imageUrl: string
+  displayOrder: string
+}
+
+const emptyForm: CategoryFormState = {
+  name: "",
+  slug: "",
+  description: "",
+  imageUrl: "",
+  displayOrder: "0",
+}
+
+function slugify(value: string) {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+}
+
 export function CategoryManagement({ categories }: CategoryManagementProps) {
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
+  const router = useRouter()
+  const [isPending, startTransition] = useTransition()
+  const [localCategories, setLocalCategories] = useState<Category[]>(categories)
+  const [dialogOpen, setDialogOpen] = useState(false)
   const [editingCategory, setEditingCategory] = useState<Category | null>(null)
-  const [newCategory, setNewCategory] = useState({
-    name: '',
-    description: '',
-    image_url: ''
-  })
+  const [form, setForm] = useState<CategoryFormState>(emptyForm)
+  const [error, setError] = useState<string | null>(null)
 
-  const sortedCategories = [...categories].sort((a, b) => a.display_order - b.display_order)
+  useEffect(() => {
+    setLocalCategories(categories)
+  }, [categories])
 
-  const handleCreateCategory = () => {
-    console.log('Creating category:', newCategory)
-    // TODO: Implement category creation
-    setNewCategory({ name: '', description: '', image_url: '' })
-    setIsCreateDialogOpen(false)
+  const sortedCategories = useMemo(
+    () => [...localCategories].sort((a, b) => a.displayOrder - b.displayOrder || a.name.localeCompare(b.name)),
+    [localCategories],
+  )
+
+  const resetForm = () => {
+    setEditingCategory(null)
+    setForm(emptyForm)
+    setError(null)
   }
 
-  const handleEditCategory = (category: Category) => {
+  const openCreateDialog = () => {
+    resetForm()
+    setForm((current) => ({
+      ...current,
+      displayOrder: String(sortedCategories.length),
+    }))
+    setDialogOpen(true)
+  }
+
+  const openEditDialog = (category: Category) => {
     setEditingCategory(category)
-    setNewCategory({
+    setForm({
+      id: category.id,
       name: category.name,
-      description: category.description,
-      image_url: category.image_url || ''
+      slug: category.slug,
+      description: category.description || "",
+      imageUrl: category.imageUrl || "",
+      displayOrder: String(category.displayOrder ?? 0),
+    })
+    setError(null)
+    setDialogOpen(true)
+  }
+
+  const submitCategory = () => {
+    setError(null)
+
+    if (!form.name.trim()) {
+      setError("Category name is required")
+      return
+    }
+
+    startTransition(async () => {
+      const payload = {
+        id: form.id,
+        name: form.name.trim(),
+        slug: form.slug.trim() || slugify(form.name),
+        description: form.description.trim() || null,
+        imageUrl: form.imageUrl.trim() || null,
+        displayOrder: Number(form.displayOrder) || 0,
+        isActive: true,
+      }
+
+      const response = await fetch("/api/admin/categories", {
+        method: editingCategory ? "PUT" : "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      })
+
+      const result = await response.json().catch(() => ({}))
+
+      if (!response.ok) {
+        setError(result.error || "Failed to save category")
+        return
+      }
+
+      toast.success(editingCategory ? "Category updated successfully" : "Category created successfully")
+      setDialogOpen(false)
+      resetForm()
+      router.refresh()
     })
   }
 
-  const handleUpdateCategory = () => {
-    console.log('Updating category:', editingCategory?.id, newCategory)
-    // TODO: Implement category update
-    setEditingCategory(null)
-    setNewCategory({ name: '', description: '', image_url: '' })
+  const deleteCategory = async (category: Category) => {
+    if (!window.confirm(`Delete "${category.name}"?`)) return
+
+    try {
+      const response = await fetch(`/api/admin/categories/${category.id}`, {
+        method: "DELETE",
+      })
+
+      const result = await response.json().catch(() => ({}))
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to delete category")
+      }
+
+      toast.success("Category deleted successfully")
+      setLocalCategories((current) => current.filter((item) => item.id !== category.id))
+      router.refresh()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to delete category")
+    }
   }
 
-  const handleDeleteCategory = (categoryId: string) => {
-    console.log('Deleting category:', categoryId)
-    // TODO: Implement category deletion
+  const reorderCategories = async (categoryId: string, direction: "up" | "down") => {
+    const currentIndex = sortedCategories.findIndex((category) => category.id === categoryId)
+    const targetIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1
+
+    if (currentIndex < 0 || targetIndex < 0 || targetIndex >= sortedCategories.length) {
+      return
+    }
+
+    const nextOrder = [...sortedCategories]
+    const [moved] = nextOrder.splice(currentIndex, 1)
+    nextOrder.splice(targetIndex, 0, moved)
+
+    setLocalCategories(nextOrder.map((category, index) => ({
+      ...category,
+      displayOrder: index,
+    })))
+
+    try {
+      const response = await fetch("/api/admin/categories/reorder", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ orderedIds: nextOrder.map((category) => category.id) }),
+      })
+
+      const result = await response.json().catch(() => ({}))
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to reorder categories")
+      }
+
+      toast.success("Category order updated")
+      router.refresh()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to reorder categories")
+      router.refresh()
+    }
   }
 
-  const handleReorderCategory = (categoryId: string, direction: 'up' | 'down') => {
-    console.log('Reordering category:', categoryId, direction)
-    // TODO: Implement category reordering
-  }
-
-  const getProductCount = (category: Category) => {
-    return category.products?.[0]?.count || 0
-  }
+  const getProductCount = (category: Category) => category.productCount || 0
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Category Management</h1>
           <p className="text-muted-foreground">Organize your product categories and manage hierarchy</p>
         </div>
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Category
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Create New Category</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium">Category Name</label>
-                <Input
-                  value={newCategory.name}
-                  onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
-                  placeholder="Enter category name"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Description</label>
-                <Textarea
-                  value={newCategory.description}
-                  onChange={(e) => setNewCategory({ ...newCategory, description: e.target.value })}
-                  placeholder="Enter category description"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Image URL</label>
-                <Input
-                  value={newCategory.image_url}
-                  onChange={(e) => setNewCategory({ ...newCategory, image_url: e.target.value })}
-                  placeholder="Enter image URL"
-                />
-              </div>
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleCreateCategory}>
-                  Create Category
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <Button onClick={openCreateDialog}>
+          <Plus className="mr-2 h-4 w-4" />
+          Add Category
+        </Button>
       </div>
 
-      {/* Categories List */}
       <div className="space-y-4">
         {sortedCategories.map((category, index) => (
           <Card key={category.id} className="overflow-hidden">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
-                {/* Drag Handle */}
                 <div className="flex flex-col gap-1">
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => handleReorderCategory(category.id, 'up')}
-                    disabled={index === 0}
+                    onClick={() => reorderCategories(category.id, "up")}
+                    disabled={index === 0 || isPending}
                   >
                     <ArrowUp className="h-4 w-4" />
                   </Button>
@@ -173,17 +256,16 @@ export function CategoryManagement({ categories }: CategoryManagementProps) {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => handleReorderCategory(category.id, 'down')}
-                    disabled={index === sortedCategories.length - 1}
+                    onClick={() => reorderCategories(category.id, "down")}
+                    disabled={index === sortedCategories.length - 1 || isPending}
                   >
                     <ArrowDown className="h-4 w-4" />
                   </Button>
                 </div>
 
-                {/* Category Image */}
                 <div className="h-16 w-16 rounded-lg bg-muted overflow-hidden flex-shrink-0">
                   <Image
-                    src={category.image_url || `/placeholder.svg?height=64&width=64&query=${category.name}`}
+                    src={category.imageUrl || `/placeholder.svg?height=64&width=64&query=${category.name}`}
                     alt={category.name}
                     width={64}
                     height={64}
@@ -191,13 +273,10 @@ export function CategoryManagement({ categories }: CategoryManagementProps) {
                   />
                 </div>
 
-                {/* Category Info */}
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <h3 className="font-semibold">{category.name}</h3>
-                    <Badge variant="secondary">
-                      Order: {category.display_order}
-                    </Badge>
+                    <Badge variant="secondary">Order: {category.displayOrder}</Badge>
                     <Badge variant="outline">
                       <Package className="mr-1 h-3 w-3" />
                       {getProductCount(category)} products
@@ -211,7 +290,6 @@ export function CategoryManagement({ categories }: CategoryManagementProps) {
                   </p>
                 </div>
 
-                {/* Actions */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="sm">
@@ -219,7 +297,7 @@ export function CategoryManagement({ categories }: CategoryManagementProps) {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => handleEditCategory(category)}>
+                    <DropdownMenuItem onClick={() => openEditDialog(category)}>
                       <Edit className="mr-2 h-4 w-4" />
                       Edit Category
                     </DropdownMenuItem>
@@ -230,9 +308,9 @@ export function CategoryManagement({ categories }: CategoryManagementProps) {
                       </a>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem 
+                    <DropdownMenuItem
                       className="text-destructive"
-                      onClick={() => handleDeleteCategory(category.id)}
+                      onClick={() => deleteCategory(category)}
                     >
                       <Trash2 className="mr-2 h-4 w-4" />
                       Delete Category
@@ -244,7 +322,7 @@ export function CategoryManagement({ categories }: CategoryManagementProps) {
           </Card>
         ))}
 
-        {categories.length === 0 && (
+        {sortedCategories.length === 0 && (
           <Card>
             <CardContent className="py-12 text-center">
               <Package className="mx-auto h-12 w-12 text-muted-foreground" />
@@ -255,43 +333,60 @@ export function CategoryManagement({ categories }: CategoryManagementProps) {
         )}
       </div>
 
-      {/* Edit Category Dialog */}
-      <Dialog open={!!editingCategory} onOpenChange={(open) => !open && setEditingCategory(null)}>
+      <Dialog open={dialogOpen} onOpenChange={(open) => (open ? setDialogOpen(true) : setDialogOpen(false))}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit Category</DialogTitle>
+            <DialogTitle>{editingCategory ? "Edit Category" : "Add New Category"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
               <label className="text-sm font-medium">Category Name</label>
               <Input
-                value={newCategory.name}
-                onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
+                value={form.name}
+                onChange={(e) => setForm((current) => ({ ...current, name: e.target.value, slug: slugify(e.target.value) }))}
                 placeholder="Enter category name"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Slug</label>
+              <Input
+                value={form.slug}
+                onChange={(e) => setForm((current) => ({ ...current, slug: e.target.value }))}
+                placeholder="category-slug"
               />
             </div>
             <div>
               <label className="text-sm font-medium">Description</label>
               <Textarea
-                value={newCategory.description}
-                onChange={(e) => setNewCategory({ ...newCategory, description: e.target.value })}
+                value={form.description}
+                onChange={(e) => setForm((current) => ({ ...current, description: e.target.value }))}
                 placeholder="Enter category description"
               />
             </div>
             <div>
               <label className="text-sm font-medium">Image URL</label>
               <Input
-                value={newCategory.image_url}
-                onChange={(e) => setNewCategory({ ...newCategory, image_url: e.target.value })}
+                value={form.imageUrl}
+                onChange={(e) => setForm((current) => ({ ...current, imageUrl: e.target.value }))}
                 placeholder="Enter image URL"
               />
             </div>
+            <div>
+              <label className="text-sm font-medium">Display Order</label>
+              <Input
+                type="number"
+                value={form.displayOrder}
+                onChange={(e) => setForm((current) => ({ ...current, displayOrder: e.target.value }))}
+                placeholder="0"
+              />
+            </div>
+            {error && <p className="text-sm text-destructive">{error}</p>}
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setEditingCategory(null)}>
+              <Button variant="outline" onClick={() => setDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleUpdateCategory}>
-                Update Category
+              <Button onClick={submitCategory} disabled={isPending}>
+                {editingCategory ? "Update Category" : "Create Category"}
               </Button>
             </div>
           </div>
