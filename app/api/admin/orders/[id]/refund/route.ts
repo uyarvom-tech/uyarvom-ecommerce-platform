@@ -3,10 +3,12 @@ import { prisma } from "@/lib/prisma"
 import { requireStaffAccess } from "@/lib/auth-middleware"
 import Razorpay from "razorpay"
 
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID || "",
-  key_secret: process.env.RAZORPAY_KEY_SECRET || "",
-})
+function getRazorpay() {
+  return new Razorpay({
+    key_id: process.env.RAZORPAY_KEY_ID!,
+    key_secret: process.env.RAZORPAY_KEY_SECRET!,
+  })
+}
 
 /**
  * POST /api/admin/orders/[id]/refund
@@ -76,7 +78,7 @@ export async function POST(
     const refundAmountPaise = Math.round(refundAmountRupees * 100)
 
     // Initiate refund via Razorpay API
-    const refund = await (razorpay.payments as any).refund(order.razorpayPaymentId, {
+    const refund = await (getRazorpay().payments as any).refund(order.razorpayPaymentId, {
       amount: refundAmountPaise,
       notes: {
         order_id: order.id,
@@ -166,7 +168,7 @@ export async function GET(
     }
 
     // Fetch refunds from Razorpay
-    const refunds = await (razorpay.payments as any).fetchMultipleRefund(order.razorpayPaymentId)
+    const refunds = await (getRazorpay().payments as any).fetchMultipleRefund(order.razorpayPaymentId)
 
     const totalRefunded = (refunds.items || []).reduce(
       (sum: number, r: any) => sum + (r.amount || 0) / 100,

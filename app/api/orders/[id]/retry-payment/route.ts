@@ -3,10 +3,12 @@ import { prisma } from "@/lib/prisma"
 import { createClient } from "@/lib/supabase/server"
 import Razorpay from "razorpay"
 
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID || "",
-  key_secret: process.env.RAZORPAY_KEY_SECRET || "",
-})
+function getRazorpay() {
+  return new Razorpay({
+    key_id: process.env.RAZORPAY_KEY_ID!,
+    key_secret: process.env.RAZORPAY_KEY_SECRET!,
+  })
+}
 
 /**
  * POST /api/orders/[id]/retry-payment
@@ -85,7 +87,7 @@ export async function POST(
     }
 
     // Create a new Razorpay order for the retry
-    const razorpayOrder = (await razorpay.orders.create({
+    const razorpayOrder = (await getRazorpay().orders.create({
       amount: Math.round(order.total * 100), // In paise
       currency: "INR",
       receipt: `${order.orderNumber}-RETRY-${Date.now()}`,
