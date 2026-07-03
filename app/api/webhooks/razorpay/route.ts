@@ -198,16 +198,27 @@ async function handleDisputeCreated(dispute: any) {
   if (!order) return
 
   // Create a support ticket for the admin to handle
-  await prisma.supportTicket.create({
+  const disputeMessage = `A payment dispute has been raised for order ${order.orderNumber}.\n\nAmount: ₹${disputeAmount.toLocaleString("en-IN")}\nReason: ${disputeReason}\nPayment ID: ${razorpayPaymentId}\n\nPlease respond via Razorpay Dashboard.`
+
+  const ticket = await prisma.supportTicket.create({
     data: {
       ticketNumber: `DSP-${Date.now()}`,
       subject: `Payment Dispute: Order ${order.orderNumber}`,
-      description: `A payment dispute has been raised for order ${order.orderNumber}.\n\nAmount: ₹${disputeAmount.toLocaleString("en-IN")}\nReason: ${disputeReason}\nPayment ID: ${razorpayPaymentId}\n\nPlease respond via Razorpay Dashboard.`,
       category: "payment",
       priority: "high",
       status: "open",
-      customerId: order.userId,
+      userId: order.userId,
       orderId: order.id,
+    },
+  })
+
+  // Add the dispute details as the first message
+  await prisma.supportMessage.create({
+    data: {
+      ticketId: ticket.id,
+      senderId: order.userId,
+      body: disputeMessage,
+      isInternal: false,
     },
   })
 
