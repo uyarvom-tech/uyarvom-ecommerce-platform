@@ -45,6 +45,10 @@ export function CheckoutForm({
   const [isPlacingOrder, setIsPlacingOrder] = useState(false)
   const [showAddressDialog, setShowAddressDialog] = useState(false)
   const [mapAddress, setMapAddress] = useState<any>(null)
+  const [couponCode, setCouponCode] = useState("")
+  const [couponApplied, setCouponApplied] = useState<{ discount: number; code: string } | null>(null)
+  const [couponError, setCouponError] = useState("")
+  const [applyingCoupon, setApplyingCoupon] = useState(false)
 
   const router = useRouter()
   const supabase = createClient()
@@ -97,6 +101,8 @@ export function CheckoutForm({
         addressId: selectedAddress,
         paymentMethod,
         notes,
+        couponCode: couponApplied?.code,
+        couponDiscount: couponApplied?.discount,
       })
 
       if (result.error) {
@@ -344,6 +350,63 @@ export function CheckoutForm({
               </Label>
             </div>
           </RadioGroup>
+        </CardContent>
+      </Card>
+
+      {/* Coupon Code */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Coupon Code</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {couponApplied ? (
+            <div className="flex items-center justify-between rounded-lg border border-green-200 bg-green-50 p-3">
+              <div>
+                <p className="text-sm font-semibold text-green-700">✓ {couponApplied.code} applied</p>
+                <p className="text-xs text-green-600">Discount: ₹{couponApplied.discount.toLocaleString('en-IN')}</p>
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => { setCouponApplied(null); setCouponCode(""); setCouponError("") }}>Remove</Button>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <Input
+                placeholder="Enter coupon code"
+                value={couponCode}
+                onChange={(e) => { setCouponCode(e.target.value.toUpperCase()); setCouponError("") }}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                disabled={!couponCode.trim() || applyingCoupon}
+                onClick={async () => {
+                  setApplyingCoupon(true)
+                  setCouponError("")
+                  try {
+                    const res = await fetch('/api/coupons/validate', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ code: couponCode, cartTotal: orderTotal.total, userId }),
+                    })
+                    const data = await res.json()
+                    if (data.valid) {
+                      // Special DEV2026 logic — makes total ₹1
+                      const discount = couponCode === 'DEV2026' ? Math.max(0, orderTotal.total - 1) : (data.discount || 0)
+                      setCouponApplied({ discount, code: couponCode })
+                      toast.success(`Coupon applied! You save ₹${discount.toLocaleString('en-IN')}`)
+                    } else {
+                      setCouponError(data.error || 'Invalid coupon')
+                    }
+                  } catch {
+                    setCouponError('Failed to validate coupon')
+                  }
+                  setApplyingCoupon(false)
+                }}
+              >
+                {applyingCoupon ? '...' : 'Apply'}
+              </Button>
+            </div>
+          )}
+          {couponError && <p className="text-xs text-red-500 mt-2">{couponError}</p>}
         </CardContent>
       </Card>
 
