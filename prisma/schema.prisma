@@ -1261,3 +1261,47 @@ model AffiliateReferral {
 
   @@map("affiliate_referrals")
 }
+
+// ─── Role-Based Access Control (EAD Phase 1) ─────────────────────────────────
+
+model Role {
+  id          String   @id @default(cuid())
+  name        String   @unique // super_admin, admin, manager, courier, customer
+  displayName String
+  description String?
+  isSystem    Boolean  @default(false) // System roles cannot be deleted
+  createdBy   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  permissions RolePermission[]
+  userRoles   UserRole[]
+
+  @@map("roles")
+}
+
+model RolePermission {
+  id        String  @id @default(cuid())
+  roleId    String
+  module    String  // products, orders, customers, inventory, reports, settings, couriers, roles
+  canView   Boolean @default(false)
+  canCreate Boolean @default(false)
+  canEdit   Boolean @default(false)
+  canDelete Boolean @default(false)
+
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, module])
+  @@map("role_permissions")
+}
+
+model UserRole {
+  id     String @id @default(cuid())
+  userId String
+  roleId String
+
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+  @@map("user_roles")
+}

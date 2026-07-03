@@ -16,6 +16,8 @@ export async function createOrder(data: {
   addressId: string
   paymentMethod: string
   notes?: string
+  couponCode?: string
+  couponDiscount?: number
 }) {
   const supabase = await createClient()
   const {
@@ -66,7 +68,8 @@ export async function createOrder(data: {
 
     const shipping = subtotal >= shippingThreshold ? 0 : shippingFee
     const tax = Math.round(subtotal * taxRate)
-    const total = subtotal + shipping + tax
+    const discount = data.couponDiscount ? Math.min(data.couponDiscount, subtotal + shipping + tax - 1) : 0
+    const total = Math.max(1, subtotal + shipping + tax - discount) // Minimum ₹1
 
     const address = await prisma.address.findFirst({
       where: {
@@ -92,6 +95,7 @@ export async function createOrder(data: {
           subtotal,
           shipping,
           tax,
+          discount,
           total,
           notes,
           shippingName: address.fullName,

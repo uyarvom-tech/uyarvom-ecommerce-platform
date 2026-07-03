@@ -17,7 +17,7 @@ export async function middleware(request: NextRequest) {
         const pathname = request.nextUrl.pathname
 
         // FAST-PATH: Skip auth for public API routes that don't need it
-        const publicPaths = ['/api/products', '/api/coupons', '/api/ping']
+        const publicPaths = ['/api/products', '/api/coupons', '/api/ping', '/api/webhooks']
         if (publicPaths.some(p => pathname.startsWith(p))) {
             return NextResponse.next()
         }
