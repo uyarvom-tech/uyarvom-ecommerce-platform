@@ -389,8 +389,9 @@ export function CheckoutForm({
                     })
                     const data = await res.json()
                     if (data.valid) {
-                      // Special DEV2026 logic — makes total ₹1
-                      const discount = couponCode === 'DEV2026' ? Math.max(0, orderTotal.total - 1) : (data.discount || 0)
+                      // Special dev/test coupons — makes total ₹1
+                      const devTestCoupons = ['DEV2026', 'DEVTESTRS1']
+                      const discount = devTestCoupons.includes(couponCode) ? Math.max(0, orderTotal.total - 1) : (data.discount || 0)
                       setCouponApplied({ discount, code: couponCode })
                       toast.success(`Coupon applied! You save ₹${discount.toLocaleString('en-IN')}`)
                     } else {

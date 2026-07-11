@@ -8,8 +8,8 @@ import Razorpay from "razorpay"
 import { getSystemSetting } from "@/lib/settings"
 
 const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID || "rzp_test_placeholder",
-  key_secret: process.env.RAZORPAY_KEY_SECRET || "placeholder_secret",
+  key_id: process.env.RAZORPAY_KEY_ID!,
+  key_secret: process.env.RAZORPAY_KEY_SECRET!,
 })
 
 export async function createOrder(data: {
@@ -186,6 +186,16 @@ export async function createOrder(data: {
     })
 
     if (paymentMethod === "online") {
+      if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+        console.error("Razorpay Error: RAZORPAY_KEY_ID or RAZORPAY_KEY_SECRET is not configured")
+        return {
+          success: true,
+          orderId: order.id,
+          paymentInitFailed: true,
+          error: "Payment gateway is not configured. Please contact support.",
+        }
+      }
+
       try {
         const razorpayOrder = (await razorpay.orders.create({
           amount: Math.round(total * 100),
@@ -211,8 +221,16 @@ export async function createOrder(data: {
           customerEmail: user.email,
           customerPhone: address.phone,
         }
-      } catch (error) {
-        console.error("Razorpay Error:", error)
+      } catch (error: any) {
+        console.error("Razorpay Order Creation Error:", {
+          message: error?.message,
+          statusCode: error?.statusCode,
+          error: error?.error,
+          description: error?.error?.description,
+          keyConfigured: !!process.env.RAZORPAY_KEY_ID,
+          amount: Math.round(total * 100),
+          receipt: order.orderNumber,
+        })
         revalidatePath("/orders")
         revalidatePath("/cart")
 

@@ -25,6 +25,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'code and cartTotal are required' }, { status: 400 })
     }
 
+    // Dev/test coupons that bypass DB — reduce total to ₹1
+    const DEV_TEST_COUPONS = ['DEV2026', 'DEVTESTRS1']
+    if (DEV_TEST_COUPONS.includes(code.toUpperCase())) {
+      const discount = Math.max(0, cartTotal - 1)
+      return NextResponse.json({ valid: true, discount, type: 'fixed', code: code.toUpperCase() })
+    }
+
     const coupon = await prisma.coupon.findUnique({
       where: { code: code.toUpperCase() },
     })
