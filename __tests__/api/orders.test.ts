@@ -94,12 +94,19 @@ describe('createOrder (checkout)', () => {
   })
 
   it('creates online order and returns razorpay details', async () => {
+    process.env.RAZORPAY_KEY_ID = 'rzp_test_123'
+    process.env.RAZORPAY_KEY_SECRET = 'test_secret_456'
+    process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID = 'rzp_test_123'
     vi.mocked(prisma.cartItem.findMany).mockResolvedValue([MOCK_CART_ITEM] as any)
     vi.mocked(prisma.$transaction).mockResolvedValue({ id: 'order-2', orderNumber: 'ORD-456' } as any)
     vi.mocked(prisma.order.update).mockResolvedValue({} as any)
     const result = await createOrder({ addressId: 'addr-1', paymentMethod: 'online' })
     expect(result.success).toBe(true)
     expect(result.razorpayOrderId).toBeDefined()
+    // Cleanup
+    delete process.env.RAZORPAY_KEY_ID
+    delete process.env.RAZORPAY_KEY_SECRET
+    delete process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID
   })
 
   it('handles variant-based cart items for stock validation', async () => {
