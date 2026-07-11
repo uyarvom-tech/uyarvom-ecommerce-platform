@@ -180,6 +180,9 @@ export async function createOrder(data: {
       })
 
       return newOrder
+    }, {
+      maxWait: 10000,  // Max time to wait for a transaction slot (10s)
+      timeout: 30000,  // Max time the transaction can run (30s)
     })
 
     if (paymentMethod === "online") {
